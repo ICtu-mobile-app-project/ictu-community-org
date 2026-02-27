@@ -57,7 +57,7 @@ Dependencies are managed via Gradle (frontend) and npm/yarn (backend).
 5. Role-based access to different features.
 6. Search and filter capabilities within feeds and news.
 
-## ⚙️ Non-Functional Requirements
+##  Non-Functional Requirements
 
 - **Performance:** Fast load times on mobile devices; API responses under 200ms.
 - **Scalability:** Support thousands of concurrent users; database optimized with indexes.
@@ -65,7 +65,7 @@ Dependencies are managed via Gradle (frontend) and npm/yarn (backend).
 - **Usability:** Intuitive UI with accessibility features.
 - **Maintainability:** Modular codebase, clear separation of concerns, use of design patterns.
 
-## 🧩 Design Patterns & Best Practices
+##  Design Patterns & Best Practices
 
 - MVVM on the frontend with LiveData/StateFlow.
 - Repository pattern to abstract data sources.
@@ -73,7 +73,7 @@ Dependencies are managed via Gradle (frontend) and npm/yarn (backend).
 - Singleton pattern for shared services (e.g., API client).
 - Dependency Injection using Hilt or Koin.
 
-## ✨ Suggested User Stories
+##  Suggested User Stories
 
 1. **As a student**, I want to log in and see the latest news so I stay informed.
 2. **As a student**, I want to register for classes and get notified about assignments.
@@ -82,7 +82,7 @@ Dependencies are managed via Gradle (frontend) and npm/yarn (backend).
 5. **As staff**, I want to publish an announcement to the entire university.
 6. **As an administrator**, I want to deactivate a user account.
 
-## 📐 UML & Diagrams
+##  UML & Diagrams
 
 - **Use case diagrams** for the four user types.
 - **Class diagrams** showing entities like `User`, `NewsItem`, `Assignment`, `Notification`.
@@ -92,7 +92,7 @@ Dependencies are managed via Gradle (frontend) and npm/yarn (backend).
 
 ---
 
-## 📁 Project Setup
+##  Project Setup
 
 1. Clone repository.
 2. Frontend: open in Android Studio, sync Gradle.
@@ -101,13 +101,13 @@ Dependencies are managed via Gradle (frontend) and npm/yarn (backend).
 
 ---
 
-## 📄 Presentation Material
+##  Presentation Material
 
 A LaTeX file `ICTU_Community.tex` contains extended documentation, requirements, diagrams, and notes prepared for generating a PDF or DOC for presentations.
 
 ---
 
-## 🛠️ Future Enhancements
+##  Future Enhancements
 
 - Real-time chat between users.
 - Analytics dashboard for admin and teachers.

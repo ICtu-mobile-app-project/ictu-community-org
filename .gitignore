@@ -1,12 +1,20 @@
-# Gradle
-.gradle/
+# Flutter and Dart
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.pub/
 build/
-*.apk
-*.aar
-*.ap_
-*.aab
 
-# IDE
+# Android/Gradle host artifacts
+.gradle/
+android/.gradle/
+android/local.properties
+android/captures/
+android/key.properties
+**/*.jks
+**/*.keystore
+
+# IDE/editor
 .idea/
 *.iml
 *.iws
@@ -16,25 +24,7 @@ build/
 *.swo
 *~
 
-# Android Studio
-local.properties
-.classpath
-.project
-.cproject
-.c9/
-*.class
-
-# Compiled files
-*.dex
-
-# Generated files
-gen/
-out/
-
-# Libraries
-libs/
-
-# Log files
+# Logs
 *.log
 logs/
 
@@ -42,17 +32,5 @@ logs/
 .env
 .env.local
 
-# Dependencies
+# Backend dependencies (if backend is added later in this repo)
 node_modules/
-
-# Kotlin
-.kotlin/
-
-# Misc
-.gradle
-.idea
-build
-captures
-gradlew
-gradlew.bat
-gradle/

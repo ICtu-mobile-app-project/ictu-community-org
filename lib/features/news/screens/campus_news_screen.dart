@@ -98,7 +98,7 @@ class CampusNewsScreen extends StatelessWidget {
                   ),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(8),
-                    color: const Color(0xFFFFEDD5),
+                    color: const Color.fromARGB(255, 44, 25, 0),
                   ),
                   child: Text(
                     category,

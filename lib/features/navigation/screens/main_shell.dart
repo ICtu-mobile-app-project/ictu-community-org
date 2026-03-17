@@ -37,7 +37,7 @@ class _MainShellState extends State<MainShell> {
       valueListenable: _controller.currentIndex,
       builder: (BuildContext context, int index, Widget? child) {
         return Scaffold(
-          backgroundColor: const Color(0xFF050913),
+          backgroundColor: const Color(0xFF111726),
           body: SafeArea(child: pages[index]),
           bottomNavigationBar: Container(
             margin: const EdgeInsets.fromLTRB(16, 0, 16, 14),
@@ -58,7 +58,7 @@ class _MainShellState extends State<MainShell> {
                   icon: Icon(Icons.home_filled, color: Color(0xFF7184A3)),
                   selectedIcon: Icon(
                     Icons.home_filled,
-                    color: Color(0xFFF59E0B),
+                    color: Color.fromARGB(255, 255, 132, 0),
                   ),
                   label: 'Home',
                 ),

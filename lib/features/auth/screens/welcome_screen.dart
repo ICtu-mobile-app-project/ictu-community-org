@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'login_screen.dart';
+import 'signup_screen.dart';
 
 class WelcomeScreen extends StatelessWidget {
   const WelcomeScreen({super.key});
@@ -128,12 +129,12 @@ class WelcomeScreen extends StatelessWidget {
                           onPressed: () {
                             Navigator.of(context).push(
                               MaterialPageRoute<void>(
-                                builder: (_) => const LoginScreen(),
+                                builder: (_) => const SignupScreen(),
                               ),
                             );
                           },
                           child: const Text(
-                            'Already have an account? Sign In',
+                            'New here? Create Account',
                             style: TextStyle(
                               color: Color(0xFF64748B),
                               fontWeight: FontWeight.w700,

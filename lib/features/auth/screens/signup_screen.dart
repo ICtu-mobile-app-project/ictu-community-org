@@ -2,29 +2,58 @@ import 'package:flutter/material.dart';
 
 import '../../navigation/screens/main_shell.dart';
 import '../controllers/auth_controller.dart';
-import 'signup_screen.dart';
+import 'login_screen.dart';
 
-class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+class SignupScreen extends StatefulWidget {
+  const SignupScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  State<SignupScreen> createState() => _SignupScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _SignupScreenState extends State<SignupScreen> {
+  final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _confirmPasswordController =
+      TextEditingController();
   final AuthController _authController = AuthController();
+
+  String? _errorText;
 
   @override
   void dispose() {
+    _nameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
+    _confirmPasswordController.dispose();
     _authController.dispose();
     super.dispose();
   }
 
-  Future<void> _onLogin() async {
+  Future<void> _onSignup() async {
+    setState(() {
+      _errorText = null;
+    });
+
+    if (_nameController.text.trim().isEmpty ||
+        _emailController.text.trim().isEmpty ||
+        _passwordController.text.isEmpty ||
+        _confirmPasswordController.text.isEmpty) {
+      setState(() {
+        _errorText = 'Please fill in all fields.';
+      });
+      return;
+    }
+
+    if (_passwordController.text != _confirmPasswordController.text) {
+      setState(() {
+        _errorText = 'Passwords do not match.';
+      });
+      return;
+    }
+
+    // Placeholder signup flow using existing auth controller.
     await _authController.signIn(
       email: _emailController.text.trim(),
       password: _passwordController.text,
@@ -98,14 +127,14 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               Positioned(
                 left: 42 * sx,
-                top: 227 * sy,
+                top: 180 * sy,
                 width: 344 * sx,
                 child: Container(
                   padding: EdgeInsets.fromLTRB(
-                    34 * sx,
+                    30 * sx,
                     18 * sy,
-                    34 * sx,
-                    26 * sy,
+                    30 * sx,
+                    22 * sy,
                   ),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(17),
@@ -123,10 +152,10 @@ class _LoginScreenState extends State<LoginScreen> {
                     children: [
                       Image.asset(
                         'assets/Logo.png',
-                        width: 136 * sx,
-                        height: 152 * sy,
+                        width: 116 * sx,
+                        height: 132 * sy,
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 6),
                       const _GradientText(
                         'ICTU COMMUNITY',
                         style: TextStyle(
@@ -137,26 +166,50 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       const SizedBox(height: 2),
                       const _GradientText(
-                        'Welcome Back',
+                        'Create Account',
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
-                      SizedBox(height: 30 * sy),
+                      SizedBox(height: 18 * sy),
+                      _LabeledInput(
+                        label: 'Full Name',
+                        isDark: isDark,
+                        controller: _nameController,
+                      ),
+                      SizedBox(height: 10 * sy),
                       _LabeledInput(
                         label: 'Email Address',
                         isDark: isDark,
                         controller: _emailController,
                       ),
-                      SizedBox(height: 14 * sy),
+                      SizedBox(height: 10 * sy),
                       _LabeledInput(
                         label: 'Password',
                         isDark: isDark,
                         controller: _passwordController,
                         obscureText: true,
                       ),
-                      SizedBox(height: 18 * sy),
+                      SizedBox(height: 10 * sy),
+                      _LabeledInput(
+                        label: 'Confirm Password',
+                        isDark: isDark,
+                        controller: _confirmPasswordController,
+                        obscureText: true,
+                      ),
+                      if (_errorText != null) ...[
+                        const SizedBox(height: 8),
+                        Text(
+                          _errorText!,
+                          style: const TextStyle(
+                            color: Color(0xFFF87171),
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                      SizedBox(height: 14 * sy),
                       SizedBox(
                         width: 222 * sx,
                         height: 37 * sy,
@@ -171,14 +224,14 @@ class _LoginScreenState extends State<LoginScreen> {
                             color: Colors.transparent,
                             child: InkWell(
                               borderRadius: BorderRadius.circular(54),
-                              onTap: _onLogin,
+                              onTap: _onSignup,
                               child: const Center(
                                 child: Text(
-                                  'Login',
+                                  'Sign Up',
                                   style: TextStyle(
                                     color: Colors.white,
                                     fontWeight: FontWeight.w700,
-                                    fontSize: 32,
+                                    fontSize: 28,
                                     height: 1,
                                     shadows: [
                                       Shadow(
@@ -199,17 +252,17 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ),
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 6),
                       TextButton(
                         onPressed: () {
                           Navigator.of(context).pushReplacement(
                             MaterialPageRoute<void>(
-                              builder: (_) => const SignupScreen(),
+                              builder: (_) => const LoginScreen(),
                             ),
                           );
                         },
                         child: Text(
-                          'Need an account? Sign Up',
+                          'Already have an account? Login',
                           style: TextStyle(
                             color: isDark
                                 ? const Color(0xFFA6FFB6)

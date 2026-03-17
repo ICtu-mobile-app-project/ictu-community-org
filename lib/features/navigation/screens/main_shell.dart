@@ -37,17 +37,17 @@ class _MainShellState extends State<MainShell> {
       valueListenable: _controller.currentIndex,
       builder: (BuildContext context, int index, Widget? child) {
         return Scaffold(
-          backgroundColor: const Color(0xFF111726),
+          backgroundColor: Color.fromARGB(0, 0, 0, 0),
           body: SafeArea(child: pages[index]),
           bottomNavigationBar: Container(
-            margin: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+            margin: const EdgeInsets.fromLTRB(16, 0, 16, 19),
             decoration: BoxDecoration(
               color: Colors.white.withValues(alpha: 0.07),
               borderRadius: BorderRadius.circular(28),
               border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
             ),
             child: NavigationBar(
-              height: 66,
+              height: 40,
               selectedIndex: index,
               onDestinationSelected: _controller.setIndex,
               backgroundColor: Colors.transparent,

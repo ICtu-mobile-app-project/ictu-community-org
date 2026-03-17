@@ -6,7 +6,7 @@ class CampusNewsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: const Color(0xFFF2F4F7),
+      color: const Color.fromARGB(255, 23, 29, 38),
       child: ListView(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         children: [
@@ -14,7 +14,7 @@ class CampusNewsScreen extends StatelessWidget {
           Row(
             children: [
               CircleAvatar(
-                backgroundColor: const Color(0xFFE8ECF1),
+                backgroundColor: const Color.fromARGB(255, 14, 30, 51),
                 child: Icon(
                   Icons.person_outline,
                   color: Colors.blueGrey.shade700,
@@ -33,7 +33,7 @@ class CampusNewsScreen extends StatelessWidget {
                 ),
               ),
               CircleAvatar(
-                backgroundColor: const Color(0xFFE8ECF1),
+                backgroundColor: const Color.fromARGB(255, 7, 20, 37),
                 child: Icon(
                   Icons.notifications_none_rounded,
                   color: Colors.blueGrey.shade700,
@@ -71,7 +71,7 @@ class CampusNewsScreen extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(18),
-        color: Colors.white,
+        color: const Color.fromARGB(255, 0, 9, 40),
         border: Border.all(color: const Color(0xFFDCE3EC)),
       ),
       child: Column(

@@ -1,6 +1,32 @@
 # ICTU Community
 
-ICTU Community is now configured as a Flutter mobile project using Dart.
+ICTU Community is now configured as a Flutter mobile project using Dart.ICTU Community is a university-ready mobile application built with Kotlin for the frontend, Node.js for the backend/API, and Supabase as the database. The app is designed to serve four types of users: students, teachers, staff, and administrators. It facilitates communication, information sharing, and academic management within the university.
+
+##  User Roles & Features
+
+### Students
+- View feeds and news.
+- Read newsletters related to their field of study (e.g., coding, marketing).
+- Access class information and recorded lectures.
+- Receive alerts about exams, continuous assessment (CA), and resits.
+- Get notifications about assignments and experimental registration features.
+
+### Teachers
+- Post course materials and send assignments.
+- Read feeds and news.
+- Assign class delegates from the student body.
+
+### Staff
+(Features to be implemented easy to develop)
+- Manage timetables and classroom allocations.
+- Handle student administrative requests (e.g., transcript requests, registration inquiries).
+- Publish campus-wide announcements.
+
+### Administrators
+(Features to be implemented easy to develop)
+- Manage user accounts and roles (create, read, update, delete).
+- Configure system-wide settings (e.g., semester dates, exam policies).
+- Oversee content moderation on feeds and news.
 
 ## Tech Stack
 

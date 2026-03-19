@@ -68,6 +68,12 @@ class _SignupScreenState extends State<SignupScreen> {
     );
   }
 
+  void _onGoogleSignUp() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Google sign-up is coming soon.')),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
@@ -252,6 +258,11 @@ class _SignupScreenState extends State<SignupScreen> {
                           ),
                         ),
                       ),
+                      const SizedBox(height: 10),
+                      _GoogleAuthButton(
+                        label: 'Sign up with Google',
+                        onTap: _onGoogleSignUp,
+                      ),
                       const SizedBox(height: 6),
                       TextButton(
                         onPressed: () {
@@ -347,19 +358,19 @@ class _LabeledInput extends StatelessWidget {
         ),
         const SizedBox(height: 4),
         SizedBox(
-          height: 31,
+          height: 44,
           child: TextField(
             controller: controller,
             obscureText: obscureText,
             style: TextStyle(
               color: isDark ? Colors.white : Colors.black,
-              fontSize: 12,
+              fontSize: 13,
             ),
             decoration: InputDecoration(
               isDense: true,
               contentPadding: const EdgeInsets.symmetric(
                 horizontal: 12,
-                vertical: 8,
+                vertical: 12,
               ),
               filled: true,
               fillColor: const Color(0x82D9D9D9),
@@ -382,6 +393,37 @@ class _LabeledInput extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _GoogleAuthButton extends StatelessWidget {
+  const _GoogleAuthButton({required this.label, required this.onTap});
+
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      height: 42,
+      child: OutlinedButton.icon(
+        onPressed: onTap,
+        icon: const Icon(Icons.g_mobiledata_rounded, size: 24),
+        label: Text(
+          label,
+          style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+        ),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: Colors.white,
+          side: BorderSide(color: Colors.white.withValues(alpha: 0.25)),
+          backgroundColor: Colors.white.withValues(alpha: 0.06),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
+        ),
+      ),
     );
   }
 }

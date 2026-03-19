@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../community/screens/community_feed_screen.dart';
 import '../../courses/screens/course_details_screen.dart';
-import '../../courses/screens/course_search_screen.dart';
+import '../../courses/screens/timetable_screen.dart';
 import '../../home/screens/home_dashboard_screen.dart';
 import '../../news/screens/campus_news_screen.dart';
 import '../controllers/main_nav_controller.dart';
@@ -26,9 +26,9 @@ class _MainShellState extends State<MainShell> {
   @override
   Widget build(BuildContext context) {
     final List<Widget> pages = <Widget>[
-      HomeDashboardScreen(onOpenSearch: () => _controller.setIndex(2)),
+      HomeDashboardScreen(onOpenSearch: () => _controller.setIndex(4)),
       const CommunityFeedScreen(),
-      CourseSearchScreen(onOpenCourseDetails: () => _controller.setIndex(3)),
+      const TimetableScreen(),
       const CourseDetailsScreen(),
       const CampusNewsScreen(),
     ];
@@ -37,13 +37,13 @@ class _MainShellState extends State<MainShell> {
       valueListenable: _controller.currentIndex,
       builder: (BuildContext context, int index, Widget? child) {
         return Scaffold(
-          backgroundColor: Color.fromARGB(0, 0, 0, 0),
+          // backgroundColor: Color.fromARGB(255, 3, 0, 14),
           body: SafeArea(child: pages[index]),
           bottomNavigationBar: Container(
-            margin: const EdgeInsets.fromLTRB(16, 0, 16, 19),
+            margin: const EdgeInsets.fromLTRB(0, 0, 0, 0),
             decoration: BoxDecoration(
               color: Colors.white.withValues(alpha: 0.07),
-              borderRadius: BorderRadius.circular(28),
+              borderRadius: BorderRadius.circular(0),
               border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
             ),
             child: NavigationBar(
@@ -71,31 +71,28 @@ class _MainShellState extends State<MainShell> {
                   label: 'Community',
                 ),
                 NavigationDestination(
-                  icon: Icon(
-                    Icons.calendar_month_rounded,
-                    color: Color(0xFF7184A3),
-                  ),
+                  icon: Icon(Icons.schedule_rounded, color: Color(0xFF7184A3)),
                   selectedIcon: Icon(
-                    Icons.calendar_month_rounded,
+                    Icons.schedule_rounded,
+                    color: Color(0xFFF59E0B),
+                  ),
+                  label: 'Timetable',
+                ),
+                NavigationDestination(
+                  icon: Icon(Icons.menu_book_rounded, color: Color(0xFF7184A3)),
+                  selectedIcon: Icon(
+                    Icons.menu_book_rounded,
                     color: Color(0xFFF59E0B),
                   ),
                   label: 'Courses',
                 ),
                 NavigationDestination(
-                  icon: Icon(Icons.pie_chart_rounded, color: Color(0xFF7184A3)),
+                  icon: Icon(Icons.newspaper_rounded, color: Color(0xFF7184A3)),
                   selectedIcon: Icon(
-                    Icons.pie_chart_rounded,
+                    Icons.newspaper_rounded,
                     color: Color(0xFFF59E0B),
                   ),
-                  label: 'Details',
-                ),
-                NavigationDestination(
-                  icon: Icon(Icons.settings_rounded, color: Color(0xFF7184A3)),
-                  selectedIcon: Icon(
-                    Icons.settings_rounded,
-                    color: Color(0xFFF59E0B),
-                  ),
-                  label: 'Settings',
+                  label: 'News',
                 ),
               ],
             ),

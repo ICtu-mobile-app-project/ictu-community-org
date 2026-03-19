@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import '../../courses/screens/course_search_screen.dart';
+import '../../notifications/screens/notifications_screen.dart';
+import '../../profile/screens/profile_screen.dart';
 
 class HomeDashboardScreen extends StatelessWidget {
   const HomeDashboardScreen({super.key, required this.onOpenSearch});
@@ -9,43 +12,311 @@ class HomeDashboardScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       color: const Color(0xFF0A0C10),
-      child: ListView(
-        padding: const EdgeInsets.fromLTRB(24, 24, 24, 110),
+      child: Stack(
         children: [
-          Row(
+          ListView(
+            padding: const EdgeInsets.fromLTRB(24, 24, 24, 110),
             children: [
-              const Text(
-                '9:41',
-                style: TextStyle(
-                  color: Color(0xFFF1F5F9),
-                  fontWeight: FontWeight.w600,
-                  fontSize: 14,
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  const SizedBox(width: 60),
+                  const SizedBox(width: 12),
+                  const Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Good Day',
+                        style: TextStyle(
+                          color: Color(0xFF94A3B8),
+                          fontSize: 12,
+                        ),
+                      ),
+                      Text(
+                        'Alex.',
+                        style: TextStyle(
+                          color: Color(0xFFF1F5F9),
+                          fontSize: 20,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const Spacer(),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Container(
+                height: 60,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(20),
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF141821), Color(0xFF1D2230)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.08),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.22),
+                      blurRadius: 16,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
+                ),
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(20),
+                    onTap: () {
+                      showModalBottomSheet(
+                        context: context,
+                        isScrollControlled: true,
+                        backgroundColor: Colors.transparent,
+                        builder: (context) => CourseSearchScreen(
+                          onOpenCourseDetails: () {
+                            Navigator.pop(context);
+                            // Handle course details navigation
+                          },
+                          onBack: () {
+                            Navigator.pop(context);
+                          },
+                        ),
+                      );
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 34,
+                            height: 34,
+                            decoration: BoxDecoration(
+                              color: const Color(
+                                0xFFF58220,
+                              ).withValues(alpha: 0.2),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: const Icon(
+                              Icons.search_rounded,
+                              color: Color(0xFFF58220),
+                              size: 19,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          const Expanded(
+                            child: Text(
+                              'Search courses, news, resources',
+                              style: TextStyle(
+                                color: Color(0xFF94A3B8),
+                                fontWeight: FontWeight.w600,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ),
+                          Icon(
+                            Icons.north_east_rounded,
+                            color: Colors.white.withValues(alpha: 0.7),
+                            size: 18,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                 ),
               ),
-              const Spacer(),
-              Icon(
-                Icons.signal_cellular_alt_rounded,
-                color: Colors.white.withValues(alpha: 0.95),
-                size: 16,
+
+              // TextField(
+              //   style: const TextStyle(color: Color(0xFFF1F5F9), fontSize: 14),
+
+              //   decoration: InputDecoration(
+              //     hintText: 'Search courses or news...',
+              //     hintStyle: const TextStyle(color: Color(0xFF6B7280)),
+              //     prefixIcon: const Icon(
+              //       Icons.search,
+              //       color: Color(0xFF64748B),
+              //       size: 18,
+              //     ),
+              //     filled: true,
+              //     fillColor: Colors.white.withValues(alpha: 0.05),
+              //     contentPadding: const EdgeInsets.symmetric(vertical: 14),
+              //     border: OutlineInputBorder(
+              //       borderRadius: BorderRadius.circular(16),
+              //       borderSide: BorderSide.none,
+              //     ),
+              //   ),
+              // ),
+              const SizedBox(height: 32),
+              Row(
+                children: [
+                  const Text(
+                    'University News',
+                    style: TextStyle(
+                      color: Color(0xFFF1F5F9),
+                      fontWeight: FontWeight.w700,
+                      fontSize: 18,
+                      letterSpacing: -0.45,
+                    ),
+                  ),
+                  const Spacer(),
+                  TextButton(
+                    onPressed: onOpenSearch,
+                    child: const Text(
+                      'See All',
+                      style: TextStyle(
+                        color: Color(0xFFF58220),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(width: 6),
-              Icon(
-                Icons.wifi_rounded,
-                color: Colors.white.withValues(alpha: 0.95),
-                size: 16,
+              const SizedBox(height: 16),
+              SizedBox(
+                height: 176,
+                child: ListView(
+                  scrollDirection: Axis.horizontal,
+                  children: const [
+                    _NewsCard(
+                      category: 'ANNOUNCEMENT',
+                      categoryColor: Color(0xFFF58220),
+                      title: 'ICTU Awarded Best Regional University 2024',
+                      description:
+                          'The Excellence in Higher Education commission has recognized ICTU for its impact and innovation.',
+                      tintColor: Color(0x1AF58220),
+                      borderColor: Color(0x33F58220),
+                      glowColor: Color(0x33F58220),
+                    ),
+                    SizedBox(width: 16),
+                    _NewsCard(
+                      category: 'CONFERENCE',
+                      categoryColor: Color(0xFF3B82F6),
+                      title: 'Next Global ICT Summit Registration Open',
+                      description:
+                          'Join global leaders at our annual summit and connect with research and industry experts.',
+                      tintColor: Color(0x08FFFFFF),
+                      borderColor: Color(0x14FFFFFF),
+                      glowColor: Color(0x1A3B82F6),
+                    ),
+                  ],
+                ),
               ),
-              const SizedBox(width: 6),
-              Icon(
-                Icons.battery_full_rounded,
-                color: Colors.white.withValues(alpha: 0.95),
-                size: 16,
+              const SizedBox(height: 32),
+              Row(
+                children: [
+                  const Text(
+                    'Active Courses',
+                    style: TextStyle(
+                      color: Color(0xFFF1F5F9),
+                      fontWeight: FontWeight.w700,
+                      fontSize: 18,
+                      letterSpacing: -0.45,
+                    ),
+                  ),
+                  const Spacer(),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0x1AF58220),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: const Text(
+                      '4 Enrolled',
+                      style: TextStyle(
+                        color: Color(0xFFF58220),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              const _CourseTile(
+                icon: Icons.terminal_rounded,
+                iconBg: Color(0x1A6366F1),
+                iconColor: Color(0xFF818CF8),
+                title: 'Advanced Mobile Development',
+                subtitle: 'Prof. Alexander Silvin',
+                progress: 0.65,
+                progressColor: Color(0xFF6366F1),
+              ),
+              const SizedBox(height: 16),
+              const _CourseTile(
+                icon: Icons.folder_copy_rounded,
+                iconBg: Color(0x1A10B981),
+                iconColor: Color(0xFF34D399),
+                title: 'Database Management Systems',
+                subtitle: 'Dr. Sarah Johnson',
+                progress: 0.82,
+                progressColor: Color(0xFF10B981),
+              ),
+              const SizedBox(height: 16),
+              const _CourseTile(
+                icon: Icons.brush_rounded,
+                iconBg: Color(0x1AF97316),
+                iconColor: Color(0xFFFB923C),
+                title: 'UI/UX Design Systems',
+                subtitle: 'Senior Designer Vitaliy D.',
+                progress: 0.30,
+                progressColor: Color(0xFFF58220),
+              ),
+              const SizedBox(height: 32),
+              const Text(
+                'Quick Actions',
+                style: TextStyle(
+                  color: Color(0xFFF1F5F9),
+                  fontWeight: FontWeight.w700,
+                  fontSize: 18,
+                  letterSpacing: -0.45,
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  _QuickAction(
+                    icon: Icons.calendar_month_rounded,
+                    label: 'Schedule',
+                    color: Color(0xFFFB7185),
+                  ),
+                  _QuickAction(
+                    icon: Icons.assignment_rounded,
+                    label: 'Exams',
+                    color: Color(0xFF38BDF8),
+                  ),
+                  _QuickAction(
+                    icon: Icons.account_balance_wallet_rounded,
+                    label: 'Finances',
+                    color: Color(0xFFFBBF24),
+                  ),
+                  _QuickAction(
+                    icon: Icons.school_rounded,
+                    label: 'Library',
+                    color: Color(0xFFA78BFA),
+                  ),
+                ],
               ),
             ],
           ),
-          const SizedBox(height: 24),
-          Row(
-            children: [
-              Stack(
+          // Fixed profile icon in top-left corner
+          Positioned(
+            top: 56,
+            left: 24,
+            child: GestureDetector(
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => const ProfileScreen(),
+                  ),
+                );
+              },
+              child: Stack(
                 clipBehavior: Clip.none,
                 children: [
                   Container(
@@ -81,26 +352,21 @@ class HomeDashboardScreen extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(width: 12),
-              const Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Good Day',
-                    style: TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
+            ),
+          ),
+          // Fixed notification icon in top-right corner
+          Positioned(
+            top: 56,
+            right: 24,
+            child: GestureDetector(
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => const NotificationsScreen(),
                   ),
-                  Text(
-                    'Alex.',
-                    style: TextStyle(
-                      color: Color(0xFFF1F5F9),
-                      fontSize: 20,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ],
-              ),
-              const Spacer(),
-              Container(
+                );
+              },
+              child: Container(
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
@@ -110,186 +376,13 @@ class HomeDashboardScreen extends StatelessWidget {
                     color: Colors.white.withValues(alpha: 0.08),
                   ),
                 ),
-                child: const Icon(
-                  Icons.settings_rounded,
-                  color: Color(0xFF94A3B8),
+                child: Icon(
+                  Icons.notifications_none_rounded,
+                  color: Colors.white.withValues(alpha: 0.7),
+                  size: 20,
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
-          TextField(
-            style: const TextStyle(color: Color(0xFFF1F5F9), fontSize: 14),
-            decoration: InputDecoration(
-              hintText: 'Search courses or news...',
-              hintStyle: const TextStyle(color: Color(0xFF6B7280)),
-              prefixIcon: const Icon(
-                Icons.search,
-                color: Color(0xFF64748B),
-                size: 18,
-              ),
-              filled: true,
-              fillColor: Colors.white.withValues(alpha: 0.05),
-              contentPadding: const EdgeInsets.symmetric(vertical: 14),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
-                borderSide: BorderSide.none,
               ),
             ),
-          ),
-          const SizedBox(height: 32),
-          Row(
-            children: [
-              const Text(
-                'University News',
-                style: TextStyle(
-                  color: Color(0xFFF1F5F9),
-                  fontWeight: FontWeight.w700,
-                  fontSize: 18,
-                  letterSpacing: -0.45,
-                ),
-              ),
-              const Spacer(),
-              TextButton(
-                onPressed: onOpenSearch,
-                child: const Text(
-                  'See All',
-                  style: TextStyle(
-                    color: Color(0xFFF58220),
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          SizedBox(
-            height: 176,
-            child: ListView(
-              scrollDirection: Axis.horizontal,
-              children: const [
-                _NewsCard(
-                  category: 'ANNOUNCEMENT',
-                  categoryColor: Color(0xFFF58220),
-                  title: 'ICTU Awarded Best Regional University 2024',
-                  description:
-                      'The Excellence in Higher Education commission has recognized ICTU for its impact and innovation.',
-                  tintColor: Color(0x1AF58220),
-                  borderColor: Color(0x33F58220),
-                  glowColor: Color(0x33F58220),
-                ),
-                SizedBox(width: 16),
-                _NewsCard(
-                  category: 'CONFERENCE',
-                  categoryColor: Color(0xFF3B82F6),
-                  title: 'Next Global ICT Summit Registration Open',
-                  description:
-                      'Join global leaders at our annual summit and connect with research and industry experts.',
-                  tintColor: Color(0x08FFFFFF),
-                  borderColor: Color(0x14FFFFFF),
-                  glowColor: Color(0x1A3B82F6),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 32),
-          Row(
-            children: [
-              const Text(
-                'Active Courses',
-                style: TextStyle(
-                  color: Color(0xFFF1F5F9),
-                  fontWeight: FontWeight.w700,
-                  fontSize: 18,
-                  letterSpacing: -0.45,
-                ),
-              ),
-              const Spacer(),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 4,
-                ),
-                decoration: BoxDecoration(
-                  color: const Color(0x1AF58220),
-                  borderRadius: BorderRadius.circular(999),
-                ),
-                child: const Text(
-                  '4 Enrolled',
-                  style: TextStyle(
-                    color: Color(0xFFF58220),
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          const _CourseTile(
-            icon: Icons.terminal_rounded,
-            iconBg: Color(0x1A6366F1),
-            iconColor: Color(0xFF818CF8),
-            title: 'Advanced Mobile Development',
-            subtitle: 'Prof. Alexander Silvin',
-            progress: 0.65,
-            progressColor: Color(0xFF6366F1),
-          ),
-          const SizedBox(height: 16),
-          const _CourseTile(
-            icon: Icons.folder_copy_rounded,
-            iconBg: Color(0x1A10B981),
-            iconColor: Color(0xFF34D399),
-            title: 'Database Management Systems',
-            subtitle: 'Dr. Sarah Johnson',
-            progress: 0.82,
-            progressColor: Color(0xFF10B981),
-          ),
-          const SizedBox(height: 16),
-          const _CourseTile(
-            icon: Icons.brush_rounded,
-            iconBg: Color(0x1AF97316),
-            iconColor: Color(0xFFFB923C),
-            title: 'UI/UX Design Systems',
-            subtitle: 'Senior Designer Vitaliy D.',
-            progress: 0.30,
-            progressColor: Color(0xFFF58220),
-          ),
-          const SizedBox(height: 32),
-          const Text(
-            'Quick Actions',
-            style: TextStyle(
-              color: Color(0xFFF1F5F9),
-              fontWeight: FontWeight.w700,
-              fontSize: 18,
-              letterSpacing: -0.45,
-            ),
-          ),
-          const SizedBox(height: 16),
-          const Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              _QuickAction(
-                icon: Icons.calendar_month_rounded,
-                label: 'Schedule',
-                color: Color(0xFFFB7185),
-              ),
-              _QuickAction(
-                icon: Icons.assignment_rounded,
-                label: 'Exams',
-                color: Color(0xFF38BDF8),
-              ),
-              _QuickAction(
-                icon: Icons.account_balance_wallet_rounded,
-                label: 'Finances',
-                color: Color(0xFFFBBF24),
-              ),
-              _QuickAction(
-                icon: Icons.school_rounded,
-                label: 'Library',
-                color: Color(0xFFA78BFA),
-              ),
-            ],
           ),
         ],
       ),

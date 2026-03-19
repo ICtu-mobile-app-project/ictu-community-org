@@ -41,8 +41,14 @@ class CourseDetailsScreen extends StatelessWidget {
             ),
           ),
           SizedBox(height: 10),
-          _MaterialTile(name: 'Week 7 - UML Design Patterns.pdf', size: '3.1 MB'),
-          _MaterialTile(name: 'DBMS Query Optimization Slides.pptx', size: '7.8 MB'),
+          _MaterialTile(
+            name: 'Week 7 - UML Design Patterns.pdf',
+            size: '3.1 MB',
+          ),
+          _MaterialTile(
+            name: 'DBMS Query Optimization Slides.pptx',
+            size: '7.8 MB',
+          ),
           SizedBox(height: 18),
           Text(
             'Exams & Deadlines',
@@ -100,11 +106,27 @@ class _CourseProgressCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(code, style: const TextStyle(color: Color(0xFFF59E0B), fontWeight: FontWeight.w700)),
+          Text(
+            code,
+            style: const TextStyle(
+              color: Color(0xFFF59E0B),
+              fontWeight: FontWeight.w700,
+            ),
+          ),
           const SizedBox(height: 4),
-          Text(title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 16)),
+          Text(
+            title,
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w800,
+              fontSize: 16,
+            ),
+          ),
           const SizedBox(height: 3),
-          Text(lecturer, style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12)),
+          Text(
+            lecturer,
+            style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
+          ),
           const SizedBox(height: 10),
           ClipRRect(
             borderRadius: BorderRadius.circular(999),
@@ -112,7 +134,9 @@ class _CourseProgressCard extends StatelessWidget {
               value: progress,
               minHeight: 7,
               backgroundColor: const Color(0xFF1E293B),
-              valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFFF59E0B)),
+              valueColor: const AlwaysStoppedAnimation<Color>(
+                Color(0xFFF59E0B),
+              ),
             ),
           ),
           const SizedBox(height: 6),
@@ -154,14 +178,26 @@ class _MaterialTile extends StatelessWidget {
               borderRadius: BorderRadius.circular(10),
               color: const Color(0x1AF59E0B),
             ),
-            child: const Icon(Icons.file_present_rounded, color: Color(0xFFF59E0B), size: 20),
+            child: const Icon(
+              Icons.file_present_rounded,
+              color: Color(0xFFF59E0B),
+              size: 20,
+            ),
           ),
           const SizedBox(width: 10),
           Expanded(
-            child: Text(name, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.white, fontSize: 13)),
+            child: Text(
+              name,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(color: Colors.white, fontSize: 13),
+            ),
           ),
           const SizedBox(width: 10),
-          Text(size, style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 11)),
+          Text(
+            size,
+            style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 11),
+          ),
         ],
       ),
     );
@@ -197,9 +233,22 @@ class _DeadlineTile extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 13)),
+                Text(
+                  title,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 13,
+                  ),
+                ),
                 const SizedBox(height: 2),
-                Text(due, style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12)),
+                Text(
+                  due,
+                  style: const TextStyle(
+                    color: Color(0xFF94A3B8),
+                    fontSize: 12,
+                  ),
+                ),
               ],
             ),
           ),

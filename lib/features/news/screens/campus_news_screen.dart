@@ -193,7 +193,11 @@ class _EventTile extends StatelessWidget {
               borderRadius: BorderRadius.circular(10),
               color: const Color(0x1AF59E0B),
             ),
-            child: const Icon(Icons.event_rounded, color: Color(0xFFF59E0B), size: 20),
+            child: const Icon(
+              Icons.event_rounded,
+              color: Color(0xFFF59E0B),
+              size: 20,
+            ),
           ),
           const SizedBox(width: 10),
           Expanded(
@@ -211,7 +215,10 @@ class _EventTile extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   meta,
-                  style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
+                  style: const TextStyle(
+                    color: Color(0xFF94A3B8),
+                    fontSize: 12,
+                  ),
                 ),
               ],
             ),

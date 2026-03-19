@@ -138,7 +138,9 @@ class _StatusBubble extends StatelessWidget {
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               border: Border.all(
-                color: active ? const Color(0xFFF58220) : const Color(0xFF475569),
+                color: active
+                    ? const Color(0xFFF58220)
+                    : const Color(0xFF475569),
                 width: 2,
               ),
             ),
@@ -206,7 +208,10 @@ class _ChatTile extends StatelessWidget {
                   message,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
+                  style: const TextStyle(
+                    color: Color(0xFF94A3B8),
+                    fontSize: 12,
+                  ),
                 ),
               ],
             ),
@@ -215,7 +220,10 @@ class _ChatTile extends StatelessWidget {
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text(time, style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 11)),
+              Text(
+                time,
+                style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 11),
+              ),
               const SizedBox(height: 6),
               if (unread > 0)
                 CircleAvatar(

@@ -50,7 +50,10 @@ class _TimetableScreenState extends State<TimetableScreen>
                 ),
                 const Spacer(),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(12),
                     color: const Color(0x1AF58220),
@@ -100,8 +103,14 @@ class _TimetableScreenState extends State<TimetableScreen>
               ),
               labelColor: Colors.white,
               unselectedLabelColor: const Color(0xFF7E90AB),
-              labelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
-              unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500, fontSize: 12),
+              labelStyle: const TextStyle(
+                fontWeight: FontWeight.w600,
+                fontSize: 12,
+              ),
+              unselectedLabelStyle: const TextStyle(
+                fontWeight: FontWeight.w500,
+                fontSize: 12,
+              ),
               splashBorderRadius: BorderRadius.circular(20),
             ),
           ),
@@ -353,7 +362,10 @@ class _DateCell extends StatelessWidget {
       ),
       child: Column(
         children: [
-          Text(day, style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 10)),
+          Text(
+            day,
+            style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 10),
+          ),
           const SizedBox(height: 4),
           Text(
             date,
@@ -417,7 +429,10 @@ class _ScheduleTypeCard extends StatelessWidget {
                 const SizedBox(height: 3),
                 Text(
                   subtitle,
-                  style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
+                  style: const TextStyle(
+                    color: Color(0xFF94A3B8),
+                    fontSize: 12,
+                  ),
                 ),
               ],
             ),

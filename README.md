@@ -52,10 +52,8 @@ ICTU Community connects members of the university community in a single, unified
   - Target API: 34+
 
 ### 3.3 Backend (Planned)
-- **Runtime**: Node.js 18+
-- **Framework**: Express.js 4.x
-- **Pattern**: RESTful API with JWT authentication
-- **Architecture**: Microservices-ready
+ - Supabase Edge Functions
+ - dart
 
 ### 3.4 Database (Planned)
 - **Primary**: PostgreSQL via Supabase

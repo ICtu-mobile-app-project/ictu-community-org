@@ -125,25 +125,25 @@ ICTU Community connects members of the university community in a single, unified
 ```mermaid
 graph TB
     subgraph "Client Layer"
-        A["📱 Mobile App<br/>Flutter + Dart"]
+        A["📱 Mobile App - Flutter + Dart"]
     end
-    
+
     subgraph "API Layer"
-        B["🚀 API Gateway<br/>Express.js"]
-        C["🔐 Auth Service<br/>JWT/Supabase"]
-        D["⚙️ Business Logic<br/>Services"]
+        B["🚀 API Gateway - Express.js"]
+        C["🔐 Auth Service - JWT/Supabase"]
+        D["⚙️ Business Logic - Services"]
     end
-    
+
     subgraph "Data Layer"
-        E["🗄️ Database<br/>PostgreSQL"]
-        F["💾 File Storage<br/>Supabase Storage"]
+        E["🗄️ Database - PostgreSQL"]
+        F["💾 File Storage - Supabase Storage"]
     end
-    
+
     subgraph "External Services"
-        G["📢 Push Notifications<br/>FCM"]
-        H["📊 Analytics<br/>Firebase"]
+        G["📢 Push Notifications - FCM"]
+        H["📊 Analytics - Firebase"]
     end
-    
+
     A -->|REST API| B
     B --> C
     B --> D
@@ -151,3 +151,4 @@ graph TB
     D --> F
     B -.->|Notifications| G
     A -.->|Events| H
+```

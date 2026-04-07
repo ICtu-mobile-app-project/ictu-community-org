@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../../home/screens/lecturer_dashboard_screen.dart';
 import '../../navigation/screens/main_shell.dart';
 import '../controllers/auth_controller.dart';
+import '../models/user_role.dart';
 import 'signup_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -12,9 +14,13 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
+  static const String _schoolDomain = '@ictuniversity.edu.cm';
+
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final AuthController _authController = AuthController();
+  bool _isSubmitting = false;
+  String? _errorText;
 
   @override
   void dispose() {
@@ -25,17 +31,53 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _onLogin() async {
-    await _authController.signIn(
+    final String normalizedEmail = _emailController.text.trim().toLowerCase();
+    if (!normalizedEmail.endsWith(_schoolDomain)) {
+      setState(() {
+        _errorText =
+            'Please login with your ICT University email (@ictuniversity.edu.cm).';
+      });
+      return;
+    }
+
+    setState(() {
+      _isSubmitting = true;
+      _errorText = null;
+    });
+
+    final AuthFlowResponse response = await _authController.signIn(
       email: _emailController.text.trim(),
       password: _passwordController.text,
     );
 
-    if (!mounted || !_authController.isLoggedIn.value) {
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _isSubmitting = false;
+    });
+
+    if (!response.isSuccess) {
+      setState(() {
+        _errorText = response.message ?? 'Login failed. Please try again.';
+      });
+      return;
+    }
+
+    final UserRole resolvedRole = response.role ?? UserRole.student;
+
+    if (resolvedRole == UserRole.lecturer) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute<void>(builder: (_) => const LecturerDashboardScreen()),
+      );
       return;
     }
 
     Navigator.of(context).pushReplacement(
-      MaterialPageRoute<void>(builder: (_) => const MainShell()),
+      MaterialPageRoute<void>(
+        builder: (_) => MainShell(userRole: resolvedRole),
+      ),
     );
   }
 
@@ -177,34 +219,55 @@ class _LoginScreenState extends State<LoginScreen> {
                             color: Colors.transparent,
                             child: InkWell(
                               borderRadius: BorderRadius.circular(54),
-                              onTap: _onLogin,
-                              child: const Center(
-                                child: Text(
-                                  'Login',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w700,
-                                    fontSize: 32,
-                                    height: 1,
-                                    shadows: [
-                                      Shadow(
-                                        blurRadius: 6.4,
-                                        offset: Offset(0, 4),
-                                        color: Color(0x40000000),
+                              onTap: _isSubmitting ? null : _onLogin,
+                              child: Center(
+                                child: _isSubmitting
+                                    ? const SizedBox(
+                                        width: 22,
+                                        height: 22,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: Colors.white,
+                                        ),
+                                      )
+                                    : const Text(
+                                        'Login',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.w700,
+                                          fontSize: 32,
+                                          height: 1,
+                                          shadows: [
+                                            Shadow(
+                                              blurRadius: 6.4,
+                                              offset: Offset(0, 4),
+                                              color: Color(0x40000000),
+                                            ),
+                                            Shadow(
+                                              blurRadius: 4,
+                                              offset: Offset(0, 4),
+                                              color: Color(0x40000000),
+                                            ),
+                                          ],
+                                        ),
                                       ),
-                                      Shadow(
-                                        blurRadius: 4,
-                                        offset: Offset(0, 4),
-                                        color: Color(0x40000000),
-                                      ),
-                                    ],
-                                  ),
-                                ),
                               ),
                             ),
                           ),
                         ),
                       ),
+                      if (_errorText != null) ...[
+                        const SizedBox(height: 10),
+                        Text(
+                          _errorText!,
+                          style: const TextStyle(
+                            color: Color(0xFFF87171),
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
                       const SizedBox(height: 10),
                       _GoogleAuthButton(
                         label: 'Sign in with Google',

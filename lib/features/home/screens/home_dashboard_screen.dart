@@ -3,6 +3,7 @@ import '../../auth/models/user_role.dart';
 import '../../courses/screens/course_search_screen.dart';
 import '../../notifications/screens/notifications_screen.dart';
 import '../../profile/screens/profile_screen.dart';
+import '../../transcription/screens/audio_ai_transcription_screen.dart';
 
 class HomeDashboardScreen extends StatelessWidget {
   const HomeDashboardScreen({
@@ -312,6 +313,56 @@ class HomeDashboardScreen extends StatelessWidget {
                   ),
                 ],
               ),
+              if (userRole == UserRole.lecturer || userRole.isDelegate) ...[
+                const SizedBox(height: 16),
+                Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(20),
+                    color: const Color(0x1AF58220),
+                    border: Border.all(color: const Color(0x33F58220)),
+                  ),
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(20),
+                      onTap: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder: (_) => const AudioAiTranscriptionScreen(),
+                          ),
+                        );
+                      },
+                      child: const Padding(
+                        padding: EdgeInsets.all(16),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.auto_awesome_rounded,
+                              color: Color(0xFFF58220),
+                            ),
+                            SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                'Audio/AI Transcription',
+                                style: TextStyle(
+                                  color: Color(0xFFF1F5F9),
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ),
+                            Icon(
+                              Icons.north_east_rounded,
+                              color: Color(0xFFF1F5F9),
+                              size: 18,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
               if (userRole.isDelegate) ...[
                 const SizedBox(height: 28),
                 Container(

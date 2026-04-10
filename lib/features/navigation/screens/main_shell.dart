@@ -9,6 +9,7 @@ import '../../courses/screens/timetable_screen.dart';
 import '../../home/screens/home_dashboard_screen.dart';
 import '../../news/screens/campus_news_screen.dart';
 import '../../profile/screens/profile_screen.dart';
+import '../../transcription/screens/audio_ai_transcription_screen.dart';
 import '../controllers/main_nav_controller.dart';
 
 class MainShell extends StatefulWidget {
@@ -41,6 +42,15 @@ class _MainShellState extends State<MainShell> {
     Navigator.of(context).pop();
     await Navigator.of(context).push(
       MaterialPageRoute<void>(builder: (_) => const ProfileScreen()),
+    );
+  }
+
+  Future<void> _openTranscriptionFromDrawer() async {
+    Navigator.of(context).pop();
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => const AudioAiTranscriptionScreen(),
+      ),
     );
   }
 
@@ -112,13 +122,14 @@ class _MainShellState extends State<MainShell> {
         return Scaffold(
           key: _scaffoldKey,
           drawer: Drawer(
+            backgroundColor: const Color(0xFF0A0C10),
             child: SafeArea(
               child: Column(
                 children: [
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
-                    color: const Color(0xFFF59E0B),
+                    color: const Color(0xFF0A0C10),
                     child: const Row(
                       children: [
                         CircleAvatar(
@@ -130,7 +141,7 @@ class _MainShellState extends State<MainShell> {
                           child: Text(
                             'Account Menu',
                             style: TextStyle(
-                              color: Colors.white,
+                              color: Color(0xFFF1F5F9),
                               fontWeight: FontWeight.w700,
                               fontSize: 16,
                             ),
@@ -141,9 +152,19 @@ class _MainShellState extends State<MainShell> {
                   ),
                   ListTile(
                     leading: const Icon(Icons.person_outline_rounded),
+                    iconColor: const Color(0xFFF1F5F9),
+                    textColor: const Color(0xFFF1F5F9),
                     title: const Text('Profile'),
                     onTap: _openProfileFromDrawer,
                   ),
+                  if (widget.userRole == UserRole.student)
+                    ListTile(
+                      leading: const Icon(Icons.auto_awesome_rounded),
+                      iconColor: const Color(0xFFF58220),
+                      textColor: const Color(0xFFF1F5F9),
+                      title: const Text('AI Transcription'),
+                      onTap: _openTranscriptionFromDrawer,
+                    ),
                   ListTile(
                     leading: _isLoggingOut
                         ? const SizedBox(
@@ -152,6 +173,8 @@ class _MainShellState extends State<MainShell> {
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
                         : const Icon(Icons.logout_rounded),
+                    iconColor: const Color(0xFFF1F5F9),
+                    textColor: const Color(0xFFF1F5F9),
                     title: const Text('Logout'),
                     onTap: _isLoggingOut ? null : _logoutFromDrawer,
                   ),

@@ -1516,22 +1516,63 @@ class _TranscriptionResultCardState extends State<_TranscriptionResultCard> {
   ];
 
   String _getContent() {
-    final Map<String, dynamic> d = widget.data;
+    final dynamic d = widget.data;
+    dynamic value;
+
     switch (_selectedFormat) {
       case 'Key Points':
-        return d['key_points']?.toString() ?? 'No key points available.';
+        value = d['key_points'];
+        break;
       case 'Past Topics':
-        return d['previous_topics_mentioned']?.toString() ?? 'No past topics mentioned.';
+        value = d['previous_topics_mentioned'];
+        break;
       case 'CA/Exam Mentions':
-        return d['assignments_and_assessments']?.toString() ?? 'No CA/Exam mentions.';
+        value = d['assignments_and_assessments'];
+        break;
       case 'Action Items':
-        return d['action_items_for_students']?.toString() ?? 'No action items.';
+        value = d['action_items_for_students'];
+        break;
       case 'Full Transcript':
-        return d['full_transcript']?.toString() ?? d['transcript']?.toString() ?? 'Transcript unavailable.';
+        value = d['full_transcript'] ?? d['transcript'];
+        break;
       case 'Summary':
       default:
-        return d['summary']?.toString() ?? 'No summary available.';
+        value = d['summary'];
+        break;
     }
+
+    if (value == null) {
+      return 'No information available for this category.';
+    }
+
+    if (value is List) {
+      if (value.isEmpty) {
+        return 'No items found for this category.';
+      }
+      return value.map((item) => '• $item').join('\n\n');
+    }
+
+    if (value is Map) {
+      final List<String> lines = [];
+      value.forEach((key, val) {
+        final String title = key.toString().replaceAll('_', ' ').toUpperCase();
+        lines.add('[$title]');
+        if (val is List) {
+          if (val.isEmpty) {
+            lines.add('  None');
+          } else {
+            lines.addAll(val.map((item) => '  • $item'));
+          }
+        } else {
+          lines.add('  $val');
+        }
+        lines.add('');
+      });
+      return lines.isEmpty ? 'No detailed data available.' : lines.join('\n').trim();
+    }
+
+    final String text = value.toString().trim();
+    return text.isEmpty ? 'No content available.' : text;
   }
 
   Future<void> _download() async {
@@ -1540,21 +1581,44 @@ class _TranscriptionResultCardState extends State<_TranscriptionResultCard> {
     final String fileName = '${safeTitle}_${_selectedFormat.replaceAll(' ', '_')}.txt';
 
     try {
-      final Directory targetDir = await getApplicationDocumentsDirectory();
+      // 1. Enforce Download folder for Android
+      Directory? targetDir;
+      if (Platform.isAndroid) {
+        // We use the public Downloads/ICTU_Transcripts folder
+        targetDir = Directory('/storage/emulated/0/Download/ICTU_Transcripts');
+        
+        // Check/Request permission for Android 10 and below or 11+ with MANAGE_EXTERNAL_STORAGE
+        // Note: For just the Download folder, sometimes basic storage is enough or MANAGE is needed 
+        // depending on the manufacturer, but we declared MANAGE in manifest so we use it for consistency.
+        if (!await Permission.manageExternalStorage.isGranted) {
+          final status = await Permission.manageExternalStorage.request();
+          if (!status.isGranted) {
+             // Fallback to basic storage check if user denied 'All Files' but might have basic 'Storage'
+             if (!await Permission.storage.request().isGranted) {
+                throw Exception('Storage permission is required to save to Downloads.');
+             }
+          }
+        }
+      } else {
+        // iOS/Desktop fallback
+        targetDir = await getApplicationDocumentsDirectory();
+      }
+
+      // 2. Create directory
+      if (!await targetDir!.exists()) {
+        await targetDir.create(recursive: true);
+      }
+
+      // 3. Save file
       final File file = File(p.join(targetDir.path, fileName));
       await file.writeAsString(content);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Saved to app documents: $fileName'),
+            content: Text('Saved to: ${file.path}'),
             backgroundColor: const Color(0xFFF58220),
             duration: const Duration(seconds: 5),
-            action: SnackBarAction(
-              label: 'Copy Path',
-              textColor: Colors.white,
-              onPressed: () => Clipboard.setData(ClipboardData(text: file.path)),
-            ),
           ),
         );
       }
@@ -1562,11 +1626,23 @@ class _TranscriptionResultCardState extends State<_TranscriptionResultCard> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to save file: $e'),
+            content: Text('Failed to save file: ${e.toString().replaceFirst('Exception: ', '')}'),
             backgroundColor: const Color(0xFFD14343),
           ),
         );
       }
+    }
+  }
+
+  Future<int> _getAndroidSdkVersion() async {
+    if (!Platform.isAndroid) return 0;
+    try {
+      final String version = await const MethodChannel('android_version').invokeMethod('getSdkVersion');
+      return int.tryParse(version) ?? 0;
+    } catch (_) {
+      // Fallback: device_info_plus is usually better, but for now we'll assume >= 33 if 
+      // storage permission fails and it's a modern device.
+      return 33;
     }
   }
 

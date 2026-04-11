@@ -24,12 +24,16 @@ class WelcomeScreen extends StatelessWidget {
             ),
           ),
           SafeArea(
-            child: Padding(
+            child: SingleChildScrollView(
               padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 18),
-              child: Column(
-                children: [
-                  const Spacer(flex: 2),
-                  Container(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  minHeight: MediaQuery.of(context).size.height - 36,
+                ),
+                child: Column(
+                  children: [
+                    const SizedBox(height: 32),
+                    Container(
                     width: 148,
                     height: 148,
                     decoration: BoxDecoration(
@@ -144,8 +148,9 @@ class WelcomeScreen extends StatelessWidget {
                       ],
                     ),
                   ),
-                  const Spacer(),
-                ],
+                    const SizedBox(height: 24),
+                  ],
+                ),
               ),
             ),
           ),

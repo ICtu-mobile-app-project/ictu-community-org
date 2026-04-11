@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../navigation/screens/main_shell.dart';
+import '../models/user_role.dart';
 import '../controllers/auth_controller.dart';
 import 'login_screen.dart';
 
@@ -12,6 +12,18 @@ class SignupScreen extends StatefulWidget {
 }
 
 class _SignupScreenState extends State<SignupScreen> {
+  static const String _faculty = 'Engineering & Technology';
+  static const List<String> _programs = <String>[
+    'BSc ICT',
+    'BSc CS',
+    'BSc SEN',
+    'BSc CYS',
+    'BSc ISN',
+    'BSc Renewable Energy',
+    'BSc JMC',
+  ];
+  static const String _schoolDomain = '@ictuniversity.edu.cm';
+
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
@@ -19,6 +31,10 @@ class _SignupScreenState extends State<SignupScreen> {
       TextEditingController();
   final AuthController _authController = AuthController();
 
+  UserRole _selectedRole = UserRole.student;
+  String _selectedProgram = _programs.first;
+  int _selectedYearLevel = 1;
+  bool _isSubmitting = false;
   String? _errorText;
 
   @override
@@ -33,6 +49,7 @@ class _SignupScreenState extends State<SignupScreen> {
 
   Future<void> _onSignup() async {
     setState(() {
+      _isSubmitting = true;
       _errorText = null;
     });
 
@@ -41,6 +58,7 @@ class _SignupScreenState extends State<SignupScreen> {
         _passwordController.text.isEmpty ||
         _confirmPasswordController.text.isEmpty) {
       setState(() {
+        _isSubmitting = false;
         _errorText = 'Please fill in all fields.';
       });
       return;
@@ -48,23 +66,58 @@ class _SignupScreenState extends State<SignupScreen> {
 
     if (_passwordController.text != _confirmPasswordController.text) {
       setState(() {
+        _isSubmitting = false;
         _errorText = 'Passwords do not match.';
       });
       return;
     }
 
-    // Placeholder signup flow using existing auth controller.
-    await _authController.signIn(
-      email: _emailController.text.trim(),
-      password: _passwordController.text,
-    );
-
-    if (!mounted || !_authController.isLoggedIn.value) {
+    final String normalizedEmail = _emailController.text.trim().toLowerCase();
+    if (!normalizedEmail.endsWith(_schoolDomain)) {
+      setState(() {
+        _isSubmitting = false;
+        _errorText =
+            'Please register with your ICT University email (@ictuniversity.edu.cm).';
+      });
       return;
     }
 
+    final AuthFlowResponse response = await _authController.signUp(
+      fullName: _nameController.text.trim(),
+      email: _emailController.text.trim(),
+      password: _passwordController.text,
+      role: _selectedRole,
+      faculty: _faculty,
+      program: _selectedProgram,
+      yearLevel: _selectedYearLevel,
+    );
+
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _isSubmitting = false;
+    });
+
+    if (!response.isSuccess) {
+      setState(() {
+        _errorText =
+            response.message ?? 'Signup failed. Please check your information.';
+      });
+      return;
+    }
+
+    final String successMessage = response.requiresEmailVerification
+        ? 'Account created. Check your email to verify before login.'
+        : 'Account created successfully. You can now login.';
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(successMessage)),
+    );
+
     Navigator.of(context).pushReplacement(
-      MaterialPageRoute<void>(builder: (_) => const MainShell()),
+      MaterialPageRoute<void>(builder: (_) => const LoginScreen()),
     );
   }
 
@@ -134,6 +187,7 @@ class _SignupScreenState extends State<SignupScreen> {
               Positioned(
                 left: 42 * sx,
                 top: 180 * sy,
+                bottom: 50 * sy,
                 width: 344 * sx,
                 child: Container(
                   padding: EdgeInsets.fromLTRB(
@@ -153,9 +207,10 @@ class _SignupScreenState extends State<SignupScreen> {
                       color: Colors.white.withValues(alpha: 0.2),
                     ),
                   ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
+                  child: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
                       Image.asset(
                         'assets/Logo.png',
                         width: 116 * sx,
@@ -189,6 +244,34 @@ class _SignupScreenState extends State<SignupScreen> {
                         label: 'Email Address',
                         isDark: isDark,
                         controller: _emailController,
+                      ),
+                      SizedBox(height: 10 * sy),
+                      _RoleSelector(
+                        role: _selectedRole,
+                        onChanged: (UserRole value) {
+                          setState(() {
+                            _selectedRole = value;
+                          });
+                        },
+                      ),
+                      SizedBox(height: 10 * sy),
+                      _ProgramSelector(
+                        selectedProgram: _selectedProgram,
+                        options: _programs,
+                        onChanged: (String value) {
+                          setState(() {
+                            _selectedProgram = value;
+                          });
+                        },
+                      ),
+                      SizedBox(height: 10 * sy),
+                      _YearLevelSelector(
+                        selectedValue: _selectedYearLevel,
+                        onChanged: (int value) {
+                          setState(() {
+                            _selectedYearLevel = value;
+                          });
+                        },
                       ),
                       SizedBox(height: 10 * sy),
                       _LabeledInput(
@@ -230,29 +313,38 @@ class _SignupScreenState extends State<SignupScreen> {
                             color: Colors.transparent,
                             child: InkWell(
                               borderRadius: BorderRadius.circular(54),
-                              onTap: _onSignup,
-                              child: const Center(
-                                child: Text(
-                                  'Sign Up',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w700,
-                                    fontSize: 28,
-                                    height: 1,
-                                    shadows: [
-                                      Shadow(
-                                        blurRadius: 6.4,
-                                        offset: Offset(0, 4),
-                                        color: Color(0x40000000),
+                              onTap: _isSubmitting ? null : _onSignup,
+                              child: Center(
+                                child: _isSubmitting
+                                    ? const SizedBox(
+                                        width: 22,
+                                        height: 22,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: Colors.white,
+                                        ),
+                                      )
+                                    : const Text(
+                                        'Sign Up',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.w700,
+                                          fontSize: 28,
+                                          height: 1,
+                                          shadows: [
+                                            Shadow(
+                                              blurRadius: 6.4,
+                                              offset: Offset(0, 4),
+                                              color: Color(0x40000000),
+                                            ),
+                                            Shadow(
+                                              blurRadius: 4,
+                                              offset: Offset(0, 4),
+                                              color: Color(0x40000000),
+                                            ),
+                                          ],
+                                        ),
                                       ),
-                                      Shadow(
-                                        blurRadius: 4,
-                                        offset: Offset(0, 4),
-                                        color: Color(0x40000000),
-                                      ),
-                                    ],
-                                  ),
-                                ),
                               ),
                             ),
                           ),
@@ -283,7 +375,8 @@ class _SignupScreenState extends State<SignupScreen> {
                           ),
                         ),
                       ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -326,6 +419,144 @@ class _SignupScreenState extends State<SignupScreen> {
           );
         },
       ),
+    );
+  }
+}
+
+class _RoleSelector extends StatelessWidget {
+  const _RoleSelector({required this.role, required this.onChanged});
+
+  final UserRole role;
+  final ValueChanged<UserRole> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return _DropdownShell<UserRole>(
+      label: 'Role',
+      value: role,
+      items: const <DropdownMenuItem<UserRole>>[
+        DropdownMenuItem<UserRole>(
+          value: UserRole.student,
+          child: Text('Student'),
+        ),
+        DropdownMenuItem<UserRole>(
+          value: UserRole.delegateRole,
+          child: Text('Delegate'),
+        ),
+        DropdownMenuItem<UserRole>(
+          value: UserRole.lecturer,
+          child: Text('Lecturer'),
+        ),
+      ],
+      onChanged: onChanged,
+    );
+  }
+}
+
+class _ProgramSelector extends StatelessWidget {
+  const _ProgramSelector({
+    required this.selectedProgram,
+    required this.options,
+    required this.onChanged,
+  });
+
+  final String selectedProgram;
+  final List<String> options;
+  final ValueChanged<String> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return _DropdownShell<String>(
+      label: 'Program',
+      value: selectedProgram,
+      items: options
+          .map(
+            (String program) => DropdownMenuItem<String>(
+              value: program,
+              child: Text(program),
+            ),
+          )
+          .toList(),
+      onChanged: onChanged,
+    );
+  }
+}
+
+class _YearLevelSelector extends StatelessWidget {
+  const _YearLevelSelector({
+    required this.selectedValue,
+    required this.onChanged,
+  });
+
+  final int selectedValue;
+  final ValueChanged<int> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return _DropdownShell<int>(
+      label: 'Year Level',
+      value: selectedValue,
+      items: const <DropdownMenuItem<int>>[
+        DropdownMenuItem<int>(value: 1, child: Text('Year 1')),
+        DropdownMenuItem<int>(value: 2, child: Text('Year 2')),
+        DropdownMenuItem<int>(value: 3, child: Text('Year 3')),
+        DropdownMenuItem<int>(value: 4, child: Text('Year 4')),
+      ],
+      onChanged: onChanged,
+    );
+  }
+}
+
+class _DropdownShell<T> extends StatelessWidget {
+  const _DropdownShell({
+    required this.label,
+    required this.value,
+    required this.items,
+    required this.onChanged,
+  });
+
+  final String label;
+  final T value;
+  final List<DropdownMenuItem<T>> items;
+  final ValueChanged<T> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 11,
+            color: Colors.white,
+            fontFamily: 'Kode Mono',
+          ),
+        ),
+        const SizedBox(height: 4),
+        Container(
+          height: 44,
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          decoration: BoxDecoration(
+            color: const Color(0x82D9D9D9),
+            borderRadius: BorderRadius.circular(15),
+          ),
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<T>(
+              value: value,
+              isExpanded: true,
+              dropdownColor: const Color(0xFF12161F),
+              style: const TextStyle(color: Colors.white, fontSize: 13),
+              items: items,
+              onChanged: (T? next) {
+                if (next != null) {
+                  onChanged(next);
+                }
+              },
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

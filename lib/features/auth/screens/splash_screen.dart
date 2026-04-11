@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../../home/screens/lecturer_dashboard_screen.dart';
+import '../../navigation/screens/main_shell.dart';
+import '../controllers/auth_controller.dart';
+import '../models/user_role.dart';
 import 'welcome_screen.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -10,17 +14,44 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
+  final AuthController _authController = AuthController();
+
   @override
   void initState() {
     super.initState();
-    Future<void>.delayed(const Duration(milliseconds: 1800), () {
-      if (!mounted) {
-        return;
-      }
+    _bootstrap();
+  }
+
+  @override
+  void dispose() {
+    _authController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _bootstrap() async {
+    await Future<void>.delayed(const Duration(milliseconds: 1400));
+    final UserRole? role = await _authController.restoreCurrentUserRole();
+    if (!mounted) {
+      return;
+    }
+
+    if (role == UserRole.lecturer) {
       Navigator.of(context).pushReplacement(
-        MaterialPageRoute<void>(builder: (_) => const WelcomeScreen()),
+        MaterialPageRoute<void>(builder: (_) => const LecturerDashboardScreen()),
       );
-    });
+      return;
+    }
+
+    if (role != null) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute<void>(builder: (_) => MainShell(userRole: role)),
+      );
+      return;
+    }
+
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute<void>(builder: (_) => const WelcomeScreen()),
+    );
   }
 
   @override

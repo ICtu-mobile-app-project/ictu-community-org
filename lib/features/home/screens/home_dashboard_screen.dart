@@ -1,12 +1,23 @@
 import 'package:flutter/material.dart';
+import '../../auth/models/user_role.dart';
 import '../../courses/screens/course_search_screen.dart';
 import '../../notifications/screens/notifications_screen.dart';
 import '../../profile/screens/profile_screen.dart';
+import '../../transcription/screens/audio_ai_transcription_screen.dart';
 
 class HomeDashboardScreen extends StatelessWidget {
-  const HomeDashboardScreen({super.key, required this.onOpenSearch});
+  const HomeDashboardScreen({
+    super.key,
+    required this.onOpenSearch,
+    this.onOpenMenu,
+    this.userRole = UserRole.student,
+    this.userDisplayName,
+  });
 
   final VoidCallback onOpenSearch;
+  final VoidCallback? onOpenMenu;
+  final UserRole userRole;
+  final String? userDisplayName;
 
   @override
   Widget build(BuildContext context) {
@@ -22,10 +33,10 @@ class HomeDashboardScreen extends StatelessWidget {
                 children: [
                   const SizedBox(width: 60),
                   const SizedBox(width: 12),
-                  const Column(
+                  Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
+                      const Text(
                         'Good Day',
                         style: TextStyle(
                           color: Color(0xFF94A3B8),
@@ -33,7 +44,7 @@ class HomeDashboardScreen extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        'Alex.',
+                        userDisplayName ?? _defaultDisplayName,
                         style: TextStyle(
                           color: Color(0xFFF1F5F9),
                           fontSize: 20,
@@ -302,6 +313,108 @@ class HomeDashboardScreen extends StatelessWidget {
                   ),
                 ],
               ),
+              if (userRole == UserRole.lecturer || userRole.isDelegate) ...[
+                const SizedBox(height: 16),
+                Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(20),
+                    color: const Color(0x1AF58220),
+                    border: Border.all(color: const Color(0x33F58220)),
+                  ),
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(20),
+                      onTap: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder: (_) => const AudioAiTranscriptionScreen(),
+                          ),
+                        );
+                      },
+                      child: const Padding(
+                        padding: EdgeInsets.all(16),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.auto_awesome_rounded,
+                              color: Color(0xFFF58220),
+                            ),
+                            SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                'Audio/AI Transcription',
+                                style: TextStyle(
+                                  color: Color(0xFFF1F5F9),
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ),
+                            Icon(
+                              Icons.north_east_rounded,
+                              color: Color(0xFFF1F5F9),
+                              size: 18,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+              if (userRole.isDelegate) ...[
+                const SizedBox(height: 28),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(20),
+                    color: const Color(0x1410B981),
+                    border: Border.all(
+                      color: const Color(0xFF10B981).withValues(alpha: 0.3),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF10B981).withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(
+                          Icons.groups_rounded,
+                          color: Color(0xFF34D399),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      const Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Delegate Controls',
+                              style: TextStyle(
+                                color: Color(0xFFF1F5F9),
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            SizedBox(height: 4),
+                            Text(
+                              'Moderate class channel and pin key updates.',
+                              style: TextStyle(
+                                color: Color(0xFF94A3B8),
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ],
           ),
           // Fixed profile icon in top-left corner
@@ -310,6 +423,11 @@ class HomeDashboardScreen extends StatelessWidget {
             left: 24,
             child: GestureDetector(
               onTap: () {
+                if (onOpenMenu != null) {
+                  onOpenMenu!();
+                  return;
+                }
+
                 Navigator.of(context).push(
                   MaterialPageRoute<void>(
                     builder: (_) => const ProfileScreen(),
@@ -387,6 +505,16 @@ class HomeDashboardScreen extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  String get _defaultDisplayName {
+    if (userRole == UserRole.lecturer) {
+      return 'Lecturer';
+    }
+    if (userRole.isDelegate) {
+      return 'Delegate';
+    }
+    return 'Alex.';
   }
 }
 

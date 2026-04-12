@@ -108,7 +108,7 @@ class _MainShellState extends State<MainShell> {
   Widget build(BuildContext context) {
     final Widget homePage = widget.userRole == UserRole.lecturer
         ? LecturerHomeDashboardScreen(
-            onOpenSearch: () => _controller.setIndex(4),
+            onOpenSearch: () => _controller.setIndex(3),
             onOpenMenu: _openDrawerMenu,
           )
         : HomeDashboardScreen(
@@ -203,7 +203,7 @@ class _MainShellState extends State<MainShell> {
               border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
             ),
             child: NavigationBar(
-              height: 40,
+              height: 72,
               selectedIndex: index,
               onDestinationSelected: _controller.setIndex,
               backgroundColor: Colors.transparent,

@@ -5,8 +5,10 @@ import '../../auth/models/user_role.dart';
 import '../../auth/screens/welcome_screen.dart';
 import '../../community/screens/community_feed_screen.dart';
 import '../../courses/screens/course_details_screen.dart';
+import '../../courses/screens/lecturer_courses_screen.dart';
 import '../../courses/screens/timetable_screen.dart';
 import '../../home/screens/home_dashboard_screen.dart';
+import '../../home/screens/lecturer_home_dashboard_screen.dart';
 import '../../news/screens/campus_news_screen.dart';
 import '../../profile/screens/profile_screen.dart';
 import '../controllers/main_nav_controller.dart';
@@ -39,9 +41,9 @@ class _MainShellState extends State<MainShell> {
 
   Future<void> _openProfileFromDrawer() async {
     Navigator.of(context).pop();
-    await Navigator.of(context).push(
-      MaterialPageRoute<void>(builder: (_) => const ProfileScreen()),
-    );
+    await Navigator.of(
+      context,
+    ).push(MaterialPageRoute<void>(builder: (_) => const ProfileScreen()));
   }
 
   Future<void> _logoutFromDrawer() async {
@@ -94,15 +96,24 @@ class _MainShellState extends State<MainShell> {
 
   @override
   Widget build(BuildContext context) {
+    final Widget homePage = widget.userRole == UserRole.lecturer
+        ? LecturerHomeDashboardScreen(
+            onOpenSearch: () => _controller.setIndex(4),
+            onOpenMenu: _openDrawerMenu,
+          )
+        : HomeDashboardScreen(
+            onOpenSearch: () => _controller.setIndex(4),
+            onOpenMenu: _openDrawerMenu,
+            userRole: widget.userRole,
+          );
+
     final List<Widget> pages = <Widget>[
-      HomeDashboardScreen(
-        onOpenSearch: () => _controller.setIndex(4),
-        onOpenMenu: _openDrawerMenu,
-        userRole: widget.userRole,
-      ),
+      homePage,
       const CommunityFeedScreen(),
       const TimetableScreen(),
-      const CourseDetailsScreen(),
+      widget.userRole == UserRole.lecturer
+          ? const LecturerCoursesScreen()
+          : CourseDetailsScreen(role: widget.userRole),
       const CampusNewsScreen(),
     ];
 

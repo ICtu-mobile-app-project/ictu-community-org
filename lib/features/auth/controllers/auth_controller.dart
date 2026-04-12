@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -65,7 +66,8 @@ class AuthController {
     if (!_isSchoolEmail(normalizedEmail)) {
       return const AuthFlowResponse(
         isSuccess: false,
-        message: 'Use your ICT University email ending with @ictuniversity.edu.cm.',
+        message:
+            'Use your ICT University email ending with @ictuniversity.edu.cm.',
       );
     }
 
@@ -243,16 +245,20 @@ class AuthController {
     }
 
     try {
+      // Primary source of truth for routing is profiles.role.
       final Map<String, dynamic>? profile = await client
           .from('profiles')
           .select('role')
           .eq('id', userId)
           .maybeSingle();
-
       if (profile != null) {
-        return UserRole.fromDb(profile['role'] as String?);
+        final String? roleValue = profile['role'] as String?;
+        if (roleValue != null && roleValue.trim().isNotEmpty) {
+          return UserRole.fromDb(roleValue);
+        }
       }
 
+      // Fallback to bootstrap function if profile row is missing/empty.
       final Session? session = client.auth.currentSession;
       if (session != null) {
         final FunctionResponse bootstrapResponse = await client.functions
@@ -267,24 +273,49 @@ class AuthController {
               },
             );
 
-        if (bootstrapResponse.status < 400 &&
-            bootstrapResponse.data is Map<String, dynamic>) {
-          final Map<String, dynamic> data =
-              bootstrapResponse.data as Map<String, dynamic>;
-          final String? roleValue = data['role'] as String?;
+        if (bootstrapResponse.status < 400) {
+          final String? roleValue = _extractRoleFromBootstrapPayload(
+            bootstrapResponse.data,
+          );
           if (roleValue != null && roleValue.trim().isNotEmpty) {
             return UserRole.fromDb(roleValue);
           }
         }
       }
 
-
       final User? currentUser = client.auth.currentUser;
-      final String? metadataRole = currentUser?.userMetadata?['role'] as String?;
+      final String? metadataRole =
+          currentUser?.userMetadata?['role'] as String?;
       return UserRole.fromDb(metadataRole);
     } catch (_) {
       return UserRole.student;
     }
+  }
+
+  String? _extractRoleFromBootstrapPayload(dynamic payload) {
+    if (payload is Map<String, dynamic>) {
+      final dynamic role = payload['role'];
+      if (role is String && role.trim().isNotEmpty) {
+        return role;
+      }
+      return null;
+    }
+
+    if (payload is String && payload.trim().isNotEmpty) {
+      try {
+        final dynamic decoded = jsonDecode(payload);
+        if (decoded is Map<String, dynamic>) {
+          final dynamic role = decoded['role'];
+          if (role is String && role.trim().isNotEmpty) {
+            return role;
+          }
+        }
+      } catch (_) {
+        // Ignore malformed payload and keep fallback resolution chain.
+      }
+    }
+
+    return null;
   }
 
   bool _isSchoolEmail(String email) {

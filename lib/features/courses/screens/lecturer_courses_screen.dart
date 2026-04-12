@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 
@@ -24,6 +25,7 @@ class _LecturerCoursesScreenState extends State<LecturerCoursesScreen> {
   final ScrollController _scrollController = ScrollController();
   final List<LecturerCourseOverview> _allCourses = <LecturerCourseOverview>[];
 
+  Timer? _reconnectTimer;
   Timer? _debounce;
   String _search = '';
   String? _error;
@@ -31,12 +33,36 @@ class _LecturerCoursesScreenState extends State<LecturerCoursesScreen> {
   bool _isLoadingMore = false;
   bool _hasMore = true;
   int _nextPage = 0;
+  bool _wasOffline = false;
 
   @override
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
+    _reconnectTimer = Timer.periodic(
+      const Duration(seconds: 12),
+      (_) => unawaited(_checkConnectionAndRefresh()),
+    );
     unawaited(_loadCourses(reset: true));
+  }
+
+  Future<void> _checkConnectionAndRefresh() async {
+    bool online = false;
+    try {
+      final List<InternetAddress> lookup = await InternetAddress.lookup(
+        'grlrrdaarzczjnqdeahh.supabase.co',
+      );
+      online = lookup.isNotEmpty;
+    } on SocketException {
+      online = false;
+    }
+
+    if (online && _wasOffline) {
+      unawaited(_loadCourses(reset: true, forceRefresh: true));
+      _wasOffline = false;
+      return;
+    }
+    _wasOffline = !online;
   }
 
   Future<void> _refresh() => _loadCourses(reset: true, forceRefresh: true);
@@ -76,6 +102,7 @@ class _LecturerCoursesScreenState extends State<LecturerCoursesScreen> {
     } catch (_) {
       setState(() {
         _error = 'Unable to load courses right now. Please try again.';
+        _wasOffline = true;
       });
     } finally {
       if (mounted) {
@@ -107,6 +134,7 @@ class _LecturerCoursesScreenState extends State<LecturerCoursesScreen> {
 
   @override
   void dispose() {
+    _reconnectTimer?.cancel();
     _debounce?.cancel();
     _searchController.dispose();
     _scrollController.dispose();
@@ -228,7 +256,7 @@ class _LecturerCoursesScreenState extends State<LecturerCoursesScreen> {
                                   crossAxisCount: crossAxisCount,
                                   crossAxisSpacing: 10,
                                   mainAxisSpacing: 10,
-                                  childAspectRatio: 0.92,
+                                  childAspectRatio: 0.84,
                                 ),
                             itemBuilder: (BuildContext context, int index) {
                               if (index >= _allCourses.length) {

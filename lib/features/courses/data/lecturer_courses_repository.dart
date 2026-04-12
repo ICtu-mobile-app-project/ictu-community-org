@@ -96,6 +96,24 @@ class LecturerCoursesRepository {
     clearCache();
   }
 
+  Future<int> getMyCoursesCount() async {
+    if (!SupabaseBootstrap.isConfigured) {
+      return 0;
+    }
+
+    final String userId = _client.auth.currentUser?.id ?? '';
+    if (userId.isEmpty) {
+      return 0;
+    }
+
+    final List<dynamic> rows = await _client
+        .from('courses')
+        .select('id')
+        .eq('lecturer_id', userId);
+
+    return rows.length;
+  }
+
   void clearCache() {
     _cache.clear();
   }

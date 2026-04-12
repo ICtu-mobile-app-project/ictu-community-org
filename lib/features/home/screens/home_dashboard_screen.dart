@@ -3,6 +3,7 @@ import '../../auth/models/user_role.dart';
 import '../../courses/screens/course_search_screen.dart';
 import '../../notifications/screens/notifications_screen.dart';
 import '../../profile/screens/profile_screen.dart';
+import '../../transcription/screens/audio_ai_transcription_screen.dart';
 
 class HomeDashboardScreen extends StatelessWidget {
   const HomeDashboardScreen({
@@ -333,54 +334,53 @@ class HomeDashboardScreen extends StatelessWidget {
                   ),
                 ],
               ),
-              if (userRole == UserRole.lecturer) ...[
-                const SizedBox(height: 28),
+              if (userRole == UserRole.lecturer || userRole.isDelegate) ...[
+                const SizedBox(height: 16),
                 Container(
-                  padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(20),
-                    color: const Color(0x1460A5FA),
-                    border: Border.all(color: const Color(0x6660A5FA)),
+                    color: const Color(0x1AF58220),
+                    border: Border.all(color: const Color(0x33F58220)),
                   ),
-                  child: const Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Lecturer Tools',
-                        style: TextStyle(
-                          color: Color(0xFFF1F5F9),
-                          fontWeight: FontWeight.w800,
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(20),
+                      onTap: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder: (_) => const AudioAiTranscriptionScreen(),
+                          ),
+                        );
+                      },
+                      child: const Padding(
+                        padding: EdgeInsets.all(16),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.auto_awesome_rounded,
+                              color: Color(0xFFF58220),
+                            ),
+                            SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                'Audio/AI Transcription',
+                                style: TextStyle(
+                                  color: Color(0xFFF1F5F9),
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ),
+                            Icon(
+                              Icons.north_east_rounded,
+                              color: Color(0xFFF1F5F9),
+                              size: 18,
+                            ),
+                          ],
                         ),
                       ),
-                      SizedBox(height: 10),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _LecturerActionTile(
-                              icon: Icons.menu_book_rounded,
-                              label: 'My Courses',
-                              tint: Color(0xFF60A5FA),
-                            ),
-                          ),
-                          SizedBox(width: 10),
-                          Expanded(
-                            child: _LecturerActionTile(
-                              icon: Icons.group_add_rounded,
-                              label: 'Delegates',
-                              tint: Color(0xFF22D3EE),
-                            ),
-                          ),
-                          SizedBox(width: 10),
-                          Expanded(
-                            child: _LecturerActionTile(
-                              icon: Icons.note_add_rounded,
-                              label: 'Notes',
-                              tint: Color(0xFFF59E0B),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
+                    ),
                   ),
                 ),
               ],

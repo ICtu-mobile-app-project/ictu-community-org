@@ -85,9 +85,12 @@ Deno.serve(async (request: Request) => {
     return Response.json({ error: profileError.message }, { status: 400 });
   }
 
-  const userMetadata = user.user_metadata as Record<string, unknown>?;
+  const userMetadata = user.user_metadata as
+    | Record<string, unknown>
+    | null
+    | undefined;
   const fallbackName =
-    typeof userMetadata?['full_name'] === 'string'
+    typeof userMetadata?.['full_name'] === 'string'
       ? (userMetadata['full_name'] as string)
       : null;
   const resolvedRole =

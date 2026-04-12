@@ -1,4 +1,4 @@
-# Supabase Auth Edge Functions
+# Supabase Edge Functions
 
 This folder contains auth and AI transcription orchestration functions used by the Flutter app.
 

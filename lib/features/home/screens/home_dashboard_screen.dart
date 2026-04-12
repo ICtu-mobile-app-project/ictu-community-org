@@ -50,6 +50,27 @@ class HomeDashboardScreen extends StatelessWidget {
                           fontWeight: FontWeight.w700,
                         ),
                       ),
+                      if (userRole == UserRole.lecturer)
+                        Container(
+                          margin: const EdgeInsets.only(top: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 3,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0x1A60A5FA),
+                            borderRadius: BorderRadius.circular(999),
+                            border: Border.all(color: const Color(0x6660A5FA)),
+                          ),
+                          child: const Text(
+                            'Lecturer Dashboard',
+                            style: TextStyle(
+                              color: Color(0xFFBFDBFE),
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
                     ],
                   ),
                   const Spacer(),
@@ -312,6 +333,57 @@ class HomeDashboardScreen extends StatelessWidget {
                   ),
                 ],
               ),
+              if (userRole == UserRole.lecturer) ...[
+                const SizedBox(height: 28),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(20),
+                    color: const Color(0x1460A5FA),
+                    border: Border.all(color: const Color(0x6660A5FA)),
+                  ),
+                  child: const Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Lecturer Tools',
+                        style: TextStyle(
+                          color: Color(0xFFF1F5F9),
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      SizedBox(height: 10),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _LecturerActionTile(
+                              icon: Icons.menu_book_rounded,
+                              label: 'My Courses',
+                              tint: Color(0xFF60A5FA),
+                            ),
+                          ),
+                          SizedBox(width: 10),
+                          Expanded(
+                            child: _LecturerActionTile(
+                              icon: Icons.group_add_rounded,
+                              label: 'Delegates',
+                              tint: Color(0xFF22D3EE),
+                            ),
+                          ),
+                          SizedBox(width: 10),
+                          Expanded(
+                            child: _LecturerActionTile(
+                              icon: Icons.note_add_rounded,
+                              label: 'Notes',
+                              tint: Color(0xFFF59E0B),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
               if (userRole.isDelegate) ...[
                 const SizedBox(height: 28),
                 Container(
@@ -464,6 +536,45 @@ class HomeDashboardScreen extends StatelessWidget {
       return 'Delegate';
     }
     return 'Alex.';
+  }
+}
+
+class _LecturerActionTile extends StatelessWidget {
+  const _LecturerActionTile({
+    required this.icon,
+    required this.label,
+    required this.tint,
+  });
+
+  final IconData icon;
+  final String label;
+  final Color tint;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 72,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(14),
+        color: Colors.white.withValues(alpha: 0.03),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, color: tint, size: 20),
+          const SizedBox(height: 6),
+          Text(
+            label,
+            style: const TextStyle(
+              color: Color(0xFFBFDBFE),
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 

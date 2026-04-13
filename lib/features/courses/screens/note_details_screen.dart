@@ -1,7 +1,12 @@
+import 'dart:io';
+
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:open_filex/open_filex.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../../auth/models/user_role.dart';
 import '../data/notes_service.dart';
@@ -24,21 +29,75 @@ class NoteDetailsScreen extends StatefulWidget {
 class _NoteDetailsScreenState extends State<NoteDetailsScreen> {
   final NotesService _service = NotesService();
   bool _isWorking = false;
+  double _downloadProgress = 0;
+  String? _localFilePath;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkLocalFile();
+  }
+
+  Future<void> _checkLocalFile() async {
+    try {
+      final directory = await getApplicationDocumentsDirectory();
+      final filePath = p.join(
+        directory.path,
+        '${widget.note.id}_${widget.note.fileName}',
+      );
+      if (await File(filePath).exists()) {
+        if (mounted) {
+          setState(() {
+            _localFilePath = filePath;
+          });
+        }
+      }
+    } catch (_) {}
+  }
 
   bool get _isOwnerActionAllowed =>
       widget.role == UserRole.lecturer || widget.role.isDelegate;
 
   Future<void> _download() async {
-    setState(() => _isWorking = true);
+    if (_localFilePath != null) {
+      final file = File(_localFilePath!);
+      if (await file.exists()) {
+        await OpenFilex.open(_localFilePath!);
+        return;
+      }
+    }
+
+    setState(() {
+      _isWorking = true;
+      _downloadProgress = 0;
+    });
+
     try {
       final String url = await _service.createDownloadUrl(widget.note.filePath);
-      final bool launched = await launchUrl(
-        Uri.parse(url),
-        mode: LaunchMode.externalApplication,
+      final directory = await getApplicationDocumentsDirectory();
+      final filePath = p.join(
+        directory.path,
+        '${widget.note.id}_${widget.note.fileName}',
       );
-      if (!launched && mounted) {
+
+      await Dio().download(
+        url,
+        filePath,
+        onReceiveProgress: (int count, int total) {
+          if (total != -1) {
+            setState(() {
+              _downloadProgress = count / total;
+            });
+          }
+        },
+      );
+
+      if (mounted) {
+        setState(() {
+          _localFilePath = filePath;
+        });
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not open download link.')),
+          const SnackBar(content: Text('File saved to device.')),
         );
       }
     } catch (e) {
@@ -52,8 +111,24 @@ class _NoteDetailsScreenState extends State<NoteDetailsScreen> {
   }
 
   Future<void> _share() async {
-    final String url = await _service.createDownloadUrl(widget.note.filePath);
-    await Share.share(url, subject: widget.note.title);
+    try {
+      if (_localFilePath != null && await File(_localFilePath!).exists()) {
+        await Share.shareXFiles(
+          [XFile(_localFilePath!)],
+          text: widget.note.title,
+        );
+        return;
+      }
+
+      final String url = await _service.createDownloadUrl(widget.note.filePath);
+      await Share.share(url, subject: widget.note.title);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Share failed: $e')),
+        );
+      }
+    }
   }
 
   Future<void> _editTitle() async {
@@ -62,20 +137,21 @@ class _NoteDetailsScreenState extends State<NoteDetailsScreen> {
     );
     final bool? save = await showDialog<bool>(
       context: context,
-      builder: (BuildContext context) => AlertDialog(
-        title: const Text('Edit Note Title'),
-        content: TextField(controller: ctrl),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
+      builder:
+          (BuildContext context) => AlertDialog(
+            title: const Text('Edit Note Title'),
+            content: TextField(controller: ctrl),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.of(context).pop(true),
+                child: const Text('Save'),
+              ),
+            ],
           ),
-          ElevatedButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Save'),
-          ),
-        ],
-      ),
     );
 
     if (save != true) return;
@@ -91,21 +167,22 @@ class _NoteDetailsScreenState extends State<NoteDetailsScreen> {
   Future<void> _delete() async {
     final bool? confirm = await showDialog<bool>(
       context: context,
-      builder: (BuildContext context) => AlertDialog(
-        title: const Text('Delete note?'),
-        content: const Text('This action cannot be undone.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
+      builder:
+          (BuildContext context) => AlertDialog(
+            title: const Text('Delete note?'),
+            content: const Text('This action cannot be undone.'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.of(context).pop(true),
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                child: const Text('Delete'),
+              ),
+            ],
           ),
-          ElevatedButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
     );
 
     if (confirm != true) return;
@@ -141,8 +218,16 @@ class _NoteDetailsScreenState extends State<NoteDetailsScreen> {
                     backgroundColor: const Color(0xFFF58220),
                     foregroundColor: Colors.white,
                   ),
-                  icon: const Icon(Icons.download_rounded),
-                  label: const Text('Download'),
+                  icon: Icon(
+                    _localFilePath != null
+                        ? Icons.open_in_new_rounded
+                        : Icons.download_rounded,
+                  ),
+                  label: Text(
+                    _isWorking
+                        ? '${(_downloadProgress * 100).toInt()}%'
+                        : (_localFilePath != null ? 'Open' : 'Download'),
+                  ),
                 ),
                 const SizedBox(width: 10),
                 OutlinedButton.icon(
@@ -165,31 +250,43 @@ class _NoteDetailsScreenState extends State<NoteDetailsScreen> {
             ),
           ),
           Expanded(
-            child: widget.note.isPdf
-                ? FutureBuilder<String>(
-                    future: _service.createDownloadUrl(widget.note.filePath),
-                    builder: (context, snapshot) {
-                      if (snapshot.connectionState != ConnectionState.done) {
-                        return const Center(
-                          child: CircularProgressIndicator(
-                            color: Color(0xFFF58220),
+            child:
+                widget.note.isPdf
+                    ? (_localFilePath != null
+                        ? SfPdfViewer.file(File(_localFilePath!))
+                        : FutureBuilder<String>(
+                          future: _service.createDownloadUrl(
+                            widget.note.filePath,
                           ),
-                        );
-                      }
-                      if (snapshot.hasError ||
-                          snapshot.data == null ||
-                          snapshot.data!.isEmpty) {
-                        return const Center(
-                          child: Text(
-                            'Could not load PDF preview.',
-                            style: TextStyle(color: Color(0xFFF87171)),
-                          ),
-                        );
-                      }
-                      return SfPdfViewer.network(snapshot.data!);
-                    },
-                  )
-                : _DocViewerHint(note: widget.note),
+                          builder: (context, snapshot) {
+                            if (snapshot.connectionState !=
+                                ConnectionState.done) {
+                              return const Center(
+                                child: CircularProgressIndicator(
+                                  color: Color(0xFFF58220),
+                                ),
+                              );
+                            }
+                            if (snapshot.hasError ||
+                                snapshot.data == null ||
+                                snapshot.data!.isEmpty) {
+                              return const Center(
+                                child: Text(
+                                  'Could not load PDF preview.',
+                                  style: TextStyle(color: Color(0xFFF87171)),
+                                ),
+                              );
+                            }
+                            return SfPdfViewer.network(snapshot.data!);
+                          },
+                        ))
+                    : _NonPdfViewer(
+                      note: widget.note,
+                      localPath: _localFilePath,
+                      onDownload: _download,
+                      isWorking: _isWorking,
+                      progress: _downloadProgress,
+                    ),
           ),
         ],
       ),
@@ -197,10 +294,20 @@ class _NoteDetailsScreenState extends State<NoteDetailsScreen> {
   }
 }
 
-class _DocViewerHint extends StatelessWidget {
-  const _DocViewerHint({required this.note});
+class _NonPdfViewer extends StatelessWidget {
+  const _NonPdfViewer({
+    required this.note,
+    this.localPath,
+    required this.onDownload,
+    required this.isWorking,
+    required this.progress,
+  });
 
   final CourseNote note;
+  final String? localPath;
+  final VoidCallback onDownload;
+  final bool isWorking;
+  final double progress;
 
   @override
   Widget build(BuildContext context) {
@@ -210,29 +317,83 @@ class _DocViewerHint extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(
-              Icons.description_rounded,
-              size: 64,
-              color: Color(0xFFF58220),
+            Icon(
+              _getFileIcon(note.fileName),
+              size: 80,
+              color: const Color(0xFFF58220),
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: 20),
             Text(
               note.fileName,
               textAlign: TextAlign.center,
               style: const TextStyle(
                 color: Colors.white,
-                fontWeight: FontWeight.w700,
+                fontWeight: FontWeight.w800,
+                fontSize: 16,
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: 200,
+              height: 48,
+              child: ElevatedButton(
+                onPressed: isWorking ? null : onDownload,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFF58220),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child:
+                    isWorking
+                        ? Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2,
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Text('${(progress * 100).toInt()}%'),
+                          ],
+                        )
+                        : Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              localPath != null
+                                  ? Icons.open_in_new_rounded
+                                  : Icons.download_rounded,
+                              size: 18,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              localPath != null ? 'Open to View' : 'Download Now',
+                            ),
+                          ],
+                        ),
+              ),
+            ),
+            const SizedBox(height: 16),
             const Text(
-              'DOC/DOCX files open in your system viewer. Use Download button above.',
+              'Files like DOC and DOCX require an external viewer app (e.g., Word, Google Docs).',
               textAlign: TextAlign.center,
-              style: TextStyle(color: Color(0xFF94A3B8)),
+              style: TextStyle(color: Color(0xFF64748B), fontSize: 12),
             ),
           ],
         ),
       ),
     );
+  }
+
+  IconData _getFileIcon(String fileName) {
+    final ext = p.extension(fileName).toLowerCase();
+    if (ext == '.doc' || ext == '.docx') return Icons.description_rounded;
+    return Icons.insert_drive_file_rounded;
   }
 }

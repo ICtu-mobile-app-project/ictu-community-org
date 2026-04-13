@@ -29,5 +29,16 @@ class LecturerCourseOverview {
       lastActivity: createdAt ?? DateTime.now(),
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'course_code': code,
+      'title': title,
+      'students_count': students,
+      'lectures_count': lectures,
+      'created_at': lastActivity.toIso8601String(),
+    };
+  }
 }
 

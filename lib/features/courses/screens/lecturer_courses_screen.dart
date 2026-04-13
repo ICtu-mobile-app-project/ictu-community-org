@@ -1,8 +1,8 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:flutter/material.dart';
 
+import '../../../core/services/connectivity_service.dart';
 import '../../auth/models/user_role.dart';
 import '../data/lecturer_courses_repository.dart';
 import '../models/lecturer_course_overview.dart';
@@ -21,11 +21,12 @@ class _LecturerCoursesScreenState extends State<LecturerCoursesScreen> {
   static const int _pageSize = 20;
 
   final LecturerCoursesRepository _repository = LecturerCoursesRepository();
+  final ConnectivityService _connectivity = ConnectivityService();
   final TextEditingController _searchController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   final List<LecturerCourseOverview> _allCourses = <LecturerCourseOverview>[];
 
-  Timer? _reconnectTimer;
+  StreamSubscription? _connectivitySubscription;
   Timer? _debounce;
   String _search = '';
   String? _error;
@@ -33,36 +34,32 @@ class _LecturerCoursesScreenState extends State<LecturerCoursesScreen> {
   bool _isLoadingMore = false;
   bool _hasMore = true;
   int _nextPage = 0;
-  bool _wasOffline = false;
+  bool _isOnline = true;
 
   @override
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
-    _reconnectTimer = Timer.periodic(
-      const Duration(seconds: 12),
-      (_) => unawaited(_checkConnectionAndRefresh()),
-    );
+    _checkConnectivity();
+    _listenToConnectivity();
     unawaited(_loadCourses(reset: true));
   }
 
-  Future<void> _checkConnectionAndRefresh() async {
-    bool online = false;
-    try {
-      final List<InternetAddress> lookup = await InternetAddress.lookup(
-        'grlrrdaarzczjnqdeahh.supabase.co',
-      );
-      online = lookup.isNotEmpty;
-    } on SocketException {
-      online = false;
-    }
+  Future<void> _checkConnectivity() async {
+    final online = await _connectivity.isOnline();
+    if (mounted) setState(() => _isOnline = online);
+  }
 
-    if (online && _wasOffline) {
-      unawaited(_loadCourses(reset: true, forceRefresh: true));
-      _wasOffline = false;
-      return;
-    }
-    _wasOffline = !online;
+  void _listenToConnectivity() {
+    _connectivitySubscription = _connectivity.onConnectivityChanged.listen((online) {
+      if (mounted) {
+        final wasOffline = !_isOnline;
+        setState(() => _isOnline = online);
+        if (online && wasOffline) {
+          unawaited(_loadCourses(reset: true, forceRefresh: true));
+        }
+      }
+    });
   }
 
   Future<void> _refresh() => _loadCourses(reset: true, forceRefresh: true);
@@ -102,7 +99,6 @@ class _LecturerCoursesScreenState extends State<LecturerCoursesScreen> {
     } catch (_) {
       setState(() {
         _error = 'Unable to load courses right now. Please try again.';
-        _wasOffline = true;
       });
     } finally {
       if (mounted) {
@@ -134,7 +130,7 @@ class _LecturerCoursesScreenState extends State<LecturerCoursesScreen> {
 
   @override
   void dispose() {
-    _reconnectTimer?.cancel();
+    _connectivitySubscription?.cancel();
     _debounce?.cancel();
     _searchController.dispose();
     _scrollController.dispose();
@@ -165,13 +161,37 @@ class _LecturerCoursesScreenState extends State<LecturerCoursesScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'My Courses',
-                style: TextStyle(
-                  color: Color(0xFFF1F5F9),
-                  fontSize: 22,
-                  fontWeight: FontWeight.w800,
-                ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'My Courses',
+                    style: TextStyle(
+                      color: Color(0xFFF1F5F9),
+                      fontSize: 22,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  if (!_isOnline)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.orange.withValues(alpha: 0.5)),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.cloud_off, size: 14, color: Colors.orange),
+                          const SizedBox(width: 4),
+                          const Text(
+                            'Offline',
+                            style: TextStyle(color: Colors.orange, fontSize: 11, fontWeight: FontWeight.bold),
+                          ),
+                        ],
+                      ),
+                    ),
+                ],
               ),
               const SizedBox(height: 4),
               const Text(

@@ -7,6 +7,7 @@ This folder contains auth, courses, notes, and AI transcription orchestration fu
 - `auth-signup`: validates role/email domain and upserts `public.profiles`.
 - `auth-login-bootstrap`: reads authenticated user profile and returns role metadata.
 - `create-course`: validates lecturer input and inserts a `public.courses` row.
+- `alerts-api`: handles alerts CRUD for assignments, CAs, exams, and notices.
 - `notes-api`: handles note CRUD against `public.notes`.
 - `transcribe-audio`: downloads lecture audio from Storage, sends it to Gladia, and writes transcript/summary/result JSON to `public.lectures`.
 
@@ -28,6 +29,7 @@ Set these in your Supabase project before deploying:
 supabase functions deploy auth-signup
 supabase functions deploy auth-login-bootstrap
 supabase functions deploy create-course
+supabase functions deploy alerts-api
 supabase functions deploy notes-api
 supabase functions deploy transcribe-audio
 ```
@@ -38,6 +40,7 @@ supabase functions deploy transcribe-audio
 supabase functions serve auth-signup --env-file .env.local
 supabase functions serve auth-login-bootstrap --env-file .env.local
 supabase functions serve create-course --env-file .env.local
+supabase functions serve alerts-api --env-file .env.local
 supabase functions serve notes-api --env-file .env.local
 supabase functions serve transcribe-audio --env-file .env.local
 ```

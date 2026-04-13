@@ -37,6 +37,36 @@ class CourseNote {
     }
     return '${(fileSizeBytes / (1024 * 1024)).toStringAsFixed(1)} MB';
   }
+
+  factory CourseNote.fromJson(Map<String, dynamic> json) {
+    return CourseNote(
+      id: (json['id'] ?? '').toString(),
+      courseId: (json['course_id'] ?? '').toString(),
+      courseCode: (json['course_code'] ?? '').toString(),
+      title: (json['title'] ?? '').toString(),
+      description: (json['description'] ?? '').toString(),
+      fileName: (json['file_name'] ?? '').toString(),
+      filePath: (json['content_url'] ?? '').toString(),
+      fileSizeBytes: (json['file_size'] ?? 0).toInt(),
+      uploadedByName: (json['uploader_name'] ?? 'Unknown').toString(),
+      uploadedAt: DateTime.tryParse((json['created_at'] ?? '').toString()) ?? DateTime.now(),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'course_id': courseId,
+      'course_code': courseCode,
+      'title': title,
+      'description': description,
+      'file_name': fileName,
+      'content_url': filePath,
+      'file_size': fileSizeBytes,
+      'uploader_name': uploadedByName,
+      'created_at': uploadedAt.toIso8601String(),
+    };
+  }
 }
 
 @immutable

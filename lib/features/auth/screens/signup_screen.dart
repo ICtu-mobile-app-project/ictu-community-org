@@ -447,6 +447,10 @@ class _RoleSelector extends StatelessWidget {
           value: UserRole.lecturer,
           child: Text('Lecturer'),
         ),
+        DropdownMenuItem<UserRole>(
+          value: UserRole.admin,
+          child: Text('Admin'),
+        ),
       ],
       onChanged: onChanged,
     );

@@ -4,15 +4,17 @@ import '../../auth/controllers/auth_controller.dart';
 import '../../auth/models/user_role.dart';
 import '../../auth/screens/welcome_screen.dart';
 import '../../community/screens/community_feed_screen.dart';
-import '../../courses/screens/course_details_screen.dart';
+import '../../courses/screens/enrolled_courses_screen.dart';
 import '../../courses/screens/lecturer_courses_screen.dart';
 import '../../courses/screens/timetable_screen.dart';
 import '../../home/screens/home_dashboard_screen.dart';
 import '../../home/screens/lecturer_home_dashboard_screen.dart';
+import '../../home/screens/admin_home_dashboard_screen.dart';
 import '../../news/screens/campus_news_screen.dart';
 import '../../profile/screens/profile_screen.dart';
 import '../../transcription/screens/audio_ai_transcription_screen.dart';
 import '../controllers/main_nav_controller.dart';
+import '../../alerts/screens/lecturer_alerts_list_screen.dart';
 
 class MainShell extends StatefulWidget {
   const MainShell({super.key, this.userRole = UserRole.student});
@@ -106,32 +108,52 @@ class _MainShellState extends State<MainShell> {
 
   @override
   Widget build(BuildContext context) {
-    final Widget homePage = widget.userRole == UserRole.lecturer
-        ? LecturerHomeDashboardScreen(
-            onOpenSearch: () => _controller.setIndex(3),
+    final Widget homePage = widget.userRole == UserRole.admin
+        ? AdminHomeDashboardScreen(
             onOpenMenu: _openDrawerMenu,
           )
-        : HomeDashboardScreen(
-            onOpenSearch: () => _controller.setIndex(4),
-            onOpenMenu: _openDrawerMenu,
-            userRole: widget.userRole,
-          );
+        : widget.userRole == UserRole.lecturer
+            ? LecturerHomeDashboardScreen(
+                onOpenSearch: () => _controller.setIndex(3),
+                onOpenMenu: _openDrawerMenu,
+              )
+            : HomeDashboardScreen(
+                onOpenSearch: () => _controller.setIndex(4),
+                onOpenMenu: _openDrawerMenu,
+                userRole: widget.userRole,
+              );
 
-    final List<Widget> pages = <Widget>[
-      homePage,
-      const CommunityFeedScreen(),
-      const TimetableScreen(),
-      widget.userRole == UserRole.lecturer
-          ? const LecturerCoursesScreen()
-          : CourseDetailsScreen(role: widget.userRole),
-      const CampusNewsScreen(),
-    ];
+    final List<Widget> pages = widget.userRole == UserRole.admin
+        ? <Widget>[
+            homePage,
+            TimetableScreen(userRole: widget.userRole),
+            const CampusNewsScreen(),
+          ]
+        : widget.userRole == UserRole.lecturer
+            ? <Widget>[
+                homePage,
+                LecturerAlertsListScreen(
+                  courseCode: '',
+                  courseTitle: null,
+                ),
+                TimetableScreen(userRole: widget.userRole),
+                const LecturerCoursesScreen(),
+                const CampusNewsScreen(),
+              ]
+            : <Widget>[
+                homePage,
+                const CommunityFeedScreen(),
+                TimetableScreen(userRole: widget.userRole),
+                const EnrolledCoursesScreen(),
+                const CampusNewsScreen(),
+              ];
 
     return ValueListenableBuilder<int>(
       valueListenable: _controller.currentIndex,
       builder: (BuildContext context, int index, Widget? child) {
         return Scaffold(
           key: _scaffoldKey,
+          extendBody: true,
           drawer: Drawer(
             backgroundColor: const Color(0xFF0A0C10),
             child: SafeArea(
@@ -193,67 +215,150 @@ class _MainShellState extends State<MainShell> {
               ),
             ),
           ),
-          // backgroundColor: Color.fromARGB(255, 3, 0, 14),
-          body: SafeArea(child: pages[index]),
+          body: SafeArea(
+            bottom: false,
+            child: pages[index],
+          ),
           bottomNavigationBar: Container(
-            margin: const EdgeInsets.fromLTRB(0, 0, 0, 0),
+            margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.07),
-              borderRadius: BorderRadius.circular(0),
+              color: const Color(0xFF1E293B).withValues(alpha: 0.95),
+              borderRadius: BorderRadius.circular(32),
               border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
-            ),
-            child: NavigationBar(
-              height: 72,
-              selectedIndex: index,
-              onDestinationSelected: _controller.setIndex,
-              backgroundColor: Colors.transparent,
-              indicatorColor: const Color(0x33F59E0B),
-              labelBehavior: NavigationDestinationLabelBehavior.alwaysHide,
-              destinations: const [
-                NavigationDestination(
-                  icon: Icon(Icons.home_filled, color: Color(0xFF7184A3)),
-                  selectedIcon: Icon(
-                    Icons.home_filled,
-                    color: Color.fromARGB(255, 255, 132, 0),
-                  ),
-                  label: 'Home',
-                ),
-                NavigationDestination(
-                  icon: Icon(Icons.groups_rounded, color: Color(0xFF7184A3)),
-                  selectedIcon: Icon(
-                    Icons.groups_rounded,
-                    color: Color(0xFFF59E0B),
-                  ),
-                  label: 'Community',
-                ),
-                NavigationDestination(
-                  icon: Icon(Icons.schedule_rounded, color: Color(0xFF7184A3)),
-                  selectedIcon: Icon(
-                    Icons.schedule_rounded,
-                    color: Color(0xFFF59E0B),
-                  ),
-                  label: 'Timetable',
-                ),
-                NavigationDestination(
-                  icon: Icon(Icons.menu_book_rounded, color: Color(0xFF7184A3)),
-                  selectedIcon: Icon(
-                    Icons.menu_book_rounded,
-                    color: Color(0xFFF59E0B),
-                  ),
-                  label: 'Courses',
-                ),
-                NavigationDestination(
-                  icon: Icon(Icons.newspaper_rounded, color: Color(0xFF7184A3)),
-                  selectedIcon: Icon(
-                    Icons.newspaper_rounded,
-                    color: Color(0xFFF59E0B),
-                  ),
-                  label: 'News',
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.3),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
                 ),
               ],
             ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(32),
+              child: NavigationBar(
+                height: 64,
+                selectedIndex: index,
+                onDestinationSelected: _controller.setIndex,
+                backgroundColor: Colors.transparent,
+                indicatorColor: const Color(0x33F59E0B),
+                labelBehavior: NavigationDestinationLabelBehavior.alwaysHide,
+                destinations: widget.userRole == UserRole.admin
+                    ? const [
+                        NavigationDestination(
+                          icon: Icon(Icons.dashboard_rounded, color: Color(0xFF7184A3)),
+                          selectedIcon: Icon(
+                            Icons.dashboard_rounded,
+                            color: Color(0xFFF59E0B),
+                          ),
+                          label: 'Admin',
+                        ),
+                        NavigationDestination(
+                          icon: Icon(Icons.calendar_month_rounded, color: Color(0xFF7184A3)),
+                          selectedIcon: Icon(
+                            Icons.calendar_month_rounded,
+                            color: Color(0xFFF59E0B),
+                          ),
+                          label: 'Timetable',
+                        ),
+                        NavigationDestination(
+                          icon: Icon(Icons.newspaper_rounded, color: Color(0xFF7184A3)),
+                          selectedIcon: Icon(
+                            Icons.newspaper_rounded,
+                            color: Color(0xFFF59E0B),
+                          ),
+                          label: 'News',
+                        ),
+                      ]
+                    : widget.userRole == UserRole.lecturer
+                        ? const [
+                        NavigationDestination(
+                          icon: Icon(Icons.home_filled, color: Color(0xFF7184A3)),
+                          selectedIcon: Icon(
+                            Icons.home_filled,
+                            color: Color.fromARGB(255, 255, 132, 0),
+                          ),
+                          label: 'Home',
+                        ),
+                        NavigationDestination(
+                          icon: Icon(Icons.notifications_active_rounded, color: Color(0xFF7184A3)),
+                          selectedIcon: Icon(
+                            Icons.notifications_active_rounded,
+                            color: Color(0xFFF59E0B),
+                          ),
+                          label: 'Alerts',
+                        ),
+                        NavigationDestination(
+                          icon: Icon(Icons.schedule_rounded, color: Color(0xFF7184A3)),
+                          selectedIcon: Icon(
+                            Icons.schedule_rounded,
+                            color: Color(0xFFF59E0B),
+                          ),
+                          label: 'Timetable',
+                        ),
+                        NavigationDestination(
+                          icon: Icon(Icons.menu_book_rounded, color: Color(0xFF7184A3)),
+                          selectedIcon: Icon(
+                            Icons.menu_book_rounded,
+                            color: Color(0xFFF59E0B),
+                          ),
+                          label: 'Courses',
+                        ),
+                        NavigationDestination(
+                          icon: Icon(Icons.newspaper_rounded, color: Color(0xFF7184A3)),
+                          selectedIcon: Icon(
+                            Icons.newspaper_rounded,
+                            color: Color(0xFFF59E0B),
+                          ),
+                          label: 'News',
+                        ),
+                      ]
+                    : const [
+                        NavigationDestination(
+                          icon: Icon(Icons.home_filled, color: Color(0xFF7184A3)),
+                          selectedIcon: Icon(
+                            Icons.home_filled,
+                            color: Color.fromARGB(255, 255, 132, 0),
+                          ),
+                          label: 'Home',
+                        ),
+                        NavigationDestination(
+                          icon: Icon(Icons.groups_rounded, color: Color(0xFF7184A3)),
+                          selectedIcon: Icon(
+                            Icons.groups_rounded,
+                            color: Color(0xFFF59E0B),
+                          ),
+                          label: 'Community',
+                        ),
+                        NavigationDestination(
+                          icon: Icon(Icons.schedule_rounded, color: Color(0xFF7184A3)),
+                          selectedIcon: Icon(
+                            Icons.schedule_rounded,
+                            color: Color(0xFFF59E0B),
+                          ),
+                          label: 'Timetable',
+                        ),
+                        NavigationDestination(
+                          icon: Icon(Icons.menu_book_rounded, color: Color(0xFF7184A3)),
+                          selectedIcon: Icon(
+                            Icons.menu_book_rounded,
+                            color: Color(0xFFF59E0B),
+                          ),
+                          label: 'Courses',
+                        ),
+                        NavigationDestination(
+                          icon: Icon(Icons.newspaper_rounded, color: Color(0xFF7184A3)),
+                          selectedIcon: Icon(
+                            Icons.newspaper_rounded,
+                            color: Color(0xFFF59E0B),
+                          ),
+                          label: 'News',
+                        ),
+                      ],
+              ),
+            ),
           ),
         );
+
       },
     );
   }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../auth/models/user_role.dart';
+import '../../alerts/screens/lecturer_alerts_list_screen.dart';
 import 'course_notes_list_screen.dart';
 
 class LecturerCourseDetailsScreen extends StatefulWidget {
@@ -67,25 +68,25 @@ class _LecturerCourseDetailsScreenState
               children: const [
                 _StatsCard(
                   label: 'Students',
-                  value: '74',
+                  value: '',
                   color: Color(0xFF38BDF8),
                 ),
                 SizedBox(width: 8),
                 _StatsCard(
                   label: 'Lectures',
-                  value: '18',
+                  value: '',
                   color: Color(0xFFA78BFA),
                 ),
                 SizedBox(width: 8),
                 _StatsCard(
                   label: 'Notes',
-                  value: '12',
+                  value: '',
                   color: Color(0xFFF58220),
                 ),
                 SizedBox(width: 8),
                 _StatsCard(
                   label: 'Alerts',
-                  value: '3',
+                  value: '',
                   color: Color(0xFFFB7185),
                 ),
               ],
@@ -120,34 +121,7 @@ class _LecturerCourseDetailsScreenState
                 ListView(
                   padding: const EdgeInsets.all(16),
                   children: [
-                    _GlassTile(
-                      icon: Icons.mic_rounded,
-                      title: 'Uploaded Lectures: 18',
-                      subtitle: 'Latest lecture activity in this course.',
-                    ),
-                    const SizedBox(height: 10),
-                    _GlassTile(
-                      icon: Icons.note_alt_rounded,
-                      title: 'Lecture Notes: 12',
-                      subtitle: 'PDF/DOC resources shared with students.',
-                      onTap: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute<void>(
-                            builder: (_) => CourseNotesListScreen(
-                              courseId: widget.courseId,
-                              courseCode: widget.courseCode,
-                              role: UserRole.lecturer,
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                    const SizedBox(height: 10),
-                    _GlassTile(
-                      icon: Icons.notifications_active_rounded,
-                      title: 'Course Alerts: 3',
-                      subtitle: 'Exams, CA notices, and reminders.',
-                    ),
+                    // Remove mock data tiles
                   ],
                 ),
                 const _SimpleTabBody(

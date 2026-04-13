@@ -5,13 +5,20 @@ import 'dart:typed_data';
 import 'package:path/path.dart' as p;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../core/services/connectivity_service.dart';
+import '../../../core/services/offline_service.dart';
 import '../../../core/supabase/supabase_bootstrap.dart';
 import '../models/course_note.dart';
 import '../models/note_upload_session.dart';
 
 class NotesService {
-  NotesService({SupabaseClient? client})
-    : _client = client ?? Supabase.instance.client;
+  NotesService({
+    SupabaseClient? client,
+    OfflineService? offlineService,
+    ConnectivityService? connectivityService,
+  })  : _client = client ?? Supabase.instance.client,
+        _offlineService = offlineService ?? OfflineService(),
+        _connectivityService = connectivityService ?? ConnectivityService();
 
   static const int maxNoteUploadBytes = 100 * 1024 * 1024;
   static const int chunkThresholdBytes = 25 * 1024 * 1024;
@@ -20,35 +27,48 @@ class NotesService {
   static const String _notesBucket = 'lecture-notes';
 
   final SupabaseClient _client;
+  final OfflineService _offlineService;
+  final ConnectivityService _connectivityService;
 
   Future<List<LecturerCourseOption>> getLecturerCourses() async {
-    if (!SupabaseBootstrap.isConfigured) {
-      throw Exception(
-        'Supabase is not configured. Notes require a live backend connection.',
-      );
-    }
-
-    final String userId = _client.auth.currentUser?.id ?? '';
-    if (userId.isEmpty) {
-      return const <LecturerCourseOption>[];
-    }
+    if (!SupabaseBootstrap.isConfigured) return [];
 
     try {
-      final List<dynamic> rows = await _client
-          .from('courses')
-          .select('id, course_code, title')
-          .eq('lecturer_id', userId)
-          .order('course_code');
+      final isOnline = await _connectivityService.isOnline();
+      if (isOnline) {
+        final String userId = _client.auth.currentUser?.id ?? '';
+        if (userId.isEmpty) {
+          return const <LecturerCourseOption>[];
+        }
 
-      return rows
-          .map(
-            (dynamic row) => LecturerCourseOption(
-              id: (row['id'] ?? '').toString(),
-              code: (row['course_code'] ?? '').toString(),
-              title: (row['title'] ?? '').toString(),
-            ),
-          )
-          .toList(growable: false);
+        final List<dynamic> rows = await _client
+            .from('courses')
+            .select('id, course_code, title')
+            .eq('lecturer_id', userId)
+            .order('course_code');
+
+        return rows
+            .map(
+              (dynamic row) => LecturerCourseOption(
+                id: (row['id'] ?? '').toString(),
+                code: (row['course_code'] ?? '').toString(),
+                title: (row['title'] ?? '').toString(),
+              ),
+            )
+            .toList(growable: false);
+      } else {
+        final cached = await _offlineService.getCachedCourses();
+        if (cached == null) return [];
+        return cached
+            .map(
+              (e) => LecturerCourseOption(
+                id: e['id'].toString(),
+                code: e['course_code'].toString(),
+                title: e['title'].toString(),
+              ),
+            )
+            .toList();
+      }
     } catch (_) {
       return const <LecturerCourseOption>[];
     }
@@ -243,47 +263,69 @@ class NotesService {
     String search = '',
     String sort = 'newest',
   }) async {
-    if (!SupabaseBootstrap.isConfigured) {
-      throw Exception(
-        'Supabase is not configured. Notes require a live backend connection.',
-      );
+    if (!SupabaseBootstrap.isConfigured) return [];
+
+    try {
+      final isOnline = await _connectivityService.isOnline();
+
+      if (isOnline) {
+        final FunctionResponse response = await _client.functions.invoke(
+          'notes-api',
+          body: <String, dynamic>{
+            'action': 'list_notes',
+            'course_code': courseCode,
+            'search': search,
+            'sort': sort,
+          },
+        );
+
+        if (response.status >= 400) {
+          throw Exception(_extractError(response.data));
+        }
+
+        final Map<String, dynamic> payload = _asJsonMap(response.data);
+        final List<dynamic> rows = (payload['notes'] as List<dynamic>?) ?? <dynamic>[];
+
+        final notes = rows
+            .map(
+              (dynamic row) => CourseNote(
+                id: (row['id'] ?? '').toString(),
+                courseId: courseId,
+                courseCode: courseCode,
+                title: (row['title'] ?? '').toString(),
+                description: (row['description'] ?? '').toString(),
+                fileName: _fileNameFromPath((row['content_url'] ?? '').toString()),
+                filePath: (row['content_url'] ?? '').toString(),
+                fileSizeBytes: 0,
+                uploadedByName: (row['uploaded_by_name'] ?? 'Unknown').toString(),
+                uploadedAt:
+                    DateTime.tryParse((row['created_at'] ?? '').toString()) ??
+                    DateTime.now(),
+              ),
+            )
+            .toList(growable: false);
+
+        // Cache for offline
+        if (search.isEmpty) {
+          await _offlineService.cacheNotes(
+            courseId,
+            notes.map((n) => n.toJson()).toList(),
+          );
+        }
+
+        return notes;
+      } else {
+        final cached = await _offlineService.getCachedNotes(courseId);
+        if (cached == null) throw Exception('No internet and no cached data');
+        return cached.map((json) => CourseNote.fromJson(json)).toList();
+      }
+    } catch (e) {
+      final cached = await _offlineService.getCachedNotes(courseId);
+      if (cached != null) {
+        return cached.map((json) => CourseNote.fromJson(json)).toList();
+      }
+      rethrow;
     }
-
-    final FunctionResponse response = await _client.functions.invoke(
-      'notes-api',
-      body: <String, dynamic>{
-        'action': 'list_notes',
-        'course_code': courseCode,
-        'search': search,
-        'sort': sort,
-      },
-    );
-
-    if (response.status >= 400) {
-      throw Exception(_extractError(response.data));
-    }
-
-    final Map<String, dynamic> payload = _asJsonMap(response.data);
-    final List<dynamic> rows = (payload['notes'] as List<dynamic>?) ?? <dynamic>[];
-
-    return rows
-        .map(
-          (dynamic row) => CourseNote(
-            id: (row['id'] ?? '').toString(),
-            courseId: courseId,
-            courseCode: courseCode,
-            title: (row['title'] ?? '').toString(),
-            description: (row['description'] ?? '').toString(),
-            fileName: _fileNameFromPath((row['content_url'] ?? '').toString()),
-            filePath: (row['content_url'] ?? '').toString(),
-            fileSizeBytes: 0,
-            uploadedByName: (row['uploaded_by_name'] ?? 'Unknown').toString(),
-            uploadedAt:
-                DateTime.tryParse((row['created_at'] ?? '').toString()) ??
-                DateTime.now(),
-          ),
-        )
-        .toList(growable: false);
   }
 
   Future<String> createDownloadUrl(String objectPath) async {

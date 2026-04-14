@@ -4,6 +4,7 @@ import '../../auth/models/user_role.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../controllers/timetable_controller.dart';
 import '../data/timetable_repository.dart';
+import '../../../core/services/offline_service.dart';
 import '../models/schedule_item.dart';
 import 'admin_timetable_management_screen.dart';
 
@@ -34,7 +35,10 @@ class _TimetableScreenState extends State<TimetableScreen>
     super.initState();
     _tabController = TabController(length: days.length, vsync: this);
     
-    final repository = TimetableRepository(Supabase.instance.client);
+    final repository = TimetableRepository(
+      Supabase.instance.client,
+      OfflineService(),
+    );
     _controller = TimetableController(repository);
     
     _loadData();

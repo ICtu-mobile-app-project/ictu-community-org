@@ -7,6 +7,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:excel/excel.dart' as excel_pkg;
 
 import '../data/timetable_repository.dart';
+import '../../../core/services/offline_service.dart';
 
 class AdminTimetableManagementScreen extends StatefulWidget {
   const AdminTimetableManagementScreen({super.key});
@@ -18,8 +19,10 @@ class AdminTimetableManagementScreen extends StatefulWidget {
 
 class _AdminTimetableManagementScreenState
     extends State<AdminTimetableManagementScreen> {
-  final TimetableRepository _repository =
-      TimetableRepository(Supabase.instance.client);
+  final TimetableRepository _repository = TimetableRepository(
+    Supabase.instance.client,
+    OfflineService(),
+  );
   bool _isProcessing = false;
   String? _statusMessage;
 

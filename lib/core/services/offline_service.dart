@@ -5,6 +5,22 @@ class OfflineService {
   static const String LECTURES_BOX = 'lectures_cache';
   static const String NOTES_BOX = 'notes_cache';
   static const String ALERTS_BOX = 'alerts_cache';
+  static const String TIMETABLE_BOX = 'timetable_cache';
+  
+  // Cache timetable
+  Future<void> cacheTimetable(List<Map<String, dynamic>> schedules) async {
+    final box = await Hive.openBox(TIMETABLE_BOX);
+    await box.put('timetable', schedules);
+    await box.put('last_synced', DateTime.now().toIso8601String());
+  }
+
+  // Get cached timetable
+  Future<List<Map<String, dynamic>>?> getCachedTimetable() async {
+    final box = await Hive.openBox(TIMETABLE_BOX);
+    final schedules = box.get('timetable');
+    if (schedules == null) return null;
+    return (schedules as List).map((e) => Map<String, dynamic>.from(e as Map)).toList();
+  }
   
   // Cache courses
   Future<void> cacheCourses(List<Map<String, dynamic>> courses) async {

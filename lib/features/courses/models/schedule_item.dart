@@ -46,4 +46,18 @@ class ScheduleItem {
     if (parts.length < 2) return time;
     return '${parts[0]}:${parts[1]}';
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'course_code': courseCode,
+      'course_name': courseName,
+      'lecturer': lecturer,
+      'hall': hall,
+      'day_of_week': dayOfWeek,
+      'start_time': startTime,
+      'end_time': endTime,
+      'group_name': groupName,
+    };
+  }
 }

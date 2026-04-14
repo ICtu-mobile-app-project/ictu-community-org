@@ -1,19 +1,25 @@
+<<<<<<< Updated upstream
 import 'dart:convert';
 
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../core/services/connectivity_service.dart';
+import '../../../core/services/offline_service.dart';
 import '../../../core/supabase/supabase_bootstrap.dart';
 import '../models/lecturer_course_overview.dart';
 
 class LecturerCoursesRepository {
-  LecturerCoursesRepository({SupabaseClient? client})
-    : _client = client ?? Supabase.instance.client;
-
-  static const Duration _cacheExpiry = Duration(hours: 1);
-  static final Map<String, _CachedCoursesPage> _cache =
-      <String, _CachedCoursesPage>{};
+  LecturerCoursesRepository({
+    SupabaseClient? client,
+    OfflineService? offlineService,
+    ConnectivityService? connectivityService,
+  })  : _client = client ?? Supabase.instance.client,
+        _offlineService = offlineService ?? OfflineService(),
+        _connectivityService = connectivityService ?? ConnectivityService();
 
   final SupabaseClient _client;
+  final OfflineService _offlineService;
+  final ConnectivityService _connectivityService;
 
   Future<List<LecturerCourseOverview>> getCourses({
     required int page,
@@ -30,38 +36,67 @@ class LecturerCoursesRepository {
       return const <LecturerCourseOverview>[];
     }
 
-    final String query = searchQuery?.trim().toLowerCase() ?? '';
-    final String key = '$userId:$page:$limit:$query';
+    try {
+      final isOnline = await _connectivityService.isOnline();
 
-    final _CachedCoursesPage? cached = _cache[key];
-    if (!forceRefresh && cached != null && !cached.isExpired) {
-      return cached.data;
+      if (isOnline) {
+        final int from = page * limit;
+        final int to = from + limit - 1;
+
+        dynamic request = _client
+            .from('courses')
+            .select('''
+              id, 
+              course_code, 
+              title, 
+              description,
+              semester,
+              created_at,
+              students_count:course_enrollments(count),
+              notes_count:notes(count),
+              alerts_count:alerts(count)
+            ''')
+            .eq('lecturer_id', userId)
+            .order('created_at', ascending: false)
+            .range(from, to);
+
+        final String query = searchQuery?.trim().toLowerCase() ?? '';
+        if (query.isNotEmpty) {
+          final String sanitized = query.replaceAll(',', ' ').replaceAll('%', '');
+          request = request.or(
+            'course_code.ilike.%$sanitized%,title.ilike.%$sanitized%',
+          );
+        }
+
+        final List<dynamic> rows = await request;
+        final List<LecturerCourseOverview> courses = rows
+            .map((dynamic row) => LecturerCourseOverview.fromJson(row))
+            .toList(growable: false);
+
+        // Cache for offline use (only if first page and no search for simplicity, or handle complex keys)
+        if (page == 0 && query.isEmpty) {
+          await _offlineService.cacheCourses(
+            courses.map((c) => c.toJson()).toList(),
+          );
+        }
+
+        return courses;
+      } else {
+        // Load from cache
+        final cached = await _offlineService.getCachedCourses();
+        if (cached == null) {
+          throw Exception('No internet and no cached data');
+        }
+        return cached.map((json) => LecturerCourseOverview.fromJson(json)).toList();
+      }
+    } catch (e) {
+      // If online request fails, try cache
+      final cached = await _offlineService.getCachedCourses();
+      if (cached != null) {
+        return cached.map((json) => LecturerCourseOverview.fromJson(json)).toList();
+      }
+      rethrow;
     }
-
-    final int from = page * limit;
-    final int to = from + limit - 1;
-
-    dynamic request = _client
-        .from('courses')
-        .select('id, course_code, title, created_at')
-        .eq('lecturer_id', userId)
-        .order('created_at', ascending: false)
-        .range(from, to);
-
-    if (query.isNotEmpty) {
-      final String sanitized = query.replaceAll(',', ' ').replaceAll('%', '');
-      request = request.or(
-        'course_code.ilike.%$sanitized%,title.ilike.%$sanitized%',
-      );
-    }
-
-    final List<dynamic> rows = await request;
-    final List<LecturerCourseOverview> courses = rows
-        .map((dynamic row) => LecturerCourseOverview.fromJson(row))
-        .toList(growable: false);
-
-    _cache[key] = _CachedCoursesPage(data: courses);
-    return courses;
   }
 
   Future<void> createCourse({
@@ -96,8 +131,26 @@ class LecturerCoursesRepository {
     clearCache();
   }
 
+  Future<int> getMyCoursesCount() async {
+    if (!SupabaseBootstrap.isConfigured) {
+      return 0;
+    }
+
+    final String userId = _client.auth.currentUser?.id ?? '';
+    if (userId.isEmpty) {
+      return 0;
+    }
+
+    final List<dynamic> rows = await _client
+        .from('courses')
+        .select('id')
+        .eq('lecturer_id', userId);
+
+    return rows.length;
+  }
+
   void clearCache() {
-    _cache.clear();
+    // No-op, _cache was removed in favor of OfflineService
   }
 
   Map<String, dynamic>? _asJsonMap(dynamic data) {
@@ -142,25 +195,88 @@ class _CachedCoursesPage {
   final List<LecturerCourseOverview> data;
 
   bool get isExpired =>
-      DateTime.now().difference(timestamp) > LecturerCoursesRepository._cacheExpiry;
+      DateTime.now().difference(timestamp) > const Duration(hours: 1);
 }
 
-final List<LecturerCourseOverview> _demoCourses = <LecturerCourseOverview>[
-  LecturerCourseOverview(
-    id: 'demo-course-1',
-    code: 'SEN3141',
-    title: 'Software Design and Modelling',
-    students: 74,
-    lectures: 18,
-    lastActivity: DateTime(2026, 4, 11),
-  ),
-  LecturerCourseOverview(
-    id: 'demo-course-2',
-    code: 'ICT2111',
-    title: 'Technical Writing for Engineers',
-    students: 52,
-    lectures: 9,
-    lastActivity: DateTime(2026, 4, 10),
-  ),
-];
+// Remove all demo/mock data for courses
+final List<LecturerCourseOverview> _demoCourses = <LecturerCourseOverview>[];
+=======
+import '../models/course_delegate.dart';
+import '../models/course_page.dart';
+import '../models/course_student.dart';
+import '../models/lecturer_course.dart';
 
+abstract class LecturerCoursesRepository {
+  Future<CoursePage> getMyCourses({
+    required String lecturerId,
+    required int page,
+    int limit = 20,
+    String searchQuery = '',
+  });
+
+  Future<bool> courseCodeExists(String courseCode);
+
+  Future<bool> canTeachDepartment({
+    required String lecturerId,
+    required String courseCode,
+  });
+
+  Future<LecturerCourse> createCourse({
+    required String lecturerId,
+    required String lecturerName,
+    required String courseCode,
+    required String title,
+    required String description,
+    required String semester,
+  });
+
+  Future<LecturerCourse> getCourseDetails(String courseId);
+
+  Future<LecturerCourse> updateCourse({
+    required String courseId,
+    required String title,
+    required String description,
+    required String semester,
+    required bool archived,
+  });
+
+  Future<void> deleteCourse(String courseId);
+
+  Future<List<CourseStudent>> getEnrolledStudents(String courseId);
+
+  Future<List<CourseStudent>> searchStudentsByEmail(String query);
+
+  Future<void> enrollStudents({
+    required String courseId,
+    required List<String> studentIds,
+  });
+
+  Future<void> removeStudent({
+    required String courseId,
+    required String studentId,
+  });
+
+  Future<List<CourseDelegate>> getDelegates(String courseId);
+
+  Future<CourseDelegate> assignDelegate({
+    required String courseId,
+    required String studentId,
+    required bool canUploadNotes,
+    required bool canEditNotes,
+    required bool canDeleteNotes,
+  });
+
+  Future<CourseDelegate> updateDelegatePermissions({
+    required String courseId,
+    required String delegateId,
+    required bool canUploadNotes,
+    required bool canEditNotes,
+    required bool canDeleteNotes,
+  });
+
+  Future<void> removeDelegate({
+    required String courseId,
+    required String delegateId,
+  });
+}
+>>>>>>> Stashed changes

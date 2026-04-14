@@ -1,303 +1,259 @@
 import 'package:flutter/material.dart';
+import '../../auth/models/user_role.dart';
+import '../controllers/course_details_controller.dart';
+import '../models/student_course_overview.dart';
+import 'course_details_screen.dart';
 
 class CourseSearchScreen extends StatefulWidget {
-  const CourseSearchScreen({
-    super.key,
-    required this.onOpenCourseDetails,
-    this.onBack,
-  });
-
-  final VoidCallback onOpenCourseDetails;
-  final VoidCallback? onBack;
+  const CourseSearchScreen({super.key});
 
   @override
   State<CourseSearchScreen> createState() => _CourseSearchScreenState();
 }
 
-class _CourseSearchScreenState extends State<CourseSearchScreen>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _animationController;
-  late Animation<double> _slideAnimation;
+class _CourseSearchScreenState extends State<CourseSearchScreen> {
+  final CourseDetailsController _controller = CourseDetailsController();
+  final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    _animationController = AnimationController(
-      duration: const Duration(milliseconds: 400),
-      vsync: this,
-    );
-    _slideAnimation = Tween<double>(begin: 100, end: 0).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeOut),
-    );
-    _animationController.forward();
+    // Force available courses view (not "My Courses")
+    if (_controller.showOnlyMyCourses) {
+      _controller.toggleMyCourses(false);
+    } else {
+      _controller.loadInitial();
+    }
   }
 
   @override
   void dispose() {
-    _animationController.dispose();
+    _searchController.dispose();
+    _controller.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final isModal = Navigator.of(context).canPop();
-
-    return Container(
-      decoration: const BoxDecoration(
-        color: Color(0xFF0A0C10),
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(24),
-          topRight: Radius.circular(24),
+    return Scaffold(
+      backgroundColor: const Color(0xFF0A0C10),
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        title: const Text(
+          'Discover Courses',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
       ),
-      child: WillPopScope(
-        onWillPop: () async {
-          _animateBack(context);
-          return false;
+      body: AnimatedBuilder(
+        animation: _controller,
+        builder: (context, _) {
+          return Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                child: TextField(
+                  controller: _searchController,
+                  onChanged: _controller.onSearchChanged,
+                  style: const TextStyle(color: Colors.white),
+                  decoration: InputDecoration(
+                    hintText: 'Search course code or title...',
+                    hintStyle: const TextStyle(color: Colors.white38),
+                    prefixIcon: const Icon(Icons.search_rounded, color: Colors.white38),
+                    filled: true,
+                    fillColor: Colors.white.withValues(alpha: 0.05),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: BorderSide.none,
+                    ),
+                  ),
+                ),
+              ),
+              Expanded(
+                child: RefreshIndicator(
+                  onRefresh: _controller.refresh,
+                  child: _buildContent(),
+                ),
+              ),
+            ],
+          );
         },
-        child: ListView(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-          children: [
-            // Drag handle for modal
-            if (isModal)
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  margin: const EdgeInsets.only(bottom: 12),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(2),
-                    color: Colors.white.withValues(alpha: 0.2),
-                  ),
-                ),
-              ),
-            // Header with back button
-            AnimatedBuilder(
-              animation: _slideAnimation,
-              builder: (context, child) {
-                return Transform.translate(
-                  offset: Offset(0, _slideAnimation.value),
-                  child: Opacity(
-                    opacity: 1 - (_slideAnimation.value / 100),
-                    child: child,
-                  ),
-                );
-              },
-              child: Row(
-                children: [
-                  GestureDetector(
-                    onTap: () => _animateBack(context),
-                    child: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(8),
-                        color: Colors.white.withValues(alpha: 0.05),
-                      ),
-                      child: Icon(
-                        Icons.arrow_back,
-                        color: Colors.white.withValues(alpha: 0.8),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  const Text(
-                    'Search Courses',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w800,
-                      fontSize: 18,
-                    ),
-                  ),
-                  const Spacer(),
-                  Container(
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.2),
-                      ),
-                    ),
-                    padding: const EdgeInsets.all(2),
-                    child: CircleAvatar(
-                      backgroundColor: const Color(0xFFFFD3BC),
-                      child: Image.asset('assets/Logo.png', width: 20),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 18),
-            // Search form
-            AnimatedBuilder(
-              animation: _slideAnimation,
-              builder: (context, child) {
-                return Transform.translate(
-                  offset: Offset(0, _slideAnimation.value * 0.5),
-                  child: Opacity(
-                    opacity: 1 - (_slideAnimation.value / 100) * 0.3,
-                    child: child,
-                  ),
-                );
-              },
-              child: Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(20),
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF111726), Color(0xFF1B1F2B)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.1),
-                    width: 1.5,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.2),
-                      blurRadius: 8,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  children: [
-                    const _FakeInput(hint: 'Search course by name or code...'),
-                    const SizedBox(height: 12),
-                    const _FakeInput(hint: 'Select Faculty', withChevron: true),
-                    const SizedBox(height: 12),
-                    const Row(
-                      children: [
-                        Expanded(
-                          child: _FakeInput(hint: 'Level', withChevron: true),
-                        ),
-                        SizedBox(width: 10),
-                        Expanded(
-                          child: _FakeInput(
-                            hint: 'Semester',
-                            withChevron: true,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 14),
-                    Container(
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(16),
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFFF59E0B), Color(0xFFFF9500)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color(
-                              0xFFF59E0B,
-                            ).withValues(alpha: 0.3),
-                            blurRadius: 12,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: Material(
-                        color: Colors.transparent,
-                        child: InkWell(
-                          borderRadius: BorderRadius.circular(16),
-                          onTap: widget.onOpenCourseDetails,
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(
-                              vertical: 16,
-                              horizontal: 20,
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                const Icon(
-                                  Icons.tune_rounded,
-                                  color: Colors.white,
-                                  size: 20,
-                                ),
-                                const SizedBox(width: 8),
-                                const Text(
-                                  'Search Courses',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w700,
-                                    fontSize: 16,
-                                    letterSpacing: 0.3,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }
 
-  void _animateBack(BuildContext context) {
-    _animationController.reverse().then((_) {
-      if (widget.onBack != null) {
-        widget.onBack!();
-      } else if (Navigator.of(context).canPop()) {
-        Navigator.of(context).pop();
-      }
-    });
+  Widget _buildContent() {
+    if (_controller.isLoadingInitial) {
+      return const Center(child: CircularProgressIndicator(color: Color(0xFFF58220)));
+    }
+
+    if (_controller.error != null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.error_outline, color: Colors.redAccent, size: 48),
+            const SizedBox(height: 16),
+            Text(_controller.error!, style: const TextStyle(color: Colors.white)),
+            TextButton(onPressed: _controller.refresh, child: const Text('Retry')),
+          ],
+        ),
+      );
+    }
+
+    if (_controller.courses.isEmpty) {
+      return const Center(
+        child: Text('No courses found for your major.', style: TextStyle(color: Colors.white38)),
+      );
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.all(20),
+      itemCount: _controller.courses.length + (_controller.hasMore ? 1 : 0),
+      itemBuilder: (context, index) {
+        if (index == _controller.courses.length) {
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 20),
+              child: _controller.isLoadingMore
+                  ? const CircularProgressIndicator()
+                  : TextButton(onPressed: _controller.loadMore, child: const Text('Load More')),
+            ),
+          );
+        }
+
+        final course = _controller.courses[index];
+        return _SearchCourseCard(
+          course: course,
+          onTap: () {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => CourseDetailsScreen(
+                  role: UserRole.student,
+                  initialCourseId: course.id,
+                ),
+              ),
+            );
+          },
+          onEnroll: () => _controller.enroll(course),
+          isWorking: _controller.isWorking && _controller.selectedCourse?.id == course.id,
+        );
+      },
+    );
   }
 }
 
-class _FakeInput extends StatelessWidget {
-  const _FakeInput({required this.hint, this.withChevron = false});
+class _SearchCourseCard extends StatelessWidget {
+  const _SearchCourseCard({
+    required this.course,
+    required this.onTap,
+    required this.onEnroll,
+    required this.isWorking,
+  });
 
-  final String hint;
-  final bool withChevron;
+  final StudentCourseOverview course;
+  final VoidCallback onTap;
+  final VoidCallback onEnroll;
+  final bool isWorking;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 54,
-      padding: const EdgeInsets.symmetric(horizontal: 14),
+      margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
         color: Colors.white.withValues(alpha: 0.05),
-        border: Border.all(
-          color: Colors.white.withValues(alpha: 0.1),
-          width: 1,
-        ),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
       ),
-      child: Row(
-        children: [
-          if (!withChevron)
-            Icon(
-              Icons.search_rounded,
-              color: Colors.white.withValues(alpha: 0.5),
-              size: 18,
-            ),
-          if (!withChevron) const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              hint,
-              style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.6),
-                fontSize: 15,
-                fontWeight: FontWeight.w500,
-              ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(20),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF58220).withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        course.code,
+                        style: const TextStyle(
+                          color: Color(0xFFF58220),
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                    if (course.isEnrolled)
+                      const Row(
+                        children: [
+                          Icon(Icons.check_circle_rounded, color: Color(0xFF22C55E), size: 16),
+                          SizedBox(width: 4),
+                          Text(
+                            'Enrolled',
+                            style: TextStyle(
+                              color: Color(0xFF22C55E),
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  course.title,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  course.lecturer,
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.5),
+                    fontSize: 13,
+                  ),
+                ),
+                if (!course.isEnrolled) ...[
+                  const SizedBox(height: 20),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 44,
+                    child: ElevatedButton(
+                      onPressed: isWorking ? null : onEnroll,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFF58220),
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      child: isWorking
+                          ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                          : const Text('Enroll Now', style: TextStyle(fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                ],
+              ],
             ),
           ),
-          if (withChevron)
-            Icon(
-              Icons.keyboard_arrow_down_rounded,
-              color: Colors.white.withValues(alpha: 0.5),
-              size: 20,
-            ),
-        ],
+        ),
       ),
     );
   }

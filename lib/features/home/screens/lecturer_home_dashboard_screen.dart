@@ -1,12 +1,16 @@
+import 'dart:async';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 
 import '../../auth/models/user_role.dart';
+import '../../courses/data/lecturer_courses_repository.dart';
 import '../../courses/screens/course_notes_list_screen.dart';
 import '../../courses/screens/upload_notes_screen.dart';
 import '../../notifications/screens/notifications_screen.dart';
 import '../../profile/screens/profile_screen.dart';
 
-class LecturerHomeDashboardScreen extends StatelessWidget {
+class LecturerHomeDashboardScreen extends StatefulWidget {
   const LecturerHomeDashboardScreen({
     super.key,
     required this.onOpenSearch,
@@ -17,6 +21,68 @@ class LecturerHomeDashboardScreen extends StatelessWidget {
   final VoidCallback onOpenSearch;
   final VoidCallback? onOpenMenu;
   final String? userDisplayName;
+
+  @override
+  State<LecturerHomeDashboardScreen> createState() =>
+      _LecturerHomeDashboardScreenState();
+}
+
+class _LecturerHomeDashboardScreenState extends State<LecturerHomeDashboardScreen> {
+  final LecturerCoursesRepository _coursesRepository = LecturerCoursesRepository();
+
+  Timer? _reconnectTimer;
+  late Future<int> _coursesCountFuture;
+  bool _wasOffline = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _coursesCountFuture = _loadCoursesCount();
+    _reconnectTimer = Timer.periodic(
+      const Duration(seconds: 12),
+      (_) => unawaited(_checkConnectionAndRefresh()),
+    );
+  }
+
+  @override
+  void dispose() {
+    _reconnectTimer?.cancel();
+    super.dispose();
+  }
+
+  Future<int> _loadCoursesCount() async {
+    try {
+      final int count = await _coursesRepository.getMyCoursesCount();
+      _wasOffline = false;
+      return count;
+    } catch (_) {
+      _wasOffline = true;
+      rethrow;
+    }
+  }
+
+  Future<void> _checkConnectionAndRefresh() async {
+    bool online = false;
+    try {
+      final List<InternetAddress> lookup = await InternetAddress.lookup(
+        'grlrrdaarzczjnqdeahh.supabase.co',
+      );
+      online = lookup.isNotEmpty;
+    } on SocketException {
+      online = false;
+    }
+
+    if (online && _wasOffline) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _coursesCountFuture = _loadCoursesCount();
+      });
+      return;
+    }
+    _wasOffline = !online;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -43,7 +109,7 @@ class LecturerHomeDashboardScreen extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        userDisplayName ?? 'Lecturer',
+                        widget.userDisplayName ?? 'Lecturer',
                         style: const TextStyle(
                           color: Color(0xFFF1F5F9),
                           fontSize: 20,
@@ -94,32 +160,43 @@ class LecturerHomeDashboardScreen extends StatelessWidget {
                       style: TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
                     ),
                     const SizedBox(height: 12),
-                    Row(
-                      children: const [
-                        Expanded(
-                          child: _MetricCard(
-                            label: 'Courses',
-                            value: '5',
-                            tint: Color(0xFF60A5FA),
-                          ),
-                        ),
-                        SizedBox(width: 8),
-                        Expanded(
-                          child: _MetricCard(
-                            label: 'Students',
-                            value: '184',
-                            tint: Color(0xFF22D3EE),
-                          ),
-                        ),
-                        SizedBox(width: 8),
-                        Expanded(
-                          child: _MetricCard(
-                            label: 'Delegates',
-                            value: '7',
-                            tint: Color(0xFFF59E0B),
-                          ),
-                        ),
-                      ],
+                    FutureBuilder<int>(
+                      future: _coursesCountFuture,
+                      builder: (BuildContext context, AsyncSnapshot<int> snapshot) {
+                        final String coursesValue = snapshot.hasData
+                            ? snapshot.data!.toString()
+                            : snapshot.hasError
+                            ? '-'
+                            : '...';
+
+                        return Row(
+                          children: [
+                            Expanded(
+                              child: _MetricCard(
+                                label: 'Courses',
+                                value: coursesValue,
+                                tint: const Color(0xFF60A5FA),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            const Expanded(
+                              child: _MetricCard(
+                                label: 'Students',
+                                value: '-',
+                                tint: Color(0xFF22D3EE),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            const Expanded(
+                              child: _MetricCard(
+                                label: 'Delegates',
+                                value: '-',
+                                tint: Color(0xFFF59E0B),
+                              ),
+                            ),
+                          ],
+                        );
+                      },
                     ),
                   ],
                 ),
@@ -138,7 +215,7 @@ class LecturerHomeDashboardScreen extends StatelessWidget {
                   ),
                   const Spacer(),
                   TextButton(
-                    onPressed: onOpenSearch,
+                    onPressed: widget.onOpenSearch,
                     child: const Text(
                       'Open All',
                       style: TextStyle(
@@ -156,7 +233,7 @@ class LecturerHomeDashboardScreen extends StatelessWidget {
                     child: _ActionPill(
                       icon: Icons.menu_book_rounded,
                       label: 'My Courses',
-                      onTap: onOpenSearch,
+                      onTap: widget.onOpenSearch,
                     ),
                   ),
                   const SizedBox(width: 10),
@@ -228,8 +305,8 @@ class LecturerHomeDashboardScreen extends StatelessWidget {
             left: 24,
             child: GestureDetector(
               onTap: () {
-                if (onOpenMenu != null) {
-                  onOpenMenu!();
+                if (widget.onOpenMenu != null) {
+                  widget.onOpenMenu!();
                   return;
                 }
                 Navigator.of(context).push(

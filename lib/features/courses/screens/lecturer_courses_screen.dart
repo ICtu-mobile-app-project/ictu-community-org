@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../../../core/services/connectivity_service.dart';
 import '../../auth/models/user_role.dart';
 import '../data/lecturer_courses_repository.dart';
 import '../models/lecturer_course_overview.dart';
@@ -20,10 +21,12 @@ class _LecturerCoursesScreenState extends State<LecturerCoursesScreen> {
   static const int _pageSize = 20;
 
   final LecturerCoursesRepository _repository = LecturerCoursesRepository();
+  final ConnectivityService _connectivity = ConnectivityService();
   final TextEditingController _searchController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   final List<LecturerCourseOverview> _allCourses = <LecturerCourseOverview>[];
 
+  StreamSubscription? _connectivitySubscription;
   Timer? _debounce;
   String _search = '';
   String? _error;
@@ -31,12 +34,32 @@ class _LecturerCoursesScreenState extends State<LecturerCoursesScreen> {
   bool _isLoadingMore = false;
   bool _hasMore = true;
   int _nextPage = 0;
+  bool _isOnline = true;
 
   @override
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
+    _checkConnectivity();
+    _listenToConnectivity();
     unawaited(_loadCourses(reset: true));
+  }
+
+  Future<void> _checkConnectivity() async {
+    final online = await _connectivity.isOnline();
+    if (mounted) setState(() => _isOnline = online);
+  }
+
+  void _listenToConnectivity() {
+    _connectivitySubscription = _connectivity.onConnectivityChanged.listen((online) {
+      if (mounted) {
+        final wasOffline = !_isOnline;
+        setState(() => _isOnline = online);
+        if (online && wasOffline) {
+          unawaited(_loadCourses(reset: true, forceRefresh: true));
+        }
+      }
+    });
   }
 
   Future<void> _refresh() => _loadCourses(reset: true, forceRefresh: true);
@@ -107,6 +130,7 @@ class _LecturerCoursesScreenState extends State<LecturerCoursesScreen> {
 
   @override
   void dispose() {
+    _connectivitySubscription?.cancel();
     _debounce?.cancel();
     _searchController.dispose();
     _scrollController.dispose();
@@ -117,19 +141,23 @@ class _LecturerCoursesScreenState extends State<LecturerCoursesScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF0A0C10),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () async {
-          final bool? created = await Navigator.of(context).push<bool>(
-            MaterialPageRoute<bool>(builder: (_) => const CreateCourseScreen()),
-          );
-          if (created == true) {
-            await _loadCourses(reset: true, forceRefresh: true);
-          }
-        },
-        backgroundColor: const Color(0xFFF58220),
-        foregroundColor: Colors.white,
-        icon: const Icon(Icons.add_rounded),
-        label: const Text('Create New Course'),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(bottom: 80),
+        child: FloatingActionButton.extended(
+          onPressed: () async {
+            final bool? created = await Navigator.of(context).push<bool>(
+              MaterialPageRoute<bool>(builder: (_) => const CreateCourseScreen()),
+            );
+            if (created == true) {
+              await _loadCourses(reset: true, forceRefresh: true);
+            }
+          },
+          backgroundColor: const Color(0xFFF58220),
+          foregroundColor: Colors.white,
+          icon: const Icon(Icons.add_rounded),
+          label: const Text('Create New Course'),
+        ),
       ),
       body: SafeArea(
         child: Padding(
@@ -137,13 +165,37 @@ class _LecturerCoursesScreenState extends State<LecturerCoursesScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'My Courses',
-                style: TextStyle(
-                  color: Color(0xFFF1F5F9),
-                  fontSize: 22,
-                  fontWeight: FontWeight.w800,
-                ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'My Courses',
+                    style: TextStyle(
+                      color: Color(0xFFF1F5F9),
+                      fontSize: 22,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  if (!_isOnline)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.orange.withValues(alpha: 0.5)),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.cloud_off, size: 14, color: Colors.orange),
+                          const SizedBox(width: 4),
+                          const Text(
+                            'Offline',
+                            style: TextStyle(color: Colors.orange, fontSize: 11, fontWeight: FontWeight.bold),
+                          ),
+                        ],
+                      ),
+                    ),
+                ],
               ),
               const SizedBox(height: 4),
               const Text(
@@ -221,14 +273,19 @@ class _LecturerCoursesScreenState extends State<LecturerCoursesScreen> {
 
                           return GridView.builder(
                             controller: _scrollController,
-                            padding: const EdgeInsets.only(bottom: 120),
+                            padding: const EdgeInsets.only(
+                              left: 0,
+                              right: 0,
+                              top: 0,
+                              bottom: 120,
+                            ),
                             itemCount: _allCourses.length + (_isLoadingMore ? 1 : 0),
                             gridDelegate:
                                 SliverGridDelegateWithFixedCrossAxisCount(
                                   crossAxisCount: crossAxisCount,
                                   crossAxisSpacing: 10,
                                   mainAxisSpacing: 10,
-                                  childAspectRatio: 0.92,
+                                  childAspectRatio: 0.84,
                                 ),
                             itemBuilder: (BuildContext context, int index) {
                               if (index >= _allCourses.length) {
@@ -247,9 +304,7 @@ class _LecturerCoursesScreenState extends State<LecturerCoursesScreen> {
                                     MaterialPageRoute<void>(
                                       builder: (_) =>
                                           LecturerCourseDetailsScreen(
-                                            courseId: item.id,
-                                            courseCode: item.code,
-                                            title: item.title,
+                                            course: item,
                                           ),
                                     ),
                                   );
@@ -327,7 +382,7 @@ class _CourseCard extends StatelessWidget {
             ),
             const Spacer(),
             _meta('Students', '${data.students}'),
-            _meta('Lectures', '${data.lectures}'),
+            _meta('Notes', '${data.notes}'),
             const SizedBox(height: 4),
             Text(
               'Last: ${_fmt(data.lastActivity)}',

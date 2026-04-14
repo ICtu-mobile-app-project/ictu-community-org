@@ -1,55 +1,74 @@
+import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:path/path.dart' as p;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../core/services/connectivity_service.dart';
+import '../../../core/services/offline_service.dart';
 import '../../../core/supabase/supabase_bootstrap.dart';
 import '../models/course_note.dart';
 import '../models/note_upload_session.dart';
 
 class NotesService {
-  NotesService({SupabaseClient? client})
-    : _client = client ?? Supabase.instance.client;
+  NotesService({
+    SupabaseClient? client,
+    OfflineService? offlineService,
+    ConnectivityService? connectivityService,
+  })  : _client = client ?? Supabase.instance.client,
+        _offlineService = offlineService ?? OfflineService(),
+        _connectivityService = connectivityService ?? ConnectivityService();
 
   static const int maxNoteUploadBytes = 100 * 1024 * 1024;
+  static const int chunkThresholdBytes = 25 * 1024 * 1024;
   static const int _chunkSizeBytes = 5 * 1024 * 1024;
   static const int _maxUploadAttempts = 3;
+  static const String _notesBucket = 'lecture-notes';
 
   final SupabaseClient _client;
+  final OfflineService _offlineService;
+  final ConnectivityService _connectivityService;
 
   Future<List<LecturerCourseOption>> getLecturerCourses() async {
-    if (!SupabaseBootstrap.isConfigured) {
-      return const <LecturerCourseOption>[
-        LecturerCourseOption(
-          id: 'demo-course-1',
-          code: 'SEN3141',
-          title: 'Software Design and Modelling',
-        ),
-      ];
-    }
-
-    final String userId = _client.auth.currentUser?.id ?? '';
-    if (userId.isEmpty) {
-      return const <LecturerCourseOption>[];
-    }
+    if (!SupabaseBootstrap.isConfigured) return [];
 
     try {
-      final List<dynamic> rows = await _client
-          .from('courses')
-          .select('id, course_code, title')
-          .eq('lecturer_id', userId)
-          .order('course_code');
+      final isOnline = await _connectivityService.isOnline();
+      if (isOnline) {
+        final String userId = _client.auth.currentUser?.id ?? '';
+        if (userId.isEmpty) {
+          return const <LecturerCourseOption>[];
+        }
 
-      return rows
-          .map(
-            (dynamic row) => LecturerCourseOption(
-              id: (row['id'] ?? '').toString(),
-              code: (row['course_code'] ?? '').toString(),
-              title: (row['title'] ?? '').toString(),
-            ),
-          )
-          .toList(growable: false);
+        final List<dynamic> rows = await _client
+            .from('courses')
+            .select('id, course_code, title')
+            .eq('lecturer_id', userId)
+            .order('course_code');
+
+        return rows
+            .map(
+              (dynamic row) => LecturerCourseOption(
+                id: (row['id'] ?? '').toString(),
+                code: (row['course_code'] ?? '').toString(),
+                title: (row['title'] ?? '').toString(),
+              ),
+            )
+            .toList(growable: false);
+      } else {
+        final cached = await _offlineService.getCachedCourses();
+        if (cached == null) return [];
+        return cached
+            .map(
+              (e) => LecturerCourseOption(
+                id: e['id'].toString(),
+                code: e['course_code'].toString(),
+                title: e['title'].toString(),
+              ),
+            )
+            .toList();
+      }
     } catch (_) {
       return const <LecturerCourseOption>[];
     }
@@ -78,17 +97,8 @@ class NotesService {
     }
 
     if (!SupabaseBootstrap.isConfigured) {
-      return CourseNote(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        courseId: courseId,
-        courseCode: courseCode,
-        title: title,
-        description: description,
-        fileName: fileName,
-        filePath: file.path,
-        fileSizeBytes: size,
-        uploadedByName: 'Demo Lecturer',
-        uploadedAt: DateTime.now(),
+      throw Exception(
+        'Supabase is not configured. Notes require a live backend connection.',
       );
     }
 
@@ -107,39 +117,50 @@ class NotesService {
     final String objectPath =
         'notes/$uid/${DateTime.now().millisecondsSinceEpoch}_$fileName';
 
+    final bool useChunked =
+        strategy == NoteUploadStrategy.chunkedRetry && size > chunkThresholdBytes;
+
     await _uploadBinary(
       objectPath: objectPath,
       bytes: Uint8List.fromList(bytes),
-      strategy: strategy,
+      useChunked: useChunked,
       onProgress: onProgress,
     );
 
-    final Map<String, dynamic> row = await _client
-        .from('lecture_notes')
-        .insert(<String, dynamic>{
-          'course_id': courseId,
-          'title': title,
-          'description': description,
-          'content_url': objectPath,
-          'file_name': fileName,
-          'file_size_bytes': size,
-          'uploaded_by': uid,
-        })
-        .select(
-          'id, course_id, title, description, content_url, file_name, file_size_bytes, created_at',
-        )
-        .single();
+    final FunctionResponse response = await _client.functions.invoke(
+      'notes-api',
+      body: <String, dynamic>{
+        'action': 'create_note',
+        'course_code': courseCode,
+        'title': title,
+        'description': description,
+        'content_url': objectPath,
+        'status': 'published',
+      },
+    );
+
+    if (response.status >= 400) {
+      throw Exception(_extractError(response.data));
+    }
+
+    final Map<String, dynamic> payload = _asJsonMap(response.data);
+    if (payload['ok'] != true) {
+      throw Exception(_extractError(payload));
+    }
+
+    final Map<String, dynamic> row = (payload['note'] as Map<String, dynamic>?) ??
+        <String, dynamic>{};
 
     return CourseNote(
       id: (row['id'] ?? '').toString(),
-      courseId: (row['course_id'] ?? '').toString(),
+      courseId: courseId,
       courseCode: courseCode,
       title: (row['title'] ?? '').toString(),
       description: (row['description'] ?? '').toString(),
-      fileName: (row['file_name'] ?? '').toString(),
+      fileName: fileName,
       filePath: (row['content_url'] ?? '').toString(),
-      fileSizeBytes: (row['file_size_bytes'] as num?)?.toInt() ?? 0,
-      uploadedByName: 'You',
+      fileSizeBytes: size,
+      uploadedByName: (row['uploaded_by_name'] ?? 'You').toString(),
       uploadedAt:
           DateTime.tryParse((row['created_at'] ?? '').toString()) ??
           DateTime.now(),
@@ -149,16 +170,14 @@ class NotesService {
   Future<void> _uploadBinary({
     required String objectPath,
     required Uint8List bytes,
-    required NoteUploadStrategy strategy,
+    required bool useChunked,
     void Function(NoteUploadProgress progress)? onProgress,
   }) async {
-    if (strategy == NoteUploadStrategy.singleShot) {
-      await _client.storage.from('lecture-notes').uploadBinary(objectPath, bytes);
-      onProgress?.call(
-        const NoteUploadProgress(
-          fraction: 1,
-          message: 'Upload complete.',
-        ),
+    if (!useChunked) {
+      await _uploadSingleShotWithRetry(
+        objectPath: objectPath,
+        bytes: bytes,
+        onProgress: onProgress,
       );
       return;
     }
@@ -174,7 +193,7 @@ class NotesService {
     int attempt = 0;
     while (true) {
       try {
-        await _client.storage.from('lecture-notes').uploadBinary(objectPath, bytes);
+        await _client.storage.from(_notesBucket).uploadBinary(objectPath, bytes);
         onProgress?.call(
           const NoteUploadProgress(
             fraction: 1,
@@ -182,10 +201,10 @@ class NotesService {
           ),
         );
         return;
-      } catch (_) {
+      } catch (error) {
         attempt += 1;
         if (attempt >= _maxUploadAttempts) {
-          rethrow;
+          throw Exception(_extractStorageError(error));
         }
 
         final int completedChunks = ((attempt / _maxUploadAttempts) * totalChunks)
@@ -203,85 +222,203 @@ class NotesService {
     }
   }
 
+  Future<void> _uploadSingleShotWithRetry({
+    required String objectPath,
+    required Uint8List bytes,
+    void Function(NoteUploadProgress progress)? onProgress,
+  }) async {
+    int attempt = 0;
+    while (true) {
+      try {
+        onProgress?.call(
+          NoteUploadProgress(
+            fraction: attempt == 0 ? 0.25 : 0.35,
+            message: attempt == 0
+                ? 'Uploading file...'
+                : 'Retrying upload (${attempt + 1}/$_maxUploadAttempts)...',
+          ),
+        );
+
+        await _client.storage.from(_notesBucket).uploadBinary(objectPath, bytes);
+        onProgress?.call(
+          const NoteUploadProgress(
+            fraction: 1,
+            message: 'Upload complete.',
+          ),
+        );
+        return;
+      } catch (error) {
+        attempt += 1;
+        if (attempt >= _maxUploadAttempts) {
+          throw Exception(_extractStorageError(error));
+        }
+        await Future<void>.delayed(Duration(milliseconds: 500 * attempt));
+      }
+    }
+  }
+
   Future<List<CourseNote>> listNotes({
     required String courseId,
     required String courseCode,
     String search = '',
     String sort = 'newest',
   }) async {
-    if (!SupabaseBootstrap.isConfigured) {
-      return <CourseNote>[];
+    if (!SupabaseBootstrap.isConfigured) return [];
+
+    try {
+      final isOnline = await _connectivityService.isOnline();
+
+      if (isOnline) {
+        final FunctionResponse response = await _client.functions.invoke(
+          'notes-api',
+          body: <String, dynamic>{
+            'action': 'list_notes',
+            'course_code': courseCode,
+            'search': search,
+            'sort': sort,
+          },
+        );
+
+        if (response.status >= 400) {
+          throw Exception(_extractError(response.data));
+        }
+
+        final Map<String, dynamic> payload = _asJsonMap(response.data);
+        final List<dynamic> rows = (payload['notes'] as List<dynamic>?) ?? <dynamic>[];
+
+        final notes = rows
+            .map(
+              (dynamic row) => CourseNote(
+                id: (row['id'] ?? '').toString(),
+                courseId: courseId,
+                courseCode: courseCode,
+                title: (row['title'] ?? '').toString(),
+                description: (row['description'] ?? '').toString(),
+                fileName: _fileNameFromPath((row['content_url'] ?? '').toString()),
+                filePath: (row['content_url'] ?? '').toString(),
+                fileSizeBytes: 0,
+                uploadedByName: (row['uploaded_by_name'] ?? 'Unknown').toString(),
+                uploadedAt:
+                    DateTime.tryParse((row['created_at'] ?? '').toString()) ??
+                    DateTime.now(),
+              ),
+            )
+            .toList(growable: false);
+
+        // Cache for offline
+        if (search.isEmpty) {
+          await _offlineService.cacheNotes(
+            courseId,
+            notes.map((n) => n.toJson()).toList(),
+          );
+        }
+
+        return notes;
+      } else {
+        final cached = await _offlineService.getCachedNotes(courseId);
+        if (cached == null) throw Exception('No internet and no cached data');
+        return cached.map((json) => CourseNote.fromJson(json)).toList();
+      }
+    } catch (e) {
+      final cached = await _offlineService.getCachedNotes(courseId);
+      if (cached != null) {
+        return cached.map((json) => CourseNote.fromJson(json)).toList();
+      }
+      rethrow;
     }
-
-    dynamic query = _client
-        .from('lecture_notes')
-        .select(
-          'id, course_id, title, description, content_url, file_name, file_size_bytes, created_at, profiles:uploaded_by(full_name)',
-        )
-        .eq('course_id', courseId);
-
-    if (search.trim().isNotEmpty) {
-      query = query.ilike('title', '%${search.trim()}%');
-    }
-
-    if (sort == 'oldest') {
-      query = query.order('created_at', ascending: true);
-    } else if (sort == 'title') {
-      query = query.order('title', ascending: true);
-    } else {
-      query = query.order('created_at', ascending: false);
-    }
-
-    final List<dynamic> rows = await query;
-
-    return rows
-        .map(
-          (dynamic row) => CourseNote(
-            id: (row['id'] ?? '').toString(),
-            courseId: (row['course_id'] ?? '').toString(),
-            courseCode: courseCode,
-            title: (row['title'] ?? '').toString(),
-            description: (row['description'] ?? '').toString(),
-            fileName: (row['file_name'] ?? '').toString(),
-            filePath: (row['content_url'] ?? '').toString(),
-            fileSizeBytes: (row['file_size_bytes'] as num?)?.toInt() ?? 0,
-            uploadedByName: (row['profiles']?['full_name'] ?? 'Unknown')
-                .toString(),
-            uploadedAt:
-                DateTime.tryParse((row['created_at'] ?? '').toString()) ??
-                DateTime.now(),
-          ),
-        )
-        .toList(growable: false);
   }
 
   Future<String> createDownloadUrl(String objectPath) async {
     if (!SupabaseBootstrap.isConfigured) {
-      return objectPath;
+      throw Exception(
+        'Supabase is not configured. Notes require a live backend connection.',
+      );
     }
 
     final String signedUrl = await _client.storage
-        .from('lecture-notes')
+        .from(_notesBucket)
         .createSignedUrl(objectPath, 60 * 30);
     return signedUrl;
   }
 
   Future<void> deleteNote(String noteId, String objectPath) async {
     if (!SupabaseBootstrap.isConfigured) {
-      return;
+      throw Exception(
+        'Supabase is not configured. Notes require a live backend connection.',
+      );
     }
 
-    await _client.from('lecture_notes').delete().eq('id', noteId);
-    await _client.storage.from('lecture-notes').remove(<String>[objectPath]);
+    final FunctionResponse response = await _client.functions.invoke(
+      'notes-api',
+      body: <String, dynamic>{
+        'action': 'delete_note',
+        'note_id': noteId,
+      },
+    );
+    if (response.status >= 400) {
+      throw Exception(_extractError(response.data));
+    }
+
+    await _client.storage.from(_notesBucket).remove(<String>[objectPath]);
   }
 
   Future<void> updateNoteTitle(String noteId, String title) async {
     if (!SupabaseBootstrap.isConfigured) {
-      return;
+      throw Exception(
+        'Supabase is not configured. Notes require a live backend connection.',
+      );
     }
-    await _client
-        .from('lecture_notes')
-        .update(<String, dynamic>{'title': title})
-        .eq('id', noteId);
+    final FunctionResponse response = await _client.functions.invoke(
+      'notes-api',
+      body: <String, dynamic>{
+        'action': 'update_note_title',
+        'note_id': noteId,
+        'title': title,
+      },
+    );
+    if (response.status >= 400) {
+      throw Exception(_extractError(response.data));
+    }
+  }
+
+  Map<String, dynamic> _asJsonMap(dynamic payload) {
+    if (payload is Map<String, dynamic>) {
+      return payload;
+    }
+    if (payload is String && payload.trim().isNotEmpty) {
+      try {
+        final dynamic decoded = jsonDecode(payload);
+        if (decoded is Map<String, dynamic>) {
+          return decoded;
+        }
+      } catch (_) {
+        return <String, dynamic>{'message': payload};
+      }
+    }
+    return <String, dynamic>{};
+  }
+
+  String _extractError(dynamic payload) {
+    final Map<String, dynamic> map = _asJsonMap(payload);
+    final dynamic value = map['error'] ?? map['message'] ?? map['details'];
+    if (value is String && value.trim().isNotEmpty) {
+      return value;
+    }
+    return 'Request failed. Please try again.';
+  }
+
+  String _extractStorageError(dynamic error) {
+    final String text = error.toString();
+    if (text.contains('Bucket not found')) {
+      return 'Storage bucket lecture-notes is missing. Please contact admin.';
+    }
+    return text;
+  }
+
+  String _fileNameFromPath(String path) {
+    if (path.trim().isEmpty) {
+      return 'note-file';
+    }
+    return p.basename(path);
   }
 }

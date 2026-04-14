@@ -1,7 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../auth/models/user_role.dart';
+import '../../auth/controllers/auth_controller.dart';
+import '../controllers/timetable_controller.dart';
+import '../data/timetable_repository.dart';
+import '../../../core/services/offline_service.dart';
+import '../models/schedule_item.dart';
+import 'admin_timetable_management_screen.dart';
 
 class TimetableScreen extends StatefulWidget {
-  const TimetableScreen({super.key});
+  const TimetableScreen({super.key, this.userRole});
+
+  final UserRole? userRole;
 
   @override
   State<TimetableScreen> createState() => _TimetableScreenState();
@@ -10,6 +20,8 @@ class TimetableScreen extends StatefulWidget {
 class _TimetableScreenState extends State<TimetableScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  late TimetableController _controller;
+  
   final List<String> days = [
     'Monday',
     'Tuesday',
@@ -22,11 +34,37 @@ class _TimetableScreenState extends State<TimetableScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: days.length, vsync: this);
+    
+    final repository = TimetableRepository(
+      Supabase.instance.client,
+      OfflineService(),
+    );
+    _controller = TimetableController(repository);
+    
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    UserRole? role = widget.userRole;
+    String? lecturerName;
+
+    if (role == null) {
+      final authController = AuthController();
+      role = await authController.restoreCurrentUserRole();
+    }
+
+    if (role == UserRole.lecturer) {
+      final user = Supabase.instance.client.auth.currentUser;
+      lecturerName = user?.userMetadata?['full_name'] as String?;
+    }
+
+    _controller.loadTimetable(role: role ?? UserRole.student, lecturerName: lecturerName);
   }
 
   @override
   void dispose() {
     _tabController.dispose();
+    _controller.dispose();
     super.dispose();
   }
 
@@ -48,6 +86,23 @@ class _TimetableScreenState extends State<TimetableScreen>
                     fontSize: 24,
                   ),
                 ),
+                const SizedBox(width: 8),
+                if (widget.userRole == UserRole.admin)
+                  IconButton(
+                    onPressed: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => const AdminTimetableManagementScreen(),
+                        ),
+                      );
+                    },
+                    icon: const Icon(
+                      Icons.settings_suggest_rounded,
+                      color: Color(0xFFF58220),
+                      size: 20,
+                    ),
+                    tooltip: 'Manage Timetable',
+                  ),
                 const Spacer(),
                 Container(
                   padding: const EdgeInsets.symmetric(
@@ -59,32 +114,13 @@ class _TimetableScreenState extends State<TimetableScreen>
                     color: const Color(0x1AF58220),
                   ),
                   child: const Text(
-                    'March 2026',
+                    'Spring 2026',
                     style: TextStyle(
                       color: Color(0xFFF58220),
                       fontWeight: FontWeight.w700,
                     ),
                   ),
                 ),
-              ],
-            ),
-          ),
-          Container(
-            margin: const EdgeInsets.fromLTRB(20, 12, 20, 0),
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(18),
-              color: Colors.white.withValues(alpha: 0.04),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: const [
-                _DateCell(day: 'MON', date: '18', selected: false),
-                _DateCell(day: 'TUE', date: '19', selected: false),
-                _DateCell(day: 'WED', date: '20', selected: true),
-                _DateCell(day: 'THU', date: '21', selected: false),
-                _DateCell(day: 'FRI', date: '22', selected: false),
               ],
             ),
           ),
@@ -116,9 +152,27 @@ class _TimetableScreenState extends State<TimetableScreen>
           ),
           const SizedBox(height: 16),
           Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              children: days.map((day) => _buildDaySchedule(day)).toList(),
+            child: ListenableBuilder(
+              listenable: _controller,
+              builder: (context, _) {
+                if (_controller.isLoading) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                
+                if (_controller.error != null) {
+                  return Center(
+                    child: Text(
+                      'Error: ${_controller.error}',
+                      style: const TextStyle(color: Colors.red),
+                    ),
+                  );
+                }
+
+                return TabBarView(
+                  controller: _tabController,
+                  children: days.map((day) => _buildDaySchedule(day)).toList(),
+                );
+              },
             ),
           ),
         ],
@@ -127,7 +181,7 @@ class _TimetableScreenState extends State<TimetableScreen>
   }
 
   Widget _buildDaySchedule(String day) {
-    final schedule = _getScheduleForDay(day);
+    final schedule = _controller.getSchedulesForDay(day);
 
     return AnimatedOpacity(
       opacity: 1,
@@ -137,306 +191,182 @@ class _TimetableScreenState extends State<TimetableScreen>
         children: schedule.isEmpty
             ? [
                 Padding(
-                  padding: const EdgeInsets.only(top: 40),
+                  padding: const EdgeInsets.only(top: 80),
                   child: Center(
-                    child: Text(
-                      'No classes scheduled',
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.5),
-                        fontSize: 16,
-                      ),
+                    child: Column(
+                      children: [
+                        Icon(
+                          Icons.calendar_today_outlined,
+                          size: 64,
+                          color: Colors.white.withValues(alpha: 0.2),
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'No classes scheduled for $day',
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.5),
+                            fontSize: 16,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
               ]
-            : [
-                ...schedule.map((session) => _buildTimeSlot(session)),
-                const SizedBox(height: 8),
-                const _ScheduleTypeCard(
-                  title: 'Department Event',
-                  subtitle: 'AI Seminar at Innovation Hall • 4:00 PM',
-                  icon: Icons.event_available_rounded,
-                ),
-                const _ScheduleTypeCard(
-                  title: 'Lecture Reminder',
-                  subtitle: 'Software Engineering Lab • Bring laptop',
-                  icon: Icons.menu_book_rounded,
-                ),
-              ],
+            : schedule.map((session) => _buildTimeSlot(session)).toList(),
       ),
     );
   }
 
-  Widget _buildTimeSlot(Map<String, String> session) {
+  Widget _buildTimeSlot(ScheduleItem session) {
+    // Determine if this is a "primary" card for the user (enrolled student or assigned lecturer)
+    final bool isUserSession = session.isEnrolled;
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 300),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          gradient: const LinearGradient(
-            colors: [Color(0xFF111726), Color(0xFF1B1F2B)],
-          ),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(8),
-                    color: const Color(0xFFF59E0B).withValues(alpha: 0.2),
-                  ),
-                  child: Text(
-                    session['time']!,
-                    style: const TextStyle(
-                      color: Color(0xFFF59E0B),
-                      fontWeight: FontWeight.w600,
-                      fontSize: 12,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    session['course']!,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 14,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Icon(
-                  Icons.location_on_outlined,
-                  size: 16,
-                  color: Colors.white.withValues(alpha: 0.6),
-                ),
-                const SizedBox(width: 6),
-                Expanded(
-                  child: Text(
-                    session['location']!,
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.7),
-                      fontSize: 13,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 4),
-            Row(
-              children: [
-                Icon(
-                  Icons.person_outline,
-                  size: 16,
-                  color: Colors.white.withValues(alpha: 0.6),
-                ),
-                const SizedBox(width: 6),
-                Expanded(
-                  child: Text(
-                    session['instructor']!,
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.7),
-                      fontSize: 13,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  List<Map<String, String>> _getScheduleForDay(String day) {
-    const schedule = {
-      'Monday': [
-        {
-          'time': '09:00 - 10:30',
-          'course': 'Data Structures',
-          'location': 'Room 201',
-          'instructor': 'Dr. Johnson',
-        },
-        {
-          'time': '11:00 - 12:30',
-          'course': 'Algorithms',
-          'location': 'Room 405',
-          'instructor': 'Prof. Smith',
-        },
-        {
-          'time': '14:00 - 15:30',
-          'course': 'Database Systems',
-          'location': 'Lab 102',
-          'instructor': 'Dr. Williams',
-        },
-      ],
-      'Tuesday': [
-        {
-          'time': '10:00 - 11:30',
-          'course': 'Web Development',
-          'location': 'Room 301',
-          'instructor': 'Eng. Davis',
-        },
-        {
-          'time': '13:00 - 14:30',
-          'course': 'Mobile Apps',
-          'location': 'Lab 201',
-          'instructor': 'Dr. Brown',
-        },
-      ],
-      'Wednesday': [
-        {
-          'time': '09:00 - 10:30',
-          'course': 'Operating Systems',
-          'location': 'Room 501',
-          'instructor': 'Prof. Miller',
-        },
-        {
-          'time': '15:00 - 16:30',
-          'course': 'Software Engineering',
-          'location': 'Room 202',
-          'instructor': 'Dr. Wilson',
-        },
-      ],
-      'Thursday': [
-        {
-          'time': '10:00 - 11:30',
-          'course': 'Machine Learning',
-          'location': 'Room 601',
-          'instructor': 'Dr. Anderson',
-        },
-        {
-          'time': '14:00 - 15:30',
-          'course': 'Networking',
-          'location': 'Lab 301',
-          'instructor': 'Eng. Taylor',
-        },
-      ],
-      'Friday': [
-        {
-          'time': '09:00 - 10:30',
-          'course': 'Project Lab',
-          'location': 'Lab 102',
-          'instructor': 'Dr. Johnson',
-        },
-      ],
-    };
-
-    return List<Map<String, String>>.from(schedule[day] ?? []);
-  }
-}
-
-class _DateCell extends StatelessWidget {
-  const _DateCell({
-    required this.day,
-    required this.date,
-    required this.selected,
-  });
-
-  final String day;
-  final String date;
-  final bool selected;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 52,
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
-        color: selected ? const Color(0x1AF58220) : Colors.transparent,
-      ),
-      child: Column(
+      child: Stack(
         children: [
-          Text(
-            day,
-            style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 10),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            date,
-            style: TextStyle(
-              color: selected ? const Color(0xFFF58220) : Colors.white,
-              fontSize: 14,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ScheduleTypeCard extends StatelessWidget {
-  const _ScheduleTypeCard({
-    required this.title,
-    required this.subtitle,
-    required this.icon,
-  });
-
-  final String title;
-  final String subtitle;
-  final IconData icon;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        color: Colors.white.withValues(alpha: 0.03),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 38,
-            height: 38,
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 300),
+            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(10),
-              color: const Color(0x1AF58220),
+              borderRadius: BorderRadius.circular(16),
+              gradient: LinearGradient(
+                colors: isUserSession
+                    ? [const Color(0xFF1E293B), const Color(0xFF0F172A)]
+                    : [const Color(0xFF111726), const Color(0xFF1B1F2B)],
+              ),
+              border: Border.all(
+                color: isUserSession
+                    ? const Color(0xFFF58220).withValues(alpha: 0.3)
+                    : Colors.white.withValues(alpha: 0.08),
+                width: isUserSession ? 1.5 : 1,
+              ),
             ),
-            child: Icon(icon, color: const Color(0xFFF59E0B), size: 20),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 13,
-                  ),
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(8),
+                        color: (isUserSession ? const Color(0xFFF58220) : const Color(0xFFF59E0B))
+                            .withValues(alpha: 0.2),
+                      ),
+                      child: Text(
+                        session.timeRange,
+                        style: TextStyle(
+                          color: isUserSession ? const Color(0xFFF58220) : const Color(0xFFF59E0B),
+                          fontWeight: FontWeight.w600,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        '${session.courseCode}: ${session.courseName}',
+                        style: TextStyle(
+                          color: isUserSession ? Colors.white : Colors.white.withValues(alpha: 0.8),
+                          fontWeight: isUserSession ? FontWeight.w700 : FontWeight.w600,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 3),
-                Text(
-                  subtitle,
-                  style: const TextStyle(
-                    color: Color(0xFF94A3B8),
-                    fontSize: 12,
+                const SizedBox(height: 12),
+                if (session.hall != null)
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.location_on_outlined,
+                        size: 16,
+                        color: Colors.white.withValues(alpha: 0.6),
+                      ),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          session.hall!,
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.7),
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ),
+                const SizedBox(height: 6),
+                if (session.lecturer != null)
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.person_outline,
+                        size: 16,
+                        color: Colors.white.withValues(alpha: 0.6),
+                      ),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          session.lecturer!,
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.7),
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                if (session.groupName != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.05),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        session.groupName!,
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.5),
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ),
               ],
             ),
           ),
+          if (isUserSession)
+            Positioned(
+              top: 0,
+              left: 0,
+              child: Container(
+                width: 40,
+                height: 40,
+                decoration: const BoxDecoration(
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(16),
+                    bottomRight: Radius.circular(40),
+                  ),
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      Color(0xFFFF9D42),
+                      Color(0x00FF9D42),
+                    ],
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
     );

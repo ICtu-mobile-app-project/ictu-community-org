@@ -1,11 +1,11 @@
 // deno-lint-ignore-file no-explicit-any
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-type UserRole = 'student' | 'lecturer' | 'delegate';
+type UserRole = 'student' | 'lecturer' | 'delegate' | 'admin';
 const SCHOOL_DOMAIN = '@ictuniversity.edu.cm';
 
 function isAllowedRole(value: string): value is UserRole {
-  return value === 'student' || value === 'lecturer' || value === 'delegate';
+  return value === 'student' || value === 'lecturer' || value === 'delegate' || value === 'admin';
 }
 
 function isSchoolEmail(email: string): boolean {
@@ -141,4 +141,3 @@ Deno.serve(async (request: Request) => {
 
   return Response.json({ ok: true }, { status: 200 });
 });
-

@@ -80,37 +80,13 @@ Deno.serve(async (request: Request) => {
     const from = page * limit;
     const to = from + limit - 1;
 
-    // Fetch user program to determine major prefix
-    const { data: profile, error: profileError } = await adminClient
-      .from('profiles')
-      .select('program')
-      .eq('id', user.id)
-      .single();
-
-    if (profileError) return Response.json({ ok: false, error: 'Could not fetch user profile' }, { status: 400 });
-
-    const program = profile?.program || '';
-    let majorPrefix = '';
-
-    if (program.includes('Software Engineering')) majorPrefix = 'SEN';
-    else if (program.includes('Computer Science')) majorPrefix = 'CSC';
-    else if (program.includes('Information Systems')) majorPrefix = 'ISN';
-    else if (program.includes('Cyber Security')) majorPrefix = 'CYS';
-    else if (program.includes('ICT')) majorPrefix = 'ICT';
-
     let query = adminClient
       .from('courses')
       .select('id, course_code, title, description, semester, created_at, profiles:lecturer_id(full_name)')
       .order('course_code', { ascending: true })
       .range(from, to);
 
-    // Filter by major prefix if identified
-    if (majorPrefix) {
-      query = query.ilike('course_code', `${majorPrefix}%`);
-    }
-
     if (search.length > 0) {
-      // Note: If using filter by major prefix, the search is also restricted to that major
       query = query.or(`course_code.ilike.%${search}%,title.ilike.%${search}%`);
     }
 

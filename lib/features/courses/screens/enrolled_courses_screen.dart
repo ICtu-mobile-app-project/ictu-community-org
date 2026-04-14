@@ -147,7 +147,7 @@ class _EnrolledCoursesScreenState extends State<EnrolledCoursesScreen> {
                   )
                 else
                   SliverPadding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                    padding: const EdgeInsets.fromLTRB(20, 16, 20, 120),
                     sliver: SliverList(
                       delegate: SliverChildBuilderDelegate(
                         (context, index) {
@@ -170,7 +170,6 @@ class _EnrolledCoursesScreenState extends State<EnrolledCoursesScreen> {
                       ),
                     ),
                   ),
-                const SliverToBoxAdapter(child: SizedBox(height: 100)),
               ],
             ),
           );

@@ -27,7 +27,9 @@ class TimetableController extends ChangeNotifier {
     try {
       if (role == UserRole.admin) {
         _allSchedules = await _repository.getAllSchedules();
-      } else if (role == UserRole.lecturer && lecturerName != null) {
+      } else if (role == UserRole.lecturer) {
+        // Lecturers should use their specific repo method (handles "isMine" highlights)
+        // Pass lecturerName if available for better highlight accuracy
         _allSchedules = await _repository.getLecturerTimetable(lecturerName);
       } else {
         _allSchedules = await _repository.getStudentTimetable();

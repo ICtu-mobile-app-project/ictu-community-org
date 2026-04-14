@@ -215,6 +215,9 @@ class _TimetableScreenState extends State<TimetableScreen>
   }
 
   Widget _buildTimeSlot(ScheduleItem session) {
+    // Determine if this is a "primary" card for the user (enrolled student or assigned lecturer)
+    final bool isUserSession = session.isEnrolled;
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Stack(
@@ -224,10 +227,17 @@ class _TimetableScreenState extends State<TimetableScreen>
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(16),
-              gradient: const LinearGradient(
-                colors: [Color(0xFF111726), Color(0xFF1B1F2B)],
+              gradient: LinearGradient(
+                colors: isUserSession
+                    ? [const Color(0xFF1E293B), const Color(0xFF0F172A)]
+                    : [const Color(0xFF111726), const Color(0xFF1B1F2B)],
               ),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+              border: Border.all(
+                color: isUserSession
+                    ? const Color(0xFFF58220).withValues(alpha: 0.3)
+                    : Colors.white.withValues(alpha: 0.08),
+                width: isUserSession ? 1.5 : 1,
+              ),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -241,12 +251,13 @@ class _TimetableScreenState extends State<TimetableScreen>
                       ),
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(8),
-                        color: const Color(0xFFF59E0B).withValues(alpha: 0.2),
+                        color: (isUserSession ? const Color(0xFFF58220) : const Color(0xFFF59E0B))
+                            .withValues(alpha: 0.2),
                       ),
                       child: Text(
                         session.timeRange,
-                        style: const TextStyle(
-                          color: Color(0xFFF59E0B),
+                        style: TextStyle(
+                          color: isUserSession ? const Color(0xFFF58220) : const Color(0xFFF59E0B),
                           fontWeight: FontWeight.w600,
                           fontSize: 12,
                         ),
@@ -256,9 +267,9 @@ class _TimetableScreenState extends State<TimetableScreen>
                     Expanded(
                       child: Text(
                         '${session.courseCode}: ${session.courseName}',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w600,
+                        style: TextStyle(
+                          color: isUserSession ? Colors.white : Colors.white.withValues(alpha: 0.8),
+                          fontWeight: isUserSession ? FontWeight.w700 : FontWeight.w600,
                           fontSize: 14,
                         ),
                       ),
@@ -329,7 +340,7 @@ class _TimetableScreenState extends State<TimetableScreen>
               ],
             ),
           ),
-          if (session.isEnrolled)
+          if (isUserSession)
             Positioned(
               top: 0,
               left: 0,

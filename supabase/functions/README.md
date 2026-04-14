@@ -10,6 +10,8 @@ This folder contains auth, courses, notes, and AI transcription orchestration fu
 - `alerts-api`: handles alerts CRUD for assignments, CAs, exams, and notices.
 - `notes-api`: handles note CRUD against `public.notes`.
 - `transcribe-audio`: downloads lecture audio from Storage, sends it to Gladia, and writes transcript/summary/result JSON to `public.lectures`.
+- `courses-api`: lecturer course management actions (create/list/details/update/delete, students, delegates).
+- `notes-api`: notes metadata and signed-download flows for lecturers, delegates, and students.
 
 ## Required Function Secrets
 
@@ -32,6 +34,8 @@ supabase functions deploy create-course
 supabase functions deploy alerts-api
 supabase functions deploy notes-api
 supabase functions deploy transcribe-audio
+supabase functions deploy courses-api
+supabase functions deploy notes-api
 ```
 
 ## Local Serve
@@ -43,5 +47,7 @@ supabase functions serve create-course --env-file .env.local
 supabase functions serve alerts-api --env-file .env.local
 supabase functions serve notes-api --env-file .env.local
 supabase functions serve transcribe-audio --env-file .env.local
+supabase functions serve courses-api --env-file .env.local
+supabase functions serve notes-api --env-file .env.local
 ```
 

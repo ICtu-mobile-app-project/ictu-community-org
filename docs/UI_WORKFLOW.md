@@ -70,3 +70,89 @@ The transcription feature allows lecturers to record or upload lecture audio, wh
 *   **Domain Lock**: The signup screen enforces `@ictuniversity.edu.cm` or `@student.ictu-university.cm` emails.
 *   **Session Persistence**: On app restart, `SplashScreen` checks `Supabase.instance.client.auth.currentSession`. If valid, it skips login. If invalid or expired, it routes to `WelcomeScreen`.
 
+<<<<<<< Updated upstream
+=======
+## Upload Tab
+1. User picks a file or uses pre-filled recording from Record tab queue.
+2. User optionally sets course code.
+3. User taps `Transcribe`.
+4. UI queue states:
+   - selected file
+   - uploaded object path
+   - created lecture ID
+5. For recordings longer than `30 minutes`, UI shows segmented-processing notice.
+6. During processing, button displays `Working...`.
+7. On success, UI renders title + summary tile from `transcription_result`.
+8. On failure, error banner displays user-friendly message.
+
+---
+
+# UI Workflow - Lecturer Courses Management
+
+## My Courses Screen (`LecturerMyCoursesScreen`)
+1. Lecturer opens `Courses` tab from bottom navigation.
+2. Screen shows responsive grid:
+   - 2 columns on phone
+   - 3 columns on tablet
+3. Each card displays:
+   - course code (bold, orange)
+   - title
+   - students count
+   - lectures count
+   - last activity timestamp
+4. Lecturer can:
+   - search by code/title (debounced)
+   - pull to refresh
+   - scroll to auto-load next page (20 items/page)
+5. FAB `Create New Course` opens `CreateCourseScreen`.
+
+## Create Course Screen (`CreateCourseScreen`)
+1. Lecturer fills:
+   - course code (auto-uppercase, XXX####)
+   - title (required)
+   - description (optional)
+   - semester dropdown
+2. Suggestion list offers ICTU sample courses.
+3. On submit, app validates:
+   - code format
+   - code uniqueness
+   - department eligibility
+4. On success:
+   - success snackbar
+   - navigate back and open Course Details.
+
+## Course Details Screen (`LecturerCourseDetailsScreen`)
+1. Header shows code/title with edit and delete actions.
+2. Stats row shows students, lectures, notes, alerts.
+3. Tabs:
+   - `Content` (overview of lectures/notes/alerts)
+   - `Students` (list, add, remove, CSV batch)
+   - `Delegates` (assign, edit permissions, remove)
+   - `Settings` (edit/archive/delete)
+4. Delete button is disabled when course has content.
+
+## Students Management
+1. `Add Students` opens search by email with multi-select.
+2. `CSV Upload` parses email list from csv file and enrolls matches.
+3. Student rows support remove action (swipe and icon).
+
+## Delegates Management
+1. `Assign Delegate` selects an enrolled student.
+2. Permissions toggles:
+   - can upload notes
+   - can edit notes
+   - can delete notes
+3. Existing delegates can be edited or removed.
+
+## Course Notes Workflow
+1. Lecturer opens Course Details -> Content -> `Open Notes`.
+2. Notes screen supports search and sort (`Newest`, `Oldest`, `Title A-Z`).
+3. Lecturer/delegate (with upload permission) taps `Upload Note`:
+   - enters title/description
+   - picks PDF/DOC/DOCX file (<=10MB)
+   - app uploads to bucket `lecture-notes` path `notes/<uid>/<timestamp>_<file>`
+   - app calls `notes-api` action `create_note`.
+4. Students open notes list as read-only and use download button.
+5. Download button calls `notes-api` action `create_download_url` and opens signed URL.
+
+>>>>>>> Stashed changes

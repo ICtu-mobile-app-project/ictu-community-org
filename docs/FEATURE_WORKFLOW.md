@@ -74,3 +74,54 @@ To handle poor connectivity, the app implements a **Write-Through/Read-Around** 
 *   When a student opens a note, the app calculates the MD5 hash of the local file (if it exists) and compares it with the server's version. 
 *   It only re-downloads if the lecturer has updated the file.
 
+<<<<<<< Updated upstream
+=======
+## Failure Path
+- If any pipeline step fails after lecture creation, row is updated to:
+  - `status=failed`
+  - `error_message=<reason>`
+
+---
+
+# Feature Workflow - Lecturer Courses Management
+
+## End-to-End Flow
+1. Lecturer opens `My Courses`.
+2. `LecturerCoursesController` fetches paginated data (`limit=20`) via repository.
+3. Search input is debounced and re-queries repository.
+4. Lecturer creates new course:
+   - validates course code format (`^[A-Z]{3}\d{4}$`)
+   - checks uniqueness
+   - verifies department eligibility
+5. Repository persists course metadata and returns created course.
+6. Course details screen loads tabs in parallel concerns:
+   - content metrics
+   - enrolled students
+   - delegates
+   - course settings
+7. Students tab supports:
+   - search by email and multi-enroll
+   - remove enrollment
+   - CSV batch enrollment
+8. Delegates tab supports:
+   - assign from enrolled students
+   - permission updates
+   - delegate removal
+9. Delete course is blocked if course has content (lectures/notes/alerts).
+
+## Error Handling Path
+- Validation errors are shown inline/snackbar in UI.
+- Repository exceptions are surfaced as user-friendly messages.
+- Unsafe destructive actions require confirmation dialogs.
+
+## Course Notes Feature Flow
+1. Lecturer/delegate uploads note file to private Storage bucket `lecture-notes`.
+2. Flutter calls `notes-api` with `create_note` including metadata + storage path.
+3. Edge function validates role/course membership/permissions:
+   - lecturer owner OR delegate with `can_upload_notes`.
+4. Edge function writes to `public.lecture_notes`.
+5. Both students and lecturers call `list_notes` to view notes for enrolled courses.
+6. Download uses `create_download_url` signed URL flow (bucket remains private).
+7. Edit/delete note actions are permission-gated by delegate flags and lecturer ownership.
+
+>>>>>>> Stashed changes

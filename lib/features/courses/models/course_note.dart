@@ -5,6 +5,7 @@ class CourseNote {
   const CourseNote({
     required this.id,
     required this.courseId,
+<<<<<<< Updated upstream
     required this.courseCode,
     required this.title,
     required this.description,
@@ -13,10 +14,21 @@ class CourseNote {
     required this.fileSizeBytes,
     required this.uploadedByName,
     required this.uploadedAt,
+=======
+    required this.title,
+    required this.description,
+    required this.contentUrl,
+    required this.fileName,
+    required this.fileSizeBytes,
+    required this.uploadedBy,
+    required this.uploadedByName,
+    required this.createdAt,
+>>>>>>> Stashed changes
   });
 
   final String id;
   final String courseId;
+<<<<<<< Updated upstream
   final String courseCode;
   final String title;
   final String description;
@@ -29,6 +41,18 @@ class CourseNote {
   bool get isPdf => fileName.toLowerCase().endsWith('.pdf');
 
   String get fileSizeLabel {
+=======
+  final String title;
+  final String description;
+  final String contentUrl;
+  final String fileName;
+  final int fileSizeBytes;
+  final String uploadedBy;
+  final String uploadedByName;
+  final DateTime createdAt;
+
+  String get sizeLabel {
+>>>>>>> Stashed changes
     if (fileSizeBytes < 1024) {
       return '$fileSizeBytes B';
     }
@@ -37,6 +61,7 @@ class CourseNote {
     }
     return '${(fileSizeBytes / (1024 * 1024)).toStringAsFixed(1)} MB';
   }
+<<<<<<< Updated upstream
 
   factory CourseNote.fromJson(Map<String, dynamic> json) {
     return CourseNote(
@@ -80,4 +105,6 @@ class LecturerCourseOption {
   final String id;
   final String code;
   final String title;
+=======
+>>>>>>> Stashed changes
 }

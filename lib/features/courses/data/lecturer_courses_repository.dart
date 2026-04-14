@@ -1,3 +1,4 @@
+<<<<<<< Updated upstream
 import 'dart:convert';
 
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -199,3 +200,83 @@ class _CachedCoursesPage {
 
 // Remove all demo/mock data for courses
 final List<LecturerCourseOverview> _demoCourses = <LecturerCourseOverview>[];
+=======
+import '../models/course_delegate.dart';
+import '../models/course_page.dart';
+import '../models/course_student.dart';
+import '../models/lecturer_course.dart';
+
+abstract class LecturerCoursesRepository {
+  Future<CoursePage> getMyCourses({
+    required String lecturerId,
+    required int page,
+    int limit = 20,
+    String searchQuery = '',
+  });
+
+  Future<bool> courseCodeExists(String courseCode);
+
+  Future<bool> canTeachDepartment({
+    required String lecturerId,
+    required String courseCode,
+  });
+
+  Future<LecturerCourse> createCourse({
+    required String lecturerId,
+    required String lecturerName,
+    required String courseCode,
+    required String title,
+    required String description,
+    required String semester,
+  });
+
+  Future<LecturerCourse> getCourseDetails(String courseId);
+
+  Future<LecturerCourse> updateCourse({
+    required String courseId,
+    required String title,
+    required String description,
+    required String semester,
+    required bool archived,
+  });
+
+  Future<void> deleteCourse(String courseId);
+
+  Future<List<CourseStudent>> getEnrolledStudents(String courseId);
+
+  Future<List<CourseStudent>> searchStudentsByEmail(String query);
+
+  Future<void> enrollStudents({
+    required String courseId,
+    required List<String> studentIds,
+  });
+
+  Future<void> removeStudent({
+    required String courseId,
+    required String studentId,
+  });
+
+  Future<List<CourseDelegate>> getDelegates(String courseId);
+
+  Future<CourseDelegate> assignDelegate({
+    required String courseId,
+    required String studentId,
+    required bool canUploadNotes,
+    required bool canEditNotes,
+    required bool canDeleteNotes,
+  });
+
+  Future<CourseDelegate> updateDelegatePermissions({
+    required String courseId,
+    required String delegateId,
+    required bool canUploadNotes,
+    required bool canEditNotes,
+    required bool canDeleteNotes,
+  });
+
+  Future<void> removeDelegate({
+    required String courseId,
+    required String delegateId,
+  });
+}
+>>>>>>> Stashed changes

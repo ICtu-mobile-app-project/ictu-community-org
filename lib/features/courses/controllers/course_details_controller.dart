@@ -1,13 +1,11 @@
 import 'dart:async';
-
 import 'package:flutter/foundation.dart';
-
 import '../data/student_courses_repository.dart';
 import '../models/student_course_overview.dart';
 
 class CourseDetailsController extends ChangeNotifier {
   CourseDetailsController({StudentCoursesRepository? repository})
-    : _repository = repository ?? StudentCoursesRepository();
+      : _repository = repository ?? StudentCoursesRepository();
 
   static const int pageSize = 20;
 
@@ -17,28 +15,34 @@ class CourseDetailsController extends ChangeNotifier {
   Timer? _debounce;
   bool _isLoadingInitial = false;
   bool _isLoadingMore = false;
+  bool _isWorking = false;
   bool _hasMore = true;
   String? _error;
   String _query = '';
   int _nextPage = 0;
   StudentCourseOverview? _selectedCourse;
+  bool _showOnlyMyCourses = false;
 
-  List<StudentCourseOverview> get courses =>
-      List<StudentCourseOverview>.unmodifiable(_courses);
+  List<StudentCourseOverview> get courses => List<StudentCourseOverview>.unmodifiable(_courses);
   bool get isLoadingInitial => _isLoadingInitial;
   bool get isLoadingMore => _isLoadingMore;
+  bool get isWorking => _isWorking;
   bool get hasMore => _hasMore;
   String? get error => _error;
   StudentCourseOverview? get selectedCourse => _selectedCourse;
+  bool get showOnlyMyCourses => _showOnlyMyCourses;
 
-  Future<void> loadInitial() => _load(reset: true);
+  Future<void> toggleMyCourses(bool value) async {
+    _showOnlyMyCourses = value;
+    await _load(reset: true);
+  }
 
-  Future<void> refresh() => _load(reset: true, forceRefresh: true);
+  Future<void> loadInitial({String? initialCourseId}) => _load(reset: true, initialCourseId: initialCourseId);
+
+  Future<void> refresh() => _load(reset: true);
 
   Future<void> loadMore() async {
-    if (_isLoadingInitial || _isLoadingMore || !_hasMore) {
-      return;
-    }
+    if (_isLoadingInitial || _isLoadingMore || !_hasMore) return;
     await _load(reset: false);
   }
 
@@ -50,12 +54,77 @@ class CourseDetailsController extends ChangeNotifier {
     });
   }
 
-  void selectCourse(StudentCourseOverview course) {
+  Future<void> selectCourse(StudentCourseOverview course) async {
     _selectedCourse = course;
     notifyListeners();
+
+    if (course.isEnrolled) {
+      await _loadCourseContent(course);
+    }
   }
 
-  Future<void> _load({required bool reset, bool forceRefresh = false}) async {
+  Future<void> enroll(StudentCourseOverview course) async {
+    _isWorking = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      await _repository.enrollInCourse(course.id);
+      
+      // Update local state
+      final index = _courses.indexWhere((c) => c.id == course.id);
+      if (index != -1) {
+        _courses[index] = _courses[index].copyWith(isEnrolled: true);
+        if (_selectedCourse?.id == course.id) {
+          _selectedCourse = _courses[index];
+        }
+      }
+      
+      await _loadCourseContent(_selectedCourse!);
+    } catch (e) {
+      _error = e.toString();
+    } finally {
+      _isWorking = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> _loadCourseContent(StudentCourseOverview course) async {
+    _isWorking = true;
+    notifyListeners();
+
+    try {
+      final data = await _repository.getCourseContent(course.id, course.code);
+      
+      final List<dynamic> notesJson = data['notes'] ?? [];
+      final List<dynamic> alertsJson = data['alerts'] ?? [];
+
+      final materials = notesJson.map((j) => CourseMaterialItem.fromNoteJson(j)).toList();
+      final deadlines = alertsJson.map((j) => CourseDeadlineItem.fromAlertJson(j)).toList();
+
+      final updatedCourse = course.copyWith(
+        materials: materials,
+        deadlines: deadlines,
+      );
+
+      // Update in list
+      final index = _courses.indexWhere((c) => c.id == course.id);
+      if (index != -1) {
+        _courses[index] = updatedCourse;
+      }
+      
+      if (_selectedCourse?.id == course.id) {
+        _selectedCourse = updatedCourse;
+      }
+    } catch (e) {
+      _error = 'Failed to load course content: $e';
+    } finally {
+      _isWorking = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> _load({required bool reset, String? initialCourseId}) async {
     if (reset) {
       _isLoadingInitial = true;
       _error = null;
@@ -69,35 +138,41 @@ class CourseDetailsController extends ChangeNotifier {
     }
 
     try {
-      final List<StudentCourseOverview> page = await _repository.getCourses(
-        page: _nextPage,
-        limit: pageSize,
-        searchQuery: _query,
-        forceRefresh: forceRefresh,
-      );
+      final List<StudentCourseOverview> page;
+      if (_showOnlyMyCourses) {
+        page = await _repository.getMyCourses();
+      } else {
+        page = await _repository.getAvailableCourses(
+          page: _nextPage,
+          limit: pageSize,
+          searchQuery: _query,
+        );
+      }
 
       if (reset) {
-        _courses
-          ..clear()
-          ..addAll(page);
-      } else {
-        _courses.addAll(page);
+        _courses.clear();
       }
+      _courses.addAll(page);
 
       _nextPage += 1;
       _hasMore = page.length == pageSize;
 
-      if (_courses.isEmpty) {
+      // Handle initial course selection
+      if (reset && _courses.isNotEmpty) {
+        if (initialCourseId != null) {
+          final found = _courses.firstWhere(
+            (c) => c.id == initialCourseId,
+            orElse: () => _courses.first,
+          );
+          await selectCourse(found);
+        } else if (_selectedCourse == null) {
+          await selectCourse(_courses.first);
+        }
+      } else if (_courses.isEmpty) {
         _selectedCourse = null;
-      } else {
-        final String? selectedId = _selectedCourse?.id;
-        _selectedCourse = _courses.firstWhere(
-          (StudentCourseOverview item) => item.id == selectedId,
-          orElse: () => _courses.first,
-        );
       }
-    } catch (_) {
-      _error = 'Unable to load courses right now. Please try again.';
+    } catch (e) {
+      _error = 'Unable to load courses: $e';
     } finally {
       _isLoadingInitial = false;
       _isLoadingMore = false;

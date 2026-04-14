@@ -1,7 +1,8 @@
 enum UserRole {
   student,
   lecturer,
-  delegateRole;
+  delegateRole,
+  admin;
 
   String get dbValue {
     switch (this) {
@@ -11,10 +12,13 @@ enum UserRole {
         return 'lecturer';
       case UserRole.delegateRole:
         return 'delegate';
+      case UserRole.admin:
+        return 'admin';
     }
   }
 
   bool get isDelegate => this == UserRole.delegateRole;
+  bool get isAdmin => this == UserRole.admin;
 
   static UserRole fromDb(String? value) {
     switch (value?.toLowerCase()) {
@@ -22,6 +26,8 @@ enum UserRole {
         return UserRole.lecturer;
       case 'delegate':
         return UserRole.delegateRole;
+      case 'admin':
+        return UserRole.admin;
       case 'student':
       default:
         return UserRole.student;

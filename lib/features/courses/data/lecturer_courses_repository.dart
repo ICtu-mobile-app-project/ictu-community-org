@@ -44,7 +44,17 @@ class LecturerCoursesRepository {
 
         dynamic request = _client
             .from('courses')
-            .select('id, course_code, title, created_at')
+            .select('''
+              id, 
+              course_code, 
+              title, 
+              description,
+              semester,
+              created_at,
+              students_count:course_enrollments(count),
+              notes_count:notes(count),
+              alerts_count:alerts(count)
+            ''')
             .eq('lecturer_id', userId)
             .order('created_at', ascending: false)
             .range(from, to);

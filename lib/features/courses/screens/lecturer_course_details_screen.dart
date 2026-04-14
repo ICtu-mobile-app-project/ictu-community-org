@@ -2,19 +2,16 @@ import 'package:flutter/material.dart';
 
 import '../../auth/models/user_role.dart';
 import '../../alerts/screens/lecturer_alerts_list_screen.dart';
+import '../models/lecturer_course_overview.dart';
 import 'course_notes_list_screen.dart';
 
 class LecturerCourseDetailsScreen extends StatefulWidget {
   const LecturerCourseDetailsScreen({
     super.key,
-    required this.courseId,
-    required this.courseCode,
-    required this.title,
+    required this.course,
   });
 
-  final String courseId;
-  final String courseCode;
-  final String title;
+  final LecturerCourseOverview course;
 
   @override
   State<LecturerCourseDetailsScreen> createState() =>
@@ -46,7 +43,7 @@ class _LecturerCourseDetailsScreenState
         backgroundColor: Colors.transparent,
         iconTheme: const IconThemeData(color: Colors.white),
         title: Text(
-          '${widget.courseCode} • ${widget.title}',
+          '${widget.course.code} • ${widget.course.title}',
           style: const TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.w700,
@@ -65,29 +62,23 @@ class _LecturerCourseDetailsScreenState
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
             child: Row(
-              children: const [
+              children: [
                 _StatsCard(
                   label: 'Students',
-                  value: '',
-                  color: Color(0xFF38BDF8),
+                  value: widget.course.students.toString(),
+                  color: const Color(0xFF38BDF8),
                 ),
-                SizedBox(width: 8),
-                _StatsCard(
-                  label: 'Lectures',
-                  value: '',
-                  color: Color(0xFFA78BFA),
-                ),
-                SizedBox(width: 8),
+                const SizedBox(width: 8),
                 _StatsCard(
                   label: 'Notes',
-                  value: '',
-                  color: Color(0xFFF58220),
+                  value: widget.course.notes.toString(),
+                  color: const Color(0xFFF58220),
                 ),
-                SizedBox(width: 8),
+                const SizedBox(width: 8),
                 _StatsCard(
                   label: 'Alerts',
-                  value: '',
-                  color: Color(0xFFFB7185),
+                  value: widget.course.alerts.toString(),
+                  color: const Color(0xFFFB7185),
                 ),
               ],
             ),
@@ -121,7 +112,58 @@ class _LecturerCourseDetailsScreenState
                 ListView(
                   padding: const EdgeInsets.all(16),
                   children: [
-                    // Remove mock data tiles
+                    _ContentSection(
+                      title: 'Course Description',
+                      content: widget.course.description.isEmpty 
+                        ? 'No description provided for this course.' 
+                        : widget.course.description,
+                    ),
+                    const SizedBox(height: 24),
+                    const Text(
+                      'Management',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 18,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    _GlassTile(
+                      icon: Icons.description_rounded,
+                      title: 'Course Notes',
+                      subtitle: 'Upload and manage study materials',
+                      onTap: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder: (_) => CourseNotesListScreen(
+                              courseId: widget.course.id,
+                              courseCode: widget.course.code,
+                              role: UserRole.lecturer,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 10),
+                    _GlassTile(
+                      icon: Icons.notification_important_rounded,
+                      title: 'Course Alerts',
+                      subtitle: 'Post assignments, exams, and announcements',
+                      onTap: () {
+                         Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder: (_) => LecturerAlertsListScreen(
+                              courseCode: widget.course.code,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 24),
+                    _ContentSection(
+                      title: 'General Info',
+                      content: 'Semester: ${widget.course.semester}\nCreated: ${_fmtDate(widget.course.lastActivity)}',
+                    ),
                   ],
                 ),
                 const _SimpleTabBody(
@@ -142,6 +184,45 @@ class _LecturerCourseDetailsScreenState
           ),
         ],
       ),
+    );
+  }
+
+  String _fmtDate(DateTime value) {
+    final String y = value.year.toString();
+    final String m = value.month.toString().padLeft(2, '0');
+    final String d = value.day.toString().padLeft(2, '0');
+    return '$y-$m-$d';
+  }
+}
+
+class _ContentSection extends StatelessWidget {
+  const _ContentSection({required this.title, required this.content});
+
+  final String title;
+  final String content;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w800,
+            fontSize: 18,
+          ),
+        ),
+        const SizedBox(height: 10),
+        Text(
+          content,
+          style: const TextStyle(
+            color: Color(0xFF94A3B8),
+            height: 1.5,
+          ),
+        ),
+      ],
     );
   }
 }

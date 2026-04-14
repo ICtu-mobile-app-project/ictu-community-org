@@ -141,19 +141,23 @@ class _LecturerCoursesScreenState extends State<LecturerCoursesScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF0A0C10),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () async {
-          final bool? created = await Navigator.of(context).push<bool>(
-            MaterialPageRoute<bool>(builder: (_) => const CreateCourseScreen()),
-          );
-          if (created == true) {
-            await _loadCourses(reset: true, forceRefresh: true);
-          }
-        },
-        backgroundColor: const Color(0xFFF58220),
-        foregroundColor: Colors.white,
-        icon: const Icon(Icons.add_rounded),
-        label: const Text('Create New Course'),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(bottom: 80),
+        child: FloatingActionButton.extended(
+          onPressed: () async {
+            final bool? created = await Navigator.of(context).push<bool>(
+              MaterialPageRoute<bool>(builder: (_) => const CreateCourseScreen()),
+            );
+            if (created == true) {
+              await _loadCourses(reset: true, forceRefresh: true);
+            }
+          },
+          backgroundColor: const Color(0xFFF58220),
+          foregroundColor: Colors.white,
+          icon: const Icon(Icons.add_rounded),
+          label: const Text('Create New Course'),
+        ),
       ),
       body: SafeArea(
         child: Padding(
@@ -269,7 +273,12 @@ class _LecturerCoursesScreenState extends State<LecturerCoursesScreen> {
 
                           return GridView.builder(
                             controller: _scrollController,
-                            padding: const EdgeInsets.only(bottom: 120),
+                            padding: const EdgeInsets.only(
+                              left: 0,
+                              right: 0,
+                              top: 0,
+                              bottom: 120,
+                            ),
                             itemCount: _allCourses.length + (_isLoadingMore ? 1 : 0),
                             gridDelegate:
                                 SliverGridDelegateWithFixedCrossAxisCount(
@@ -295,9 +304,7 @@ class _LecturerCoursesScreenState extends State<LecturerCoursesScreen> {
                                     MaterialPageRoute<void>(
                                       builder: (_) =>
                                           LecturerCourseDetailsScreen(
-                                            courseId: item.id,
-                                            courseCode: item.code,
-                                            title: item.title,
+                                            course: item,
                                           ),
                                     ),
                                   );
@@ -375,7 +382,7 @@ class _CourseCard extends StatelessWidget {
             ),
             const Spacer(),
             _meta('Students', '${data.students}'),
-            _meta('Lectures', '${data.lectures}'),
+            _meta('Notes', '${data.notes}'),
             const SizedBox(height: 4),
             Text(
               'Last: ${_fmt(data.lastActivity)}',

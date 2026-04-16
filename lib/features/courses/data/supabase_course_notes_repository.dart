@@ -2,14 +2,17 @@ import 'dart:convert';
 
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../core/services/offline_service.dart';
 import '../models/course_note.dart';
 import 'course_notes_repository.dart';
 
 class SupabaseCourseNotesRepository implements CourseNotesRepository {
-  SupabaseCourseNotesRepository({SupabaseClient? client})
-    : _client = client ?? Supabase.instance.client;
+  SupabaseCourseNotesRepository({SupabaseClient? client, OfflineService? offlineService})
+    : _client = client ?? Supabase.instance.client,
+      _offlineService = offlineService ?? OfflineService();
 
   final SupabaseClient _client;
+  final OfflineService _offlineService;
 
   @override
   Future<List<CourseNote>> listNotes({
@@ -17,22 +20,38 @@ class SupabaseCourseNotesRepository implements CourseNotesRepository {
     String searchQuery = '',
     String sort = 'newest',
   }) async {
-    final Map<String, dynamic> response = await _call(
-      action: 'list_notes',
-      payload: <String, dynamic>{
-        'courseId': courseId,
-        'search': searchQuery,
-        'sort': sort,
-      },
-    );
+    try {
+      final Map<String, dynamic> response = await _call(
+        action: 'list_notes',
+        payload: <String, dynamic>{
+          'courseId': courseId,
+          'search': searchQuery,
+          'sort': sort,
+        },
+      );
 
-    final List<dynamic> rows =
-        (_asJsonMap(response['data'])['items'] as List<dynamic>? ??
-        <dynamic>[]);
+      final List<dynamic> rows =
+          (_asJsonMap(response['data'])['items'] as List<dynamic>? ??
+          <dynamic>[]);
 
-    return rows
-        .map((dynamic row) => _mapNote(_asJsonMap(row)))
-        .toList(growable: false);
+      final notes = rows
+          .map((dynamic row) => _mapNote(_asJsonMap(row)))
+          .toList(growable: false);
+
+      // Cache notes if it's a full list (no search)
+      if (searchQuery.isEmpty) {
+        await _offlineService.cacheNotes(courseId, notes.map((e) => e.toJson()).toList());
+      }
+
+      return notes;
+    } catch (e) {
+      // Fallback to cache on error
+      final cached = await _offlineService.getCachedNotes(courseId);
+      if (cached != null) {
+        return cached.map((e) => CourseNote.fromJson(e)).toList();
+      }
+      rethrow;
+    }
   }
 
   @override

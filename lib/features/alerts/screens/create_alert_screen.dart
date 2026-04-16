@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../courses/data/notes_service.dart';
 import '../../courses/models/course_note.dart';
+import '../../courses/models/lecturer_course_option.dart';
 import '../data/alerts_service.dart';
 import '../models/alert_item.dart';
 

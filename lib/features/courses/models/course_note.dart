@@ -5,16 +5,7 @@ class CourseNote {
   const CourseNote({
     required this.id,
     required this.courseId,
-<<<<<<< Updated upstream
-    required this.courseCode,
-    required this.title,
-    required this.description,
-    required this.fileName,
-    required this.filePath,
-    required this.fileSizeBytes,
-    required this.uploadedByName,
-    required this.uploadedAt,
-=======
+    this.courseCode = '',
     required this.title,
     required this.description,
     required this.contentUrl,
@@ -23,25 +14,11 @@ class CourseNote {
     required this.uploadedBy,
     required this.uploadedByName,
     required this.createdAt,
->>>>>>> Stashed changes
   });
 
   final String id;
   final String courseId;
-<<<<<<< Updated upstream
   final String courseCode;
-  final String title;
-  final String description;
-  final String fileName;
-  final String filePath;
-  final int fileSizeBytes;
-  final String uploadedByName;
-  final DateTime uploadedAt;
-
-  bool get isPdf => fileName.toLowerCase().endsWith('.pdf');
-
-  String get fileSizeLabel {
-=======
   final String title;
   final String description;
   final String contentUrl;
@@ -51,8 +28,9 @@ class CourseNote {
   final String uploadedByName;
   final DateTime createdAt;
 
+  bool get isPdf => fileName.toLowerCase().endsWith('.pdf');
+
   String get sizeLabel {
->>>>>>> Stashed changes
     if (fileSizeBytes < 1024) {
       return '$fileSizeBytes B';
     }
@@ -61,20 +39,26 @@ class CourseNote {
     }
     return '${(fileSizeBytes / (1024 * 1024)).toStringAsFixed(1)} MB';
   }
-<<<<<<< Updated upstream
+
+  String get fileSizeLabel => sizeLabel;
+
+  DateTime get uploadedAt => createdAt;
+
+  String get filePath => contentUrl;
 
   factory CourseNote.fromJson(Map<String, dynamic> json) {
     return CourseNote(
-      id: (json['id'] ?? '').toString(),
-      courseId: (json['course_id'] ?? '').toString(),
-      courseCode: (json['course_code'] ?? '').toString(),
+      id: (json['id'] ?? json['noteId'] ?? '').toString(),
+      courseId: (json['course_id'] ?? json['courseId'] ?? '').toString(),
+      courseCode: (json['course_code'] ?? json['courseCode'] ?? '').toString(),
       title: (json['title'] ?? '').toString(),
       description: (json['description'] ?? '').toString(),
-      fileName: (json['file_name'] ?? '').toString(),
-      filePath: (json['content_url'] ?? '').toString(),
-      fileSizeBytes: (json['file_size'] ?? 0).toInt(),
-      uploadedByName: (json['uploader_name'] ?? 'Unknown').toString(),
-      uploadedAt: DateTime.tryParse((json['created_at'] ?? '').toString()) ?? DateTime.now(),
+      contentUrl: (json['content_url'] ?? json['contentUrl'] ?? '').toString(),
+      fileName: (json['file_name'] ?? json['fileName'] ?? '').toString(),
+      fileSizeBytes: (json['file_size'] ?? json['fileSizeBytes'] ?? 0).toInt(),
+      uploadedBy: (json['uploaded_by'] ?? json['uploadedBy'] ?? '').toString(),
+      uploadedByName: (json['uploader_name'] ?? json['uploadedByName'] ?? 'Unknown').toString(),
+      createdAt: DateTime.tryParse((json['created_at'] ?? json['createdAt'] ?? '').toString()) ?? DateTime.now(),
     );
   }
 
@@ -85,26 +69,12 @@ class CourseNote {
       'course_code': courseCode,
       'title': title,
       'description': description,
+      'content_url': contentUrl,
       'file_name': fileName,
-      'content_url': filePath,
       'file_size': fileSizeBytes,
+      'uploaded_by': uploadedBy,
       'uploader_name': uploadedByName,
-      'created_at': uploadedAt.toIso8601String(),
+      'created_at': createdAt.toIso8601String(),
     };
   }
-}
-
-@immutable
-class LecturerCourseOption {
-  const LecturerCourseOption({
-    required this.id,
-    required this.code,
-    required this.title,
-  });
-
-  final String id;
-  final String code;
-  final String title;
-=======
->>>>>>> Stashed changes
 }

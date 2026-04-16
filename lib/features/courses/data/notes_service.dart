@@ -9,6 +9,7 @@ import '../../../core/services/connectivity_service.dart';
 import '../../../core/services/offline_service.dart';
 import '../../../core/supabase/supabase_bootstrap.dart';
 import '../models/course_note.dart';
+import '../models/lecturer_course_option.dart';
 import '../models/note_upload_session.dart';
 
 class NotesService {
@@ -49,11 +50,7 @@ class NotesService {
 
         return rows
             .map(
-              (dynamic row) => LecturerCourseOption(
-                id: (row['id'] ?? '').toString(),
-                code: (row['course_code'] ?? '').toString(),
-                title: (row['title'] ?? '').toString(),
-              ),
+              (dynamic row) => LecturerCourseOption.fromJson(row as Map<String, dynamic>),
             )
             .toList(growable: false);
       } else {
@@ -61,11 +58,7 @@ class NotesService {
         if (cached == null) return [];
         return cached
             .map(
-              (e) => LecturerCourseOption(
-                id: e['id'].toString(),
-                code: e['course_code'].toString(),
-                title: e['title'].toString(),
-              ),
+              (e) => LecturerCourseOption.fromJson(e as Map<String, dynamic>),
             )
             .toList();
       }
@@ -157,11 +150,12 @@ class NotesService {
       courseCode: courseCode,
       title: (row['title'] ?? '').toString(),
       description: (row['description'] ?? '').toString(),
+      contentUrl: (row['content_url'] ?? '').toString(),
       fileName: fileName,
-      filePath: (row['content_url'] ?? '').toString(),
       fileSizeBytes: size,
+      uploadedBy: (row['uploaded_by'] ?? '').toString(),
       uploadedByName: (row['uploaded_by_name'] ?? 'You').toString(),
-      uploadedAt:
+      createdAt:
           DateTime.tryParse((row['created_at'] ?? '').toString()) ??
           DateTime.now(),
     );
@@ -294,11 +288,12 @@ class NotesService {
                 courseCode: courseCode,
                 title: (row['title'] ?? '').toString(),
                 description: (row['description'] ?? '').toString(),
+                contentUrl: (row['content_url'] ?? '').toString(),
                 fileName: _fileNameFromPath((row['content_url'] ?? '').toString()),
-                filePath: (row['content_url'] ?? '').toString(),
                 fileSizeBytes: 0,
+                uploadedBy: (row['uploaded_by'] ?? '').toString(),
                 uploadedByName: (row['uploaded_by_name'] ?? 'Unknown').toString(),
-                uploadedAt:
+                createdAt:
                     DateTime.tryParse((row['created_at'] ?? '').toString()) ??
                     DateTime.now(),
               ),
@@ -307,10 +302,9 @@ class NotesService {
 
         // Cache for offline
         if (search.isEmpty) {
-          await _offlineService.cacheNotes(
-            courseId,
-            notes.map((n) => n.toJson()).toList(),
-          );
+          final List<Map<String, dynamic>> payload =
+              notes.map((CourseNote n) => n.toJson()).toList();
+          await _offlineService.cacheNotes(courseId, payload);
         }
 
         return notes;

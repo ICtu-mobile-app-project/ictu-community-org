@@ -4,13 +4,8 @@ import '../../auth/controllers/auth_controller.dart';
 import '../../auth/models/user_role.dart';
 import '../../auth/screens/welcome_screen.dart';
 import '../../community/screens/community_feed_screen.dart';
-<<<<<<< Updated upstream
 import '../../courses/screens/enrolled_courses_screen.dart';
 import '../../courses/screens/lecturer_courses_screen.dart';
-=======
-import '../../courses/screens/course_details_screen.dart';
-import '../../courses/screens/lecturer_my_courses_screen.dart';
->>>>>>> Stashed changes
 import '../../courses/screens/timetable_screen.dart';
 import '../../home/screens/home_dashboard_screen.dart';
 import '../../home/screens/lecturer_home_dashboard_screen.dart';
@@ -113,7 +108,6 @@ class _MainShellState extends State<MainShell> {
 
   @override
   Widget build(BuildContext context) {
-<<<<<<< Updated upstream
     final Widget homePage = widget.userRole == UserRole.admin
         ? AdminHomeDashboardScreen(
             onOpenMenu: _openDrawerMenu,
@@ -138,7 +132,7 @@ class _MainShellState extends State<MainShell> {
         : widget.userRole == UserRole.lecturer
             ? <Widget>[
                 homePage,
-                LecturerAlertsListScreen(
+                const LecturerAlertsListScreen(
                   courseCode: '',
                   courseTitle: null,
                 ),
@@ -153,23 +147,6 @@ class _MainShellState extends State<MainShell> {
                 const EnrolledCoursesScreen(),
                 const CampusNewsScreen(),
               ];
-=======
-    final Widget coursesPage = widget.userRole == UserRole.lecturer
-        ? const LecturerMyCoursesScreen()
-        : const CourseDetailsScreen();
-
-    final List<Widget> pages = <Widget>[
-      HomeDashboardScreen(
-        onOpenSearch: () => _controller.setIndex(4),
-        onOpenMenu: _openDrawerMenu,
-        userRole: widget.userRole,
-      ),
-      const CommunityFeedScreen(),
-      const TimetableScreen(),
-      coursesPage,
-      const CampusNewsScreen(),
-    ];
->>>>>>> Stashed changes
 
     return ValueListenableBuilder<int>(
       valueListenable: _controller.currentIndex,

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 
 import '../data/notes_service.dart';
 import '../models/course_note.dart';
+import '../models/lecturer_course_option.dart';
 import '../models/note_upload_session.dart';
 
 class UploadNotesScreen extends StatefulWidget {

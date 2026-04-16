@@ -1,152 +1,159 @@
-# ICTU Community - Software Requirements Specification (SRS)
+# ICTU Community
 
-**Version:** 1.0.0  
-**Last Updated:** March 31, 2026  
-**Status:** In Development
+> A cross-platform mobile app connecting students, lecturers, staff, and administrators at ICT University Yaoundé, Cameroon.
 
----
-
-## 1. Executive Summary
-
-ICTU Community is a university-ready mobile application designed to facilitate seamless communication, information sharing, and academic management within an educational institution. The application serves four distinct user roles (Students, Teachers, Staff, and Administrators) and provides role-based features for managing academic activities, announcements, and community engagement.
-
-Currently implemented: **Flutter for cross-platform mobile development**
-Planned: **Node.js/Express backend and Supabase (PostgreSQL) database**
+**Stack:** Flutter · Dart · Supabase · Gladia AI  
+**Status:** 🟡 In active development  
+**Platform:** Android (iOS planned)
 
 ---
 
-## 2. Product Overview
-
-### 2.1 Purpose
-ICTU Community connects members of the university community in a single, unified platform for:
-- Academic management and communication
-- Real-time notifications and alerts
-- Resource sharing and document management
-- Community engagement and announcements
-
-### 2.2 Current Implementation Status
-- ✅ **Flutter/Dart Frontend**: Fully configured and ready for feature development
-- ✅ **Basic UI Structure**: Splash Screen, Welcome Screen, Material Design Theme
-- ⏳ **Backend**: Planned with Node.js/Express
-- ⏳ **Database**: Planned with Supabase/PostgreSQL
+## Table of Contents
+- [Overview](#overview)
+- [Architecture](#architecture)
+- [Getting Started](#getting-started)
+- [Project Structure](#project-structure)
+- [Environment Setup](#environment-setup)
+- [Running & Building](#running--building)
+- [Contributing](#contributing)
+- [Team](#team)
 
 ---
 
-## 3. Technology Stack
+## Overview
 
-### 3.1 Frontend (Current)
-- **Framework**: Flutter 3.x
-- **Language**: Dart 3.x+
-- **Architecture Pattern**: MVVM (Model-View-ViewModel)
-- **UI Framework**: Material Design 3
-- **Min SDK**: Dart 3.11.0+
-- **Key Dependencies**:
-  - `cupertino_icons`: ^1.0.8
-  - `flutter_lints`: ^6.0.0
+ICTU Community is a university mobile platform providing:
 
-### 3.2 Mobile Platform
-- **Android**: 
-  - Build System: Gradle (Flutter)
-  - Embedding: Flutter Android Embedding v2
-  - Min API: 21+
-  - Target API: 34+
-
-### 3.3 Backend (Planned)
- - Supabase Edge Functions
- - dart
-
-### 3.4 Database (Planned)
-- **Primary**: PostgreSQL via Supabase
-- **Authentication**: Supabase Auth with JWT
-- **Real-time**: Supabase Real-time subscriptions
-- **Storage**: Supabase Storage for files
-
-### 3.5 Additional Services (Planned)
-- **Push Notifications**: Firebase Cloud Messaging
-- **Authentication**: Supabase Auth
-- **Analytics**: Firebase Analytics
-- **Error Tracking**: Sentry
+- 📢 **Alerts & Announcements** — CA dates, exam schedules, resits
+- 📅 **Timetable** — Live lecture schedule per programme and year
+- 📚 **Courses** — Materials, resources, and assignment management
+- 🎙️ **Lecture Transcription** — AI-powered audio-to-text via Gladia
+- 🗞️ **News & Community Feed** — Campus news and community posts
+- 👤 **Role-based Access** — Student, Lecturer, Staff, Admin views
 
 ---
 
-## 4. User Roles & Requirements
+## Architecture
 
-### 4.1 Students
-**Features**:
-- View feeds and news
-- Read field-specific newsletters (coding, marketing, etc.)
-- Access class information and recorded lectures
-- Receive notifications for:
-  - Exam schedules
-  - Continuous Assessment (CA) announcements
-  - Assignment deadlines
-  - Resit exam information
-- Register for classes
-- Submit assignments
-- View personal dashboard and grades
+The app follows **Feature-First Clean Architecture**:
 
-### 4.2 Teachers
-**Features**:
-- Publish course materials and resources
-- Create and distribute assignments
-- View class-related feeds and news
-- Assign class delegates from students
-- Track assignment submissions
-- Grade work and provide feedback
-- Manage course schedule
-
-### 4.3 Staff
-**Features** (Planned):
-- Manage timetables and classroom allocations
-- Process student administrative requests
-- Issue transcripts and handle registrations
-- Publish campus-wide announcements
-- Manage facility bookings
-- Generate administrative reports
-
-### 4.4 Administrators
-**Features** (Planned):
-- User account management (CRUD operations)
-- Role and permission management
-- System configuration (semester dates, policies)
-- Content moderation (feeds, news)
-- Analytics and reporting
-- Backup and recovery management
-- Audit logs and activity tracking
-
----
-
-## 5. System Architecture
-
-### 5.1 High-Level System Architecture
-
-```mermaid
-graph TB
-    subgraph "Client Layer"
-        A["📱 Mobile App - Flutter + Dart"]
-    end
-
-    subgraph "API Layer"
-        B["🚀 API Gateway - Express.js"]
-        C["🔐 Auth Service - JWT/Supabase"]
-        D["⚙️ Business Logic - Services"]
-    end
-
-    subgraph "Data Layer"
-        E["🗄️ Database - PostgreSQL"]
-        F["💾 File Storage - Supabase Storage"]
-    end
-
-    subgraph "External Services"
-        G["📢 Push Notifications - FCM"]
-        H["📊 Analytics - Firebase"]
-    end
-
-    A -->|REST API| B
-    B --> C
-    B --> D
-    D --> E
-    D --> F
-    B -.->|Notifications| G
-    A -.->|Events| H
 ```
+lib/
+├── main.dart                  # App entry point (Supabase init)
+├── app.dart                   # Root widget, routing
+├── core/
+│   ├── supabase/              # Supabase client singleton
+│   └── theme/                 # App theme & typography
+└── features/
+    ├── auth/                  # Login, registration, session
+    ├── alerts/                # Push alerts & announcements
+    ├── community/             # Community feed
+    ├── courses/               # Course listings & materials
+    ├── home/                  # Dashboard per role
+    ├── navigation/            # Bottom nav shell
+    ├── news/                  # Campus news
+    ├── notifications/         # Notification centre
+    ├── profile/               # User profile management
+    └── transcription/         # Lecture audio transcription
+```
+
+Each feature follows the layer pattern:
+
+```
+features/<feature>/
+  screens/      # UI pages (routes)
+  widgets/      # Reusable components
+  controllers/  # State (ValueNotifier / BLoC)
+  data/         # Repositories, API calls
+```
+
+**Backend:** Supabase (PostgreSQL + Auth + Storage + Edge Functions)  
+**AI:** Gladia API for lecture transcription  
+**CI/CD:** GitHub Actions (lint → test → build on every PR)
+
+---
+
+## Getting Started
+
+### Prerequisites
+
+| Tool | Version |
+|------|---------|
+| Flutter | ≥ 3.x (stable channel) |
+| Dart | ≥ 3.11.0 |
+| Android Studio / VS Code | Latest |
+| Supabase CLI | Latest (for Edge Functions) |
+
+### Clone the repo
+
+```bash
+git clone https://github.com/ICtu-mobile-app-project/ictu-community-org.git
+cd ictu-community-org
+```
+
+---
+
+## Environment Setup
+
+This project uses Supabase. You need to configure your credentials before running.
+
+1. Create a `.env` file at the root (it is gitignored):
+```
+SUPABASE_URL=your_supabase_project_url
+SUPABASE_ANON_KEY=your_supabase_anon_key
+```
+
+2. Never commit real keys. Edge Function secrets (`SUPABASE_SERVICE_ROLE_KEY`, `GLADIA_API_KEY`) live only on the Supabase dashboard — see `supabase/README_AUTH_FUNCTIONS.md`.
+
+---
+
+## Running & Building
+
+```bash
+# Install dependencies
+flutter pub get
+
+# Run on connected device / emulator
+flutter run
+
+# Analyze code (must be zero warnings before committing)
+flutter analyze
+
+# Format code
+dart format .
+
+# Run tests
+flutter test
+
+# Build debug APK
+flutter build apk --debug
+
+# Clear build cache
+flutter clean && flutter pub get
+```
+
+### Deploy Edge Functions
+
+```bash
+supabase functions deploy register
+supabase functions deploy login
+supabase functions deploy transcribe-audio
+```
+
+---
+
+## Contributing
+
+Please read **[CONTRIBUTING.md](./CONTRIBUTING.md)** before opening a branch or PR. Key rules:
+
+- Branch off `develop` using `feat/`, `fix/`, `chore/`, `docs/` prefixes
+- Write commits in [Conventional Commits](https://www.conventionalcommits.org/) format
+- CI (lint + tests) must be green before requesting review
+- At least one approval required to merge
+
+---
+
+## Team
+
+Built by the ICT University Yaoundé student development team.  
+For questions, open an issue or reach out via the community channel.

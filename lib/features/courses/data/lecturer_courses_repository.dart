@@ -1,11 +1,9 @@
-<<<<<<< Updated upstream
 import 'dart:convert';
 
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/services/connectivity_service.dart';
 import '../../../core/services/offline_service.dart';
-import '../../../core/supabase/supabase_bootstrap.dart';
 import '../models/lecturer_course_overview.dart';
 
 class LecturerCoursesRepository {
@@ -27,10 +25,6 @@ class LecturerCoursesRepository {
     String? searchQuery,
     bool forceRefresh = false,
   }) async {
-    if (!SupabaseBootstrap.isConfigured) {
-      return _demoCourses;
-    }
-
     final String userId = _client.auth.currentUser?.id ?? '';
     if (userId.isEmpty) {
       return const <LecturerCourseOverview>[];
@@ -43,7 +37,8 @@ class LecturerCoursesRepository {
         final int from = page * limit;
         final int to = from + limit - 1;
 
-        dynamic request = _client
+        final String query = searchQuery?.trim().toLowerCase() ?? '';
+        var request = _client
             .from('courses')
             .select('''
               id, 
@@ -51,16 +46,9 @@ class LecturerCoursesRepository {
               title, 
               description,
               semester,
-              created_at,
-              students_count:course_enrollments(count),
-              notes_count:notes(count),
-              alerts_count:alerts(count)
-            ''')
-            .eq('lecturer_id', userId)
-            .order('created_at', ascending: false)
-            .range(from, to);
+              created_at
+            ''');
 
-        final String query = searchQuery?.trim().toLowerCase() ?? '';
         if (query.isNotEmpty) {
           final String sanitized = query.replaceAll(',', ' ').replaceAll('%', '');
           request = request.or(
@@ -68,12 +56,57 @@ class LecturerCoursesRepository {
           );
         }
 
-        final List<dynamic> rows = await request;
-        final List<LecturerCourseOverview> courses = rows
-            .map((dynamic row) => LecturerCourseOverview.fromJson(row))
-            .toList(growable: false);
+        final List<dynamic> rows = await request
+            .eq('lecturer_id', userId)
+            .order('created_at', ascending: false)
+            .range(from, to);
+        
+        // Fetch counts separately or join if schema allows
+        // For simplicity and speed, let's map what we have and then enrich if needed
+        // But since I updated the model, I should try to get counts.
+        
+        final List<LecturerCourseOverview> courses = [];
+        for (var row in rows) {
+          final courseId = row['id'];
+          
+          // Count students
+          final studentsRes = await _client
+              .from('course_enrollments')
+              .select('id')
+              .eq('course_id', courseId)
+              .count(CountOption.exact);
+          final studentsCount = studentsRes.count;
 
-        // Cache for offline use (only if first page and no search for simplicity, or handle complex keys)
+          // Count notes
+          final notesRes = await _client
+              .from('notes')
+              .select('id')
+              .eq('course_id', courseId)
+              .count(CountOption.exact);
+          final notesCount = notesRes.count;
+
+          // Count alerts
+          final alertsRes = await _client
+              .from('alerts')
+              .select('id')
+              .eq('course_id', courseId)
+              .count(CountOption.exact);
+          final alertsCount = alertsRes.count;
+
+          courses.add(LecturerCourseOverview(
+            id: courseId,
+            code: row['course_code'],
+            title: row['title'],
+            description: row['description'] ?? '',
+            semester: row['semester'] ?? '',
+            students: studentsCount,
+            notes: notesCount,
+            alerts: alertsCount,
+            lastActivity: DateTime.tryParse(row['created_at'] ?? '') ?? DateTime.now(),
+          ));
+        }
+
+        // Cache for offline use
         if (page == 0 && query.isEmpty) {
           await _offlineService.cacheCourses(
             courses.map((c) => c.toJson()).toList(),
@@ -105,10 +138,6 @@ class LecturerCoursesRepository {
     required String semester,
     String description = '',
   }) async {
-    if (!SupabaseBootstrap.isConfigured) {
-      return;
-    }
-
     final FunctionResponse response = await _client.functions.invoke(
       'courses-api',
       body: <String, dynamic>{
@@ -127,30 +156,21 @@ class LecturerCoursesRepository {
     if (payload != null && payload['ok'] == false) {
       throw Exception(_extractError(payload));
     }
-
-    clearCache();
   }
 
   Future<int> getMyCoursesCount() async {
-    if (!SupabaseBootstrap.isConfigured) {
-      return 0;
-    }
-
     final String userId = _client.auth.currentUser?.id ?? '';
     if (userId.isEmpty) {
       return 0;
     }
 
-    final List<dynamic> rows = await _client
+    final res = await _client
         .from('courses')
         .select('id')
-        .eq('lecturer_id', userId);
+        .eq('lecturer_id', userId)
+        .count(CountOption.exact);
 
-    return rows.length;
-  }
-
-  void clearCache() {
-    // No-op, _cache was removed in favor of OfflineService
+    return res.count;
   }
 
   Map<String, dynamic>? _asJsonMap(dynamic data) {
@@ -187,96 +207,3 @@ class LecturerCoursesRepository {
     return 'Unable to create course right now. Please try again.';
   }
 }
-
-class _CachedCoursesPage {
-  _CachedCoursesPage({required this.data}) : timestamp = DateTime.now();
-
-  final DateTime timestamp;
-  final List<LecturerCourseOverview> data;
-
-  bool get isExpired =>
-      DateTime.now().difference(timestamp) > const Duration(hours: 1);
-}
-
-// Remove all demo/mock data for courses
-final List<LecturerCourseOverview> _demoCourses = <LecturerCourseOverview>[];
-=======
-import '../models/course_delegate.dart';
-import '../models/course_page.dart';
-import '../models/course_student.dart';
-import '../models/lecturer_course.dart';
-
-abstract class LecturerCoursesRepository {
-  Future<CoursePage> getMyCourses({
-    required String lecturerId,
-    required int page,
-    int limit = 20,
-    String searchQuery = '',
-  });
-
-  Future<bool> courseCodeExists(String courseCode);
-
-  Future<bool> canTeachDepartment({
-    required String lecturerId,
-    required String courseCode,
-  });
-
-  Future<LecturerCourse> createCourse({
-    required String lecturerId,
-    required String lecturerName,
-    required String courseCode,
-    required String title,
-    required String description,
-    required String semester,
-  });
-
-  Future<LecturerCourse> getCourseDetails(String courseId);
-
-  Future<LecturerCourse> updateCourse({
-    required String courseId,
-    required String title,
-    required String description,
-    required String semester,
-    required bool archived,
-  });
-
-  Future<void> deleteCourse(String courseId);
-
-  Future<List<CourseStudent>> getEnrolledStudents(String courseId);
-
-  Future<List<CourseStudent>> searchStudentsByEmail(String query);
-
-  Future<void> enrollStudents({
-    required String courseId,
-    required List<String> studentIds,
-  });
-
-  Future<void> removeStudent({
-    required String courseId,
-    required String studentId,
-  });
-
-  Future<List<CourseDelegate>> getDelegates(String courseId);
-
-  Future<CourseDelegate> assignDelegate({
-    required String courseId,
-    required String studentId,
-    required bool canUploadNotes,
-    required bool canEditNotes,
-    required bool canDeleteNotes,
-  });
-
-  Future<CourseDelegate> updateDelegatePermissions({
-    required String courseId,
-    required String delegateId,
-    required bool canUploadNotes,
-    required bool canEditNotes,
-    required bool canDeleteNotes,
-  });
-
-  Future<void> removeDelegate({
-    required String courseId,
-    required String delegateId,
-  });
-}
->>>>>>> Stashed changes

@@ -38,73 +38,35 @@ class LecturerCoursesRepository {
         final int to = from + limit - 1;
 
         final String query = searchQuery?.trim().toLowerCase() ?? '';
-        var request = _client
-            .from('courses')
+        final List<dynamic> rows = await request
             .select('''
               id, 
               course_code, 
               title, 
               description,
               semester,
-              created_at
-            ''');
-
-        if (query.isNotEmpty) {
-          final String sanitized = query.replaceAll(',', ' ').replaceAll('%', '');
-          request = request.or(
-            'course_code.ilike.%$sanitized%,title.ilike.%$sanitized%',
-          );
-        }
-
-        final List<dynamic> rows = await request
+              created_at,
+              course_enrollments(count),
+              notes(count),
+              alerts(count)
+            ''')
             .eq('lecturer_id', userId)
             .order('created_at', ascending: false)
             .range(from, to);
-        
-        // Fetch counts separately or join if schema allows
-        // For simplicity and speed, let's map what we have and then enrich if needed
-        // But since I updated the model, I should try to get counts.
-        
-        final List<LecturerCourseOverview> courses = [];
-        for (var row in rows) {
-          final courseId = row['id'];
-          
-          // Count students
-          final studentsRes = await _client
-              .from('course_enrollments')
-              .select('id')
-              .eq('course_id', courseId)
-              .count(CountOption.exact);
-          final studentsCount = studentsRes.count;
 
-          // Count notes
-          final notesRes = await _client
-              .from('notes')
-              .select('id')
-              .eq('course_id', courseId)
-              .count(CountOption.exact);
-          final notesCount = notesRes.count;
-
-          // Count alerts
-          final alertsRes = await _client
-              .from('alerts')
-              .select('id')
-              .eq('course_id', courseId)
-              .count(CountOption.exact);
-          final alertsCount = alertsRes.count;
-
-          courses.add(LecturerCourseOverview(
-            id: courseId,
+        final List<LecturerCourseOverview> courses = rows.map((row) {
+          return LecturerCourseOverview(
+            id: row['id'],
             code: row['course_code'],
             title: row['title'],
             description: row['description'] ?? '',
             semester: row['semester'] ?? '',
-            students: studentsCount,
-            notes: notesCount,
-            alerts: alertsCount,
+            students: (row['course_enrollments'] as List).first['count'] as int,
+            notes: (row['notes'] as List).first['count'] as int,
+            alerts: (row['alerts'] as List).first['count'] as int,
             lastActivity: DateTime.tryParse(row['created_at'] ?? '') ?? DateTime.now(),
-          ));
-        }
+          );
+        }).toList();
 
         // Cache for offline use
         if (page == 0 && query.isEmpty) {

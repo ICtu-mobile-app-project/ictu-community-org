@@ -1,367 +1,397 @@
 # =============================================================================
 # repo-finalise.ps1
-#
-# Master cleanup script for ictu-community-org.
-# Run ONCE from the repo root on a machine with push access:
-#
-#   cd S:\ictu-community-org
-#   .\scripts\repo-finalise.ps1
+# ICTU Community — One-shot repository cleanup script
 #
 # What this script does (in order):
-#   1.  Creates missing Clean Architecture layer folders for every feature
-#   2.  Removes duplicate lib/assets/ images from Git tracking
-#   3.  Removes LaTeX build artifacts in pdfs/ from Git tracking
-#   4.  Removes supabase/.temp/ from Git tracking
-#   5.  Removes old root-level 0-byte garbage files from Git tracking
-#   6.  Stages the package.json / package-lock.json move (root -> supabase/)
-#   7.  Stages the docs/ flat-file moves (-> docs/guides/)
-#   8.  Updates .gitignore with all new exclusion rules
-#   9.  Commits all staged changes with a clean conventional commit
-#   10. Deletes 6 stale remote branches
-#   11. Verifies final branch state
+#   1.  Creates all missing Clean Architecture layer folders
+#   2.  Deletes the 5 zero-byte garbage root files
+#   3.  Removes LaTeX build artifacts (never should have been committed)
+#   4.  Removes supabase/.temp from git tracking
+#   5.  Removes the lib/assets/ duplicate (real assets live in root assets/)
+#   6.  Registers all moved/new files with git (git add)
+#   7.  Removes git tracking for all deleted/moved files (git rm --cached)
+#   8.  Updates .gitignore to prevent these issues recurring
+#   9.  Commits all structural changes with a proper conventional commit
+#   10. Deletes all 6 stale remote branches
+#   11. Prints a summary and next steps
+#
+# Requirements:
+#   - Run from the repo root: cd S:\ictu-community-org
+#   - Git must be on your PATH
+#   - You must be authenticated to GitHub (HTTPS credential manager or SSH)
+#
+# Usage:
+#   cd S:\ictu-community-org
+#   .\scripts\repo-finalise.ps1
 # =============================================================================
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
-$repo = $PSScriptRoot | Split-Path -Parent   # S:\ictu-community-org
+$RepoRoot = (Get-Item $PSScriptRoot).Parent.FullName
+Set-Location $RepoRoot
 
-function Step($n, $msg) {
-    Write-Host "`n[$n] $msg" -ForegroundColor Cyan
+$Green  = "Green"
+$Yellow = "Yellow"
+$Red    = "Red"
+$Cyan   = "Cyan"
+$Gray   = "DarkGray"
+
+function Write-Step($n, $msg) {
+    Write-Host ""
+    Write-Host "[$n] $msg" -ForegroundColor $Cyan
 }
-function Ok($msg)   { Write-Host "    OK  $msg" -ForegroundColor Green }
-function Skip($msg) { Write-Host "    --  $msg" -ForegroundColor DarkGray }
-function Warn($msg) { Write-Host "    !!  $msg" -ForegroundColor Yellow }
 
-Set-Location $repo
-Write-Host "`n==========================================================" -ForegroundColor Magenta
-Write-Host "  ICTU Community — Repository Finalise Script" -ForegroundColor Magenta
-Write-Host "==========================================================" -ForegroundColor Magenta
+function Write-Ok($msg)   { Write-Host "    OK  $msg" -ForegroundColor $Green  }
+function Write-Skip($msg) { Write-Host "    --  $msg" -ForegroundColor $Gray   }
+function Write-Warn($msg) { Write-Host "    !!  $msg" -ForegroundColor $Yellow }
 
-# ── 0. Sanity check ──────────────────────────────────────────────────────────
-if (-not (Test-Path ".git")) {
-    Write-Host "ERROR: Run this from the repo root (S:\ictu-community-org)" -ForegroundColor Red
+function Ensure-Dir($path) {
+    if (-not (Test-Path $path)) {
+        New-Item -ItemType Directory -Path $path -Force | Out-Null
+        Write-Ok "Created $($path.Replace($RepoRoot, ''))"
+    } else {
+        Write-Skip "Exists  $($path.Replace($RepoRoot, ''))"
+    }
+}
+
+function Write-Gitkeep($dir, $note) {
+    Ensure-Dir $dir
+    $gk = Join-Path $dir ".gitkeep"
+    if (-not (Test-Path $gk)) {
+        Set-Content $gk "# $note"
+        Write-Ok "Added .gitkeep → $($gk.Replace($RepoRoot,''))"
+    }
+}
+
+function Remove-RootFile($name) {
+    $path = Join-Path $RepoRoot $name
+    if (Test-Path $path) {
+        Remove-Item $path -Force
+        Write-Ok "Deleted root file: $name"
+    } else {
+        Write-Skip "Already gone: $name"
+    }
+}
+
+function Git-RmCached($repoPath) {
+    # Only remove from index if git is tracking it
+    $tracked = git ls-files --error-unmatch $repoPath 2>$null
+    if ($LASTEXITCODE -eq 0) {
+        git rm --cached -r --quiet -- $repoPath 2>$null
+        Write-Ok "git rm --cached $repoPath"
+    } else {
+        Write-Skip "Not tracked: $repoPath"
+    }
+}
+
+function Git-RmFile($repoPath) {
+    # Remove from index AND disk
+    $tracked = git ls-files --error-unmatch $repoPath 2>$null
+    if ($LASTEXITCODE -eq 0) {
+        git rm --force --quiet -- $repoPath 2>$null
+        Write-Ok "git rm $repoPath"
+    } else {
+        Write-Skip "Not tracked: $repoPath"
+        # Still delete from disk if it exists
+        $full = Join-Path $RepoRoot ($repoPath -replace '/', '\')
+        if (Test-Path $full) { Remove-Item $full -Force }
+    }
+}
+
+function Delete-RemoteBranch($branch) {
+    $remoteRef = "refs/remotes/origin/$branch"
+    $exists = git show-ref $remoteRef 2>$null
+    if ($exists) {
+        git push origin --delete $branch 2>&1 | Out-Null
+        if ($LASTEXITCODE -eq 0) {
+            Write-Ok "Deleted remote: origin/$branch"
+        } else {
+            Write-Warn "Could not delete remote branch: $branch (may already be deleted)"
+        }
+    } else {
+        Write-Skip "Remote branch not found: $branch"
+    }
+    # Also delete local tracking ref if it exists
+    $localRef = git branch --list $branch
+    if ($localRef) {
+        git branch -D $branch 2>$null
+        Write-Ok "Deleted local: $branch"
+    }
+}
+
+# =============================================================================
+Write-Host ""
+Write-Host "================================================" -ForegroundColor $Cyan
+Write-Host "  ICTU Community — Repository Finalise Script  " -ForegroundColor $Cyan
+Write-Host "================================================" -ForegroundColor $Cyan
+Write-Host "  Root: $RepoRoot"
+Write-Host ""
+
+# Verify we're in the right repo
+if (-not (Test-Path (Join-Path $RepoRoot ".git"))) {
+    Write-Host "ERROR: Not a git repository. Run from repo root." -ForegroundColor $Red
     exit 1
 }
 
-# ── 1. Create missing Clean Architecture layer folders ───────────────────────
-Step 1 "Creating missing feature layer folders"
+# =============================================================================
+Write-Step "1/10" "Creating missing Clean Architecture layer folders..."
 
-$layers = @("screens", "widgets", "controllers", "models", "data")
-$features = @(
-    "alerts", "auth", "community", "courses",
-    "home", "navigation", "news", "notifications",
-    "profile", "transcription"
+$Features = @(
+    @{ name="alerts";        layers=@("controllers", "widgets") },
+    @{ name="auth";          layers=@("data", "widgets") },
+    @{ name="community";     layers=@("data", "widgets", "models", "controllers") },
+    @{ name="courses";       layers=@("widgets") },
+    @{ name="home";          layers=@("data", "widgets", "models", "controllers") },
+    @{ name="navigation";    layers=@("data", "widgets", "models") },
+    @{ name="news";          layers=@("data", "widgets", "models", "controllers") },
+    @{ name="notifications"; layers=@("data", "widgets", "models", "controllers") },
+    @{ name="profile";       layers=@("data", "widgets", "models") },
+    @{ name="transcription"; layers=@("widgets", "models") }
 )
 
-foreach ($feature in $features) {
-    foreach ($layer in $layers) {
-        $path = "lib\features\$feature\$layer"
-        if (-not (Test-Path $path)) {
-            New-Item -ItemType Directory -Path $path -Force | Out-Null
-            # Git won't track empty dirs — add a .gitkeep
-            $keepFile = "$path\.gitkeep"
-            Set-Content $keepFile "# placeholder — replace with real files as the feature grows"
-            Ok "Created $path"
-        }
+foreach ($f in $Features) {
+    foreach ($layer in $f.layers) {
+        $dir = Join-Path $RepoRoot "lib\features\$($f.name)\$layer"
+        $note = "Add $($f.name) $layer components here as the feature grows."
+        Write-Gitkeep $dir $note
     }
 }
 
-# Also ensure core has standard subdirs
-$coreDirs = @("lib\core\constants", "lib\core\services", "lib\core\supabase",
-              "lib\core\theme", "lib\core\validation", "lib\core\utils")
-foreach ($dir in $coreDirs) {
-    if (-not (Test-Path $dir)) {
-        New-Item -ItemType Directory -Path $dir -Force | Out-Null
-        Set-Content "$dir\.gitkeep" "# placeholder"
-        Ok "Created $dir"
-    }
-}
+# Also ensure docs/srs exists (for the SRS pdf/tex already moved there)
+Ensure-Dir (Join-Path $RepoRoot "docs\srs")
+Ensure-Dir (Join-Path $RepoRoot "docs\guides")
+Ensure-Dir (Join-Path $RepoRoot "docs\api")
+Ensure-Dir (Join-Path $RepoRoot "docs\deployment")
 
-# ── 2. Remove duplicate lib/assets/ from Git tracking ────────────────────────
-Step 2 "Removing duplicate lib/assets/ from Git (images live in root assets/)"
+# =============================================================================
+Write-Step "2/10" "Deleting zero-byte garbage root files..."
 
-$libAssets = @(
-    "lib/assets/Logo.png",
-    "lib/assets/madam.jpg",
-    "lib/assets/school.jpeg",
-    "lib/assets/students.jpg"
-)
-foreach ($file in $libAssets) {
-    $tracked = git ls-files $file 2>$null
-    if ($tracked) {
-        git rm --cached $file 2>$null
-        # Delete the physical duplicate too — the real copy is in assets/
-        if (Test-Path $file) { Remove-Item $file -Force }
-        Ok "Untracked + deleted duplicate: $file"
-    } else {
-        Skip "$file already untracked"
-    }
-}
-# Remove the now-empty lib/assets directory from Git
-$libAssetsDir = "lib\assets"
-if (Test-Path $libAssetsDir) {
-    $remaining = Get-ChildItem $libAssetsDir -Recurse -File
-    if (-not $remaining) {
-        Remove-Item $libAssetsDir -Recurse -Force
-        Ok "Deleted empty directory: lib/assets/"
-    }
-}
-
-# ── 3. Remove LaTeX build artifacts in pdfs/ from Git tracking ───────────────
-Step 3 "Removing LaTeX build artifacts from Git (pdfs/*.aux, *.fls, etc.)"
-
-$latexArtifacts = @(
-    "pdfs/ICTU_Community.aux",
-    "pdfs/ICTU_Community.fdb_latexmk",
-    "pdfs/ICTU_Community.fls",
-    "pdfs/ICTU_Community.out",
-    "pdfs/ICTU_Community.synctex.gz"
-)
-foreach ($file in $latexArtifacts) {
-    $tracked = git ls-files $file 2>$null
-    if ($tracked) {
-        git rm --cached $file 2>$null
-        if (Test-Path $file) { Remove-Item $file -Force }
-        Ok "Untracked + deleted: $file"
-    } else {
-        Skip "$file already untracked"
-    }
-}
-
-# The .tex and .pdf were already moved to docs/srs/ — untrack old pdfs/ location
-$pdfTracked = git ls-files "pdfs/ICTU_Community.pdf" 2>$null
-if ($pdfTracked) {
-    git rm --cached "pdfs/ICTU_Community.pdf" 2>$null
-    Ok "Untracked old pdfs/ICTU_Community.pdf (now in docs/srs/)"
-}
-$texTracked = git ls-files "pdfs/ICTU_Community.tex" 2>$null
-if ($texTracked) {
-    git rm --cached "pdfs/ICTU_Community.tex" 2>$null
-    Ok "Untracked old pdfs/ICTU_Community.tex (now in docs/srs/)"
-}
-
-# Stage the docs/srs/ moves so Git sees them as renames
-git add "docs/srs/ICTU_Community.pdf" 2>$null
-git add "docs/srs/ICTU_Community.tex" 2>$null
-
-# Remove the now-empty pdfs/ directory
-if (Test-Path "pdfs") {
-    $remaining = Get-ChildItem "pdfs" -Recurse -File
-    if (-not $remaining) {
-        Remove-Item "pdfs" -Recurse -Force
-        Ok "Deleted empty pdfs/ directory"
-    }
-}
-
-# ── 4. Remove supabase/.temp/ from Git tracking ──────────────────────────────
-Step 4 "Removing supabase/.temp/ from Git tracking"
-
-$tempFile = "supabase/.temp/cli-latest"
-$tracked = git ls-files $tempFile 2>$null
-if ($tracked) {
-    git rm --cached -r "supabase/.temp/" 2>$null
-    Ok "Untracked supabase/.temp/"
-} else {
-    Skip "supabase/.temp/ already untracked"
-}
-
-# ── 5. Remove remaining 0-byte garbage files from Git + disk ─────────────────
-Step 5 "Removing 0-byte garbage files from root"
-
-$garbageFiles = @(
+$GarbageFiles = @(
     "_isWorking",
     "AlertDialog(",
     "Navigator.of(context).pop(false)",
     "Navigator.of(context).pop(true)",
     "NoteDetailsScreen(note"
 )
-foreach ($file in $garbageFiles) {
-    $tracked = git ls-files $file 2>$null
-    if ($tracked) {
-        # git rm can struggle with special chars — use cached then delete
-        git rm --cached "$file" 2>$null
-    }
-    if (Test-Path $file) {
-        Remove-Item $file -Force
-        Ok "Deleted: $file"
-    } else {
-        Skip "Already gone: $file"
-    }
+
+foreach ($f in $GarbageFiles) {
+    Git-RmFile $f
+    Remove-RootFile $f
 }
 
-# ── 6. Stage the package.json / package-lock.json move ───────────────────────
-Step 6 "Staging package.json move (root -> supabase/)"
+# =============================================================================
+Write-Step "3/10" "Removing LaTeX build artifacts from tracking and disk..."
 
-# Untrack old locations
-foreach ($f in @("package.json", "package-lock.json")) {
-    $tracked = git ls-files $f 2>$null
-    if ($tracked) {
-        git rm --cached $f 2>$null
-        Ok "Untracked root $f"
-    } else {
-        Skip "root $f already untracked"
-    }
-}
-# Stage new locations
-git add "supabase/package.json" 2>$null
-git add "supabase/package-lock.json" 2>$null
-Ok "Staged supabase/package.json + supabase/package-lock.json"
+$LatexArtifacts = @(
+    "pdfs/ICTU_Community.aux",
+    "pdfs/ICTU_Community.fdb_latexmk",
+    "pdfs/ICTU_Community.fls",
+    "pdfs/ICTU_Community.out",
+    "pdfs/ICTU_Community.synctex.gz"
+)
 
-# ── 7. Stage docs/ flat-file moves ───────────────────────────────────────────
-Step 7 "Staging docs/guides/ moves"
-
-foreach ($f in @("docs/guides/API_ENDPOINTS.md", "docs/guides/FEATURE_WORKFLOW.md",
-                  "docs/guides/OFFLINE_IMPLEMENTATION.md", "docs/guides/UI_WORKFLOW.md")) {
-    if (Test-Path $f) {
-        git add $f 2>$null
-        Ok "Staged $f"
-    } else {
-        Warn "$f not found — was it moved already?"
-    }
+foreach ($f in $LatexArtifacts) {
+    Git-RmFile $f
 }
 
-# ── 8. Update .gitignore ──────────────────────────────────────────────────────
-Step 8 "Updating .gitignore"
+# Move .tex and .pdf to docs/srs if not already done
+$texSrc = Join-Path $RepoRoot "pdfs\ICTU_Community.tex"
+$texDst = Join-Path $RepoRoot "docs\srs\ICTU_Community.tex"
+if ((Test-Path $texSrc) -and -not (Test-Path $texDst)) {
+    Move-Item $texSrc $texDst
+    Write-Ok "Moved pdfs/ICTU_Community.tex → docs/srs/"
+} elseif (Test-Path $texDst) {
+    Write-Skip "Already moved: ICTU_Community.tex"
+    if (Test-Path $texSrc) { Remove-Item $texSrc -Force }
+}
 
-$newRules = @"
+$pdfSrc = Join-Path $RepoRoot "pdfs\ICTU_Community.pdf"
+$pdfDst = Join-Path $RepoRoot "docs\srs\ICTU_Community.pdf"
+if ((Test-Path $pdfSrc) -and -not (Test-Path $pdfDst)) {
+    Move-Item $pdfSrc $pdfDst
+    Write-Ok "Moved pdfs/ICTU_Community.pdf → docs/srs/"
+} elseif (Test-Path $pdfDst) {
+    Write-Skip "Already moved: ICTU_Community.pdf"
+    if (Test-Path $pdfSrc) { Remove-Item $pdfSrc -Force }
+}
 
-# --- Added by repo-finalise.ps1 ---
+# Remove empty pdfs/ dir from git if it's now empty
+$pdfsDir = Join-Path $RepoRoot "pdfs"
+if ((Test-Path $pdfsDir) -and ((Get-ChildItem $pdfsDir -Force).Count -eq 0)) {
+    Remove-Item $pdfsDir
+    Write-Ok "Removed empty pdfs/ directory"
+}
+Git-RmCached "pdfs"
 
-# LaTeX build artefacts
+# =============================================================================
+Write-Step "4/10" "Removing supabase/.temp from git tracking..."
+
+Git-RmCached "supabase/.temp"
+
+$tempDir = Join-Path $RepoRoot "supabase\.temp"
+if (Test-Path $tempDir) {
+    Write-Skip "supabase/.temp still on disk (correct — it's a CLI cache, just untracked now)"
+}
+
+# =============================================================================
+Write-Step "5/10" "Removing lib/assets/ duplicate from git tracking..."
+# The real assets live in root assets/. lib/assets/ is a duplicate that was
+# accidentally committed. We remove it from git tracking only — the files
+# in root assets/ are the ones pubspec.yaml already references.
+
+Git-RmCached "lib/assets"
+
+$libAssets = Join-Path $RepoRoot "lib\assets"
+if (Test-Path $libAssets) {
+    Remove-Item $libAssets -Recurse -Force
+    Write-Ok "Deleted lib/assets/ directory from disk"
+}
+
+# =============================================================================
+Write-Step "6/10" "Registering all moved and new files with git..."
+
+git add -A
+Write-Ok "git add -A complete"
+
+# =============================================================================
+Write-Step "7/10" "Updating .gitignore..."
+
+$gitignorePath = Join-Path $RepoRoot ".gitignore"
+$current = Get-Content $gitignorePath -Raw
+
+$additions = @"
+
+# LaTeX build artifacts (docs/srs/ source is fine, these are not)
 pdfs/*.aux
-pdfs/*.fdb_latexmk
 pdfs/*.fls
+pdfs/*.fdb_latexmk
 pdfs/*.out
 pdfs/*.synctex.gz
+*.aux
+*.fls
+*.fdb_latexmk
+*.synctex.gz
 
 # Supabase CLI cache
 supabase/.temp/
-
-# Dart / Flutter generated
-*.g.dart
-*.freezed.dart
-.dart_tool/
 
 # Build logs (never commit these)
 build_log*.txt
 build_log*.log
 
-# Node (Supabase JS tooling only)
-supabase/node_modules/
-
 # Duplicate assets guard
 lib/assets/
 
-# OS
-.DS_Store
-Thumbs.db
+# Dart generated files
+**/*.g.dart
+**/*.freezed.dart
 "@
 
-$gitignorePath = ".gitignore"
-$current = Get-Content $gitignorePath -Raw
-if ($current -notmatch "repo-finalise") {
-    Add-Content $gitignorePath $newRules
-    Ok ".gitignore updated"
+# Only append if not already present
+if ($current -notmatch "LaTeX build artifacts") {
+    Add-Content $gitignorePath $additions
+    Write-Ok "Updated .gitignore with 6 new rule groups"
 } else {
-    Skip ".gitignore already patched"
+    Write-Skip ".gitignore already has LaTeX rules"
 }
+
 git add .gitignore
+Write-Ok "Staged .gitignore"
 
-# ── 9. Stage all new files and commit ────────────────────────────────────────
-Step 9 "Staging all changes and committing"
+# =============================================================================
+Write-Step "8/10" "Ensuring develop branch exists and is up to date..."
 
-git add -A
-
-$status = git status --short
-if ($status) {
-    Write-Host "`n    Staged changes:" -ForegroundColor DarkGray
-    $status | ForEach-Object { Write-Host "      $_" -ForegroundColor DarkGray }
-
-    git commit -m "chore(repo): finalise structure and clean tracked artefacts
-
-- Remove duplicate lib/assets/ (images already in root assets/)
-- Remove LaTeX build artefacts from pdfs/ tracking
-- Move pdfs/ICTU_Community.{tex,pdf} -> docs/srs/
-- Remove supabase/.temp/cli-latest from tracking
-- Remove 0-byte root garbage files (_isWorking, AlertDialog( etc.)
-- Move package.json + package-lock.json -> supabase/
-- Move docs flat-files -> docs/guides/
-- Create missing Clean Architecture layer folders for all features
-- Update .gitignore with LaTeX, Supabase temp, build log patterns"
-
-    Ok "Committed successfully"
+$developExists = git branch --list "develop"
+if (-not $developExists) {
+    git checkout -b develop main
+    git push -u origin develop
+    Write-Ok "Created and pushed 'develop' branch"
 } else {
-    Skip "Nothing to commit — working tree already clean"
+    Write-Skip "'develop' already exists"
 }
 
-# ── 10. Delete stale remote branches ─────────────────────────────────────────
-Step 10 "Deleting stale remote branches"
+# Make sure we're on develop for the cleanup commit
+$currentBranch = git rev-parse --abbrev-ref HEAD
+if ($currentBranch -ne "develop") {
+    git checkout develop
+    Write-Ok "Switched to develop"
+}
 
-$toDelete = @(
-    "Feature-1-Authentication-branch",
-    "feature-7-audio-rec-and-ai-transcription",
-    "feature-8-Course-feature",
-    "dev",
-    "copilot/sub-pr-1",
-    "copilot/feature-8-ui-design-summary"
+git pull origin develop --rebase 2>$null
+Write-Ok "develop is up to date"
+
+# =============================================================================
+Write-Step "9/10" "Committing all structural changes..."
+
+$status = git status --porcelain
+if ($status) {
+    git add -A
+    $msg = @"
+chore(repo): restructure folders, remove artifacts, add workflow docs
+
+- Remove lib/assets/ duplicate (root assets/ is canonical)
+- Remove LaTeX build artifacts from tracking (pdfs/*.aux etc.)
+- Remove supabase/.temp CLI cache from tracking
+- Remove zero-byte garbage root files (_isWorking, AlertDialog( etc.)
+- Move docs flat files into docs/guides/ subdirectory
+- Move package.json/package-lock.json to supabase/
+- Move pdfs/SRS source to docs/srs/
+- Add missing Clean Architecture layer folders (.gitkeep) for all features
+- Add docs/GIT_WORKFLOW.md — branching and commit strategy
+- Update .gitignore with LaTeX, temp, build-log, and duplicate asset rules
+"@
+    git commit -m $msg
+    Write-Ok "Committed structural changes"
+    git push origin develop
+    Write-Ok "Pushed to origin/develop"
+} else {
+    Write-Skip "Nothing to commit — working tree clean"
+}
+
+# =============================================================================
+Write-Step "10/10" "Deleting stale remote branches..."
+
+$BranchesToDelete = @(
+    "Feature-1-Authentication-branch",    # Merged via PR #7 — auth is live in main
+    "feature-7-audio-rec-and-ai-transcription", # Merged via PR #6 — transcription live
+    "feature-8-Course-feature",           # Merged via PR #8 — courses live
+    "dev",                                # Stale duplicate of develop
+    "copilot/sub-pr-1",                   # Auto-generated, superseded by auth_controller.dart
+    "copilot/feature-8-ui-design-summary" # Contains only build_log.txt files + old code
 )
 
-foreach ($branch in $toDelete) {
-    $exists = git ls-remote --heads origin $branch 2>$null
-    if ($exists) {
-        git push origin --delete $branch 2>&1 | Out-Null
-        if ($LASTEXITCODE -eq 0) {
-            Ok "Deleted remote: $branch"
-        } else {
-            Warn "Could not delete remote: $branch (may need admin rights on GitHub)"
-        }
-        # Also delete local if present
-        $local = git branch --list $branch
-        if ($local) {
-            git branch -D $branch 2>$null
-            Ok "Deleted local: $branch"
-        }
-    } else {
-        Skip "Remote branch not found (already deleted?): $branch"
-    }
+foreach ($branch in $BranchesToDelete) {
+    Delete-RemoteBranch $branch
 }
 
-# ── 11. Push main + develop, verify ──────────────────────────────────────────
-Step 11 "Pushing changes and verifying final state"
-
-git push origin main
-git push origin develop 2>$null
-
-Write-Host "`n    Remaining remote branches:" -ForegroundColor DarkGray
-git branch -r | ForEach-Object { Write-Host "      $_" -ForegroundColor DarkGray }
-
-# ── Done ─────────────────────────────────────────────────────────────────────
-Write-Host "`n==========================================================" -ForegroundColor Magenta
-Write-Host "  ALL DONE — Repository is clean." -ForegroundColor Magenta
-Write-Host "==========================================================" -ForegroundColor Magenta
-Write-Host @"
-
-  Next steps on GitHub (manual — requires repo admin):
-  ─────────────────────────────────────────────────────
-  1. Go to: Settings > Branches > Add branch ruleset
-
-  RULESET for 'main':
-    - Target: main
-    - Require pull request before merging (min 1 approval)
-    - Require status checks: CI / Lint & Analyze, CI / Run Tests
-    - Block force pushes
-    - Restrict deletions
-
-  RULESET for 'develop':
-    - Target: develop
-    - Require pull request before merging (min 1 approval)
-    - Require status checks: CI / Lint & Analyze
-    - Block force pushes
-
-  2. Go to: Settings > General > Pull Requests
-    - Allow squash merging ONLY (disable merge commits + rebase)
-    - Automatically delete head branches (enable this checkbox)
-
-  See docs/GIT_WORKFLOW.md for the full team strategy.
-"@
+# =============================================================================
+Write-Host ""
+Write-Host "================================================" -ForegroundColor $Green
+Write-Host "  Done! Repository is clean.                   " -ForegroundColor $Green
+Write-Host "================================================" -ForegroundColor $Green
+Write-Host ""
+Write-Host "REMAINING MANUAL STEPS:" -ForegroundColor $Yellow
+Write-Host ""
+Write-Host "  1. Go to GitHub → Settings → Branches" -ForegroundColor White
+Write-Host "     Add protection rule for 'main':" -ForegroundColor Gray
+Write-Host "       • Require pull request before merging (1 approval)" -ForegroundColor Gray
+Write-Host "       • Require status checks: 'CI / Lint & Analyze', 'CI / Run Tests'" -ForegroundColor Gray
+Write-Host "       • Require branches up to date before merging" -ForegroundColor Gray
+Write-Host "       • Do not allow bypassing the above settings" -ForegroundColor Gray
+Write-Host "       • Restrict push access to project lead only" -ForegroundColor Gray
+Write-Host ""
+Write-Host "     Repeat the same protection rule for 'develop'." -ForegroundColor Gray
+Write-Host ""
+Write-Host "  2. Go to GitHub → Settings → General → Pull Requests" -ForegroundColor White
+Write-Host "       • Enable: Automatically delete head branches" -ForegroundColor Gray
+Write-Host "       • Default merge: Squash and merge" -ForegroundColor Gray
+Write-Host ""
+Write-Host "  3. Go to GitHub → Settings → Code and automation → Actions" -ForegroundColor White
+Write-Host "       • Ensure Actions are enabled for this repository" -ForegroundColor Gray
+Write-Host ""
+Write-Host "  4. Read docs/GIT_WORKFLOW.md and share it with the team." -ForegroundColor White
+Write-Host ""
+Write-Host "  Final branch state:" -ForegroundColor $Cyan
+git branch -a
+Write-Host ""

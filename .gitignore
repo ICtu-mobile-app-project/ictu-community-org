@@ -46,3 +46,24 @@ package-lock.json
 
 # Distribution / build scripts output
 scripts/build-output/
+
+# LaTeX build artifacts (pdfs/*.tex and *.pdf are fine, these are not)
+*.aux
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+pdfs/*.out
+
+# Supabase CLI cache (machine-local)
+supabase/.temp/
+
+# Build logs (never commit)
+build_log*.txt
+build_log*.log
+
+# Duplicate assets folder guard
+lib/assets/
+
+# Dart generated files (hive, freezed, build_runner)
+**/*.g.dart
+**/*.freezed.dart

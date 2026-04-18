@@ -1,108 +1,89 @@
-# Git Workflow & Strategy — ICTU Community
+# Git Workflow & Strategy — ICTU Community App
 
-> This document is the single source of truth for how the team works with Git.  
-> Every contributor must read this before opening their first branch.
-
----
-
-## Table of Contents
-
-1. [Branch Model](#1-branch-model)
-2. [Branch Naming Rules](#2-branch-naming-rules)
-3. [Commit Convention](#3-commit-convention)
-4. [Pull Request Process](#4-pull-request-process)
-5. [Merge Strategy](#5-merge-strategy)
-6. [Release Process](#6-release-process)
-7. [What To Do When Things Go Wrong](#7-what-to-do-when-things-go-wrong)
-8. [Branch Protection Rules](#8-branch-protection-rules)
-9. [CI/CD Pipeline](#9-cicd-pipeline)
-10. [Quick Reference Card](#10-quick-reference-card)
+> **Recommended by:** Manus AI (Senior Software Architect) + Claude (Anthropic)  
+> **Applies to:** All contributors to `ICtu-mobile-app-project/ictu-community-org`  
+> **Last updated:** April 2026
 
 ---
 
-## 1. Branch Model
+## 1. Why This Document Exists
 
-We use a **GitFlow-inspired two-track model** suited to a small mobile team
-shipping to a single production target (Android, with iOS planned).
+The repository was assessed in April 2026 and received an overall grade of **C+ (Developing)**. The primary failure areas were:
 
-```
-main ──────────────────────────────────────────────────────► production
-        ▲                                            ▲
-        │  (PR, squash-merge, tagged release)        │
-develop ─────────┬──────────┬───────────┬────────────┘
-                 │          │           │
-          feat/..│   fix/...│  chore/...│
-                 ▼          ▼           ▼
-             (short-lived feature branches, deleted after merge)
-```
+- **Branching (D)** — stale branches, mixed naming conventions, direct commits to `main`
+- **Commits (C-)** — non-descriptive messages with zero traceability
+- **DevOps (F)** — no CI/CD pipeline, no automated testing
 
-### The two permanent branches
-
-| Branch    | Purpose | Who can push directly |
-|-----------|---------|----------------------|
-| `main`    | Production-ready releases only. Every commit here is a tag. | Nobody — PRs only |
-| `develop` | Integration branch. All finished features land here first. | Nobody — PRs only |
-
-### The rule in one sentence
-
-> **Branch from `develop`. Merge back to `develop`. Never touch `main` directly.**
+This document is the single source of truth for how all future development is done. Every team member must read and follow it.
 
 ---
 
-## 2. Branch Naming Rules
+## 2. Branch Model — GitFlow
 
-All branches use **kebab-case** with a mandatory type prefix.
+We use a **simplified GitFlow** with two permanent branches and short-lived feature branches.
 
 ```
-<type>/<short-description>
+main
+ └── develop
+      ├── feat/alerts-push-notifications
+      ├── fix/timetable-monday-overflow
+      ├── chore/upgrade-supabase-sdk
+      └── docs/update-contributing-guide
 ```
 
-### Allowed types
+### 2.1 Permanent Branches
 
-| Prefix      | When to use                                         | Example |
-|-------------|-----------------------------------------------------|---------|
-| `feat/`     | Any new user-facing feature                         | `feat/alerts-push-notifications` |
-| `fix/`      | Bug fix (found in develop or reported by testers)   | `fix/timetable-monday-overflow` |
-| `hotfix/`   | Critical fix that must go straight from main        | `hotfix/auth-token-null-crash` |
-| `chore/`    | Deps, config, tooling, CI — no production code change | `chore/upgrade-supabase-sdk` |
-| `docs/`     | Documentation only                                  | `docs/update-api-endpoints` |
-| `refactor/` | Code restructure with no behaviour change           | `refactor/auth-repository-cleanup` |
-| `test/`     | Adding or fixing tests only                         | `test/courses-widget-coverage` |
+| Branch    | Purpose                                         | Who merges here        | Direct commits? |
+|-----------|-------------------------------------------------|------------------------|-----------------|
+| `main`    | Production-ready, deployed code                 | Project lead only      | ❌ Never        |
+| `develop` | Integration branch — staging for next release   | Via PR from feat/* branches | ❌ Never   |
 
-### Hard rules
+**`main` is sacred.** It must always build, always be deployable. No exceptions.
 
-- **kebab-case only.** No PascalCase (`Feature-1-Auth`), no spaces, no underscores.
-- **Keep names short but descriptive.** Aim for 3–5 words after the prefix.
-- **One purpose per branch.** Don't mix a feature and a refactor.
-- **Delete your branch the moment it is merged.** Never let branches sit stale.
-- **Copilot/AI auto-branches must be reviewed and renamed or deleted immediately.**  
-  Names like `copilot/sub-pr-1` are not acceptable for long-lived branches.
+### 2.2 Short-lived Branches
 
-### ✅ Good branch names
+Branch off `develop`. Never branch off `main`.
+
+#### Naming Convention
+
 ```
-feat/community-feed-pagination
-fix/auth-session-not-persisting
-chore/update-flutter-3-29
-docs/contributing-guide-update
-refactor/transcription-repository-extract
-hotfix/crash-on-null-user-role
+<type>/<short-kebab-description>
 ```
 
-### ❌ Bad branch names
-```
-Feature-1-Authentication-branch   # PascalCase + number prefix
-feature-8-Course-feature          # Mixed case
-bug fixes                         # Spaces, no type prefix
-dev                               # Meaningless
-copilot/sub-pr-1                  # Auto-generated, not descriptive
-wip                               # Tells us nothing
-```
+| Type         | When to use                                       | Example                                  |
+|--------------|---------------------------------------------------|------------------------------------------|
+| `feat/`      | New user-facing feature                           | `feat/student-grade-viewer`              |
+| `fix/`       | Bug fix                                           | `fix/login-null-pointer-crash`           |
+| `refactor/`  | Internal restructure, no behaviour change         | `refactor/auth-repository-split`         |
+| `chore/`     | Dependencies, config, tooling, CI                 | `chore/upgrade-flutter-3-22`             |
+| `docs/`      | Documentation only                                | `docs/api-endpoint-transcription`        |
+| `test/`      | Adding or fixing tests only                       | `test/courses-controller-unit-tests`     |
+| `hotfix/`    | Emergency fix branched off `main`                 | `hotfix/auth-token-expiry-crash`         |
+
+#### Rules
+
+- ✅ Use **kebab-case** only — no PascalCase, no spaces, no underscores
+- ✅ Be descriptive but concise — max 5 words after the prefix
+- ✅ One branch = one purpose
+- ❌ Do not prefix with numbers (`Feature-1-...` is invalid)
+- ❌ Do not use Copilot auto-branch names as permanent branches (`copilot/...`)
+- ❌ Delete your branch immediately after it is merged
+
+#### What We Had vs What We Do Now
+
+| Old (Bad) ❌                              | New (Correct) ✅                          |
+|------------------------------------------|------------------------------------------|
+| `Feature-1-Authentication-branch`        | `feat/auth-login-signup`                 |
+| `feature-8-Course-feature`               | `feat/lecturer-courses`                  |
+| `feature-7-audio-rec-and-ai-transcription` | `feat/lecture-audio-transcription`     |
+| `dev`                                    | `develop` (single integration branch)   |
+| `copilot/sub-pr-1`                       | Merged and deleted immediately           |
 
 ---
 
-## 3. Commit Convention
+## 3. Commit Convention — Conventional Commits
 
-We follow **[Conventional Commits v1.0.0](https://www.conventionalcommits.org/)**.
+We follow the **[Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/)** specification. This enables automated changelog generation and makes `git log` actually useful.
 
 ### Format
 
@@ -111,324 +92,238 @@ We follow **[Conventional Commits v1.0.0](https://www.conventionalcommits.org/)*
 
 [optional body — explain WHY, not what the diff shows]
 
-[optional footer — Closes #<issue>, BREAKING CHANGE: ...]
+[optional footer — e.g. Closes #42, BREAKING CHANGE: ...]
 ```
 
-- Subject line: **max 72 characters**, no period at the end
-- Use the **imperative mood**: "add", "fix", "remove" — not "added" / "fixes"
-- Body: wrap at 80 characters, explain the reason not the mechanism
+- The **header** line must be ≤ 72 characters
+- Use **imperative mood** — "add", "fix", "remove" not "added", "fixed", "removed"
+- The **scope** is the feature folder name from `lib/features/<scope>`
 
 ### Types
 
-| Type        | When                                                   |
-|-------------|--------------------------------------------------------|
-| `feat`      | A new feature visible to users                         |
-| `fix`       | A bug fix                                              |
-| `chore`     | Build scripts, deps, tooling, CI                       |
-| `docs`      | Documentation only                                     |
-| `refactor`  | Code change that neither fixes a bug nor adds a feature|
-| `test`      | Adding or updating tests                               |
-| `style`     | Formatting, whitespace — zero logic changes            |
-| `perf`      | Measurable performance improvement                     |
-| `revert`    | Reverting a previous commit                            |
+| Type        | Use case                                              | Triggers version bump |
+|-------------|-------------------------------------------------------|-----------------------|
+| `feat`      | New feature visible to users                          | Minor (`1.x.0`)       |
+| `fix`       | Bug fix                                               | Patch (`1.0.x`)       |
+| `refactor`  | Code restructure, no behaviour change                 | None                  |
+| `chore`     | Tooling, dependencies, CI, config                     | None                  |
+| `docs`      | Documentation changes only                            | None                  |
+| `test`      | Adding or updating tests                              | None                  |
+| `style`     | Formatting, whitespace — zero logic changes           | None                  |
+| `perf`      | Performance improvement                               | Patch                 |
+| `ci`        | GitHub Actions / CI config changes                    | None                  |
 
 ### Scopes (use the feature folder name)
 
-`auth` · `alerts` · `community` · `courses` · `home` · `navigation` ·
-`news` · `notifications` · `profile` · `transcription` · `core` · `ci` ·
-`deps` · `supabase`
+`auth` · `alerts` · `community` · `courses` · `home` · `navigation` · `news` · `notifications` · `profile` · `transcription` · `core` · `supabase` · `android` · `ci` · `deps`
 
-### ✅ Good commit messages
+### Good Examples ✅
+
 ```
-feat(alerts): add push notification for CA announcements
+feat(alerts): add push notification for CA exam announcements
 
-Used Supabase Realtime to subscribe to the alerts table and trigger
-a local notification via the flutter_local_notifications package.
+fix(timetable): resolve Monday schedule overflow on small screens
 
 Closes #14
-```
-```
-fix(timetable): resolve overflow on Monday schedule for small screens
 
-The Monday column was exceeding viewport width on phones with
-screen width < 380dp. Added flexible column widths with constraints.
-```
-```
 chore(deps): upgrade supabase_flutter to 2.10.2
-chore(ci): add build-android job to CI pipeline
+
+refactor(auth): extract token refresh into AuthRepository
+
 docs(api): document transcribe-audio edge function response schema
-refactor(auth): extract token refresh logic into AuthRepository
-test(courses): add widget tests for CourseCard component
+
+test(courses): add unit tests for CourseCodeValidator
+
+ci: add Android APK build step to CI pipeline
+
+feat(transcription): implement Gladia polling with timeout handling
+
+BREAKING CHANGE: audioUrl now expects object path, not full URL
 ```
 
-### ❌ Bad commit messages
+### Bad Examples ❌
+
 ```
-bug fixes          # Zero information
-timetable bug fix 2    # What bug? What fix?
-update             # Update what?
-WIP                # Never commit WIP to a shared branch
-asdfghjkl          # This has actually happened
+bug fixes
+timetable bug fix 2
+update
+WIP
+new changes to polish the screens
+6572902 bug fixes
 ```
 
 ---
 
 ## 4. Pull Request Process
 
-### Step-by-step
+### 4.1 Before Opening a PR
 
-```
-1.  Branch off develop:
-      git checkout develop && git pull
-      git checkout -b feat/my-feature
+Run these locally and fix all issues before pushing:
 
-2.  Work in small, logical commits (follow Conventional Commits).
-
-3.  Before pushing — always run locally:
-      flutter analyze        # must be zero warnings
-      dart format .          # must show no changes
-      flutter test           # all tests must pass
-
-4.  Push and open a PR against develop (NOT main):
-      git push -u origin feat/my-feature
-
-5.  Fill in the PR template completely.
-
-6.  Request review from at least one teammate.
-
-7.  Respond to all review comments before merging.
-
-8.  CI must be green (Lint + Tests).
-
-9.  Merge using Squash-merge (see section 5).
-
-10. Delete the branch immediately after merge.
-```
-
-### PR size guidelines
-
-| Size   | Lines changed | Guideline |
-|--------|--------------|-----------|
-| Small  | < 200        | Ideal — fast to review |
-| Medium | 200–500      | Acceptable for full features |
-| Large  | > 500        | Split into smaller PRs if possible |
-
-If a PR is unavoidably large, add a detailed description and walkthrough
-in the PR body so the reviewer knows where to focus.
-
-### Review checklist (for reviewers)
-
-- [ ] Does the code do what the PR title claims?
-- [ ] Are there obvious bugs, edge cases, or null-safety issues?
-- [ ] Is error handling user-friendly (no raw exception messages shown to users)?
-- [ ] Are there `print()` statements left in production code?
-- [ ] Are hardcoded strings, URLs, or keys present?
-- [ ] Does the UI work on small screens (< 380dp width)?
-- [ ] Are new Supabase calls protected by RLS policies?
-- [ ] Are new features behind role-based access control?
-
----
-
-## 5. Merge Strategy
-
-### develop ← feature branches → **Squash Merge only**
-
-Every feature branch is squash-merged into `develop`. This keeps the
-`develop` history clean — one meaningful commit per feature, not a
-sprawl of "fix typo" and "WIP" commits.
-
-```
-Before merge (feature branch):
-  abc1234  WIP
-  def5678  fix typo
-  ghi9012  add alerts screen
-  jkl3456  add alerts controller
-  mno7890  add alerts data layer
-
-After squash merge into develop:
-  pqr1234  feat(alerts): add push notification for CA announcements
-```
-
-### main ← develop → **Merge Commit (release only)**
-
-When releasing to production, `develop` is merged into `main` with a
-standard merge commit (preserving the full integration history) and
-**tagged with the version number**.
-
-```bash
-git checkout main
-git merge --no-ff develop -m "release: v1.2.0"
-git tag -a v1.2.0 -m "Release v1.2.0 — alerts + timetable fixes"
-git push origin main --tags
-```
-
-### GitHub Settings to enforce this
-
-Go to **Settings → General → Pull Requests**:
-- ✅ Allow squash merging
-- ❌ Disable merge commits (for feature PRs)
-- ❌ Disable rebase merging
-- ✅ Automatically delete head branches
-
----
-
-## 6. Release Process
-
-```
-develop (stable, all tests green)
-   │
-   ├── Create PR: develop → main
-   │     Title:  "release: v<MAJOR>.<MINOR>.<PATCH>"
-   │     Body:   paste the changelog entries
-   │
-   ├── Get at least 1 approval
-   ├── Merge with merge commit (not squash — releases keep full history)
-   │
-   ├── Tag the merge commit:
-   │     git tag -a v1.0.0 -m "Release v1.0.0"
-   │     git push origin main --tags
-   │
-   └── GitHub Actions automatically builds the release APK
-         and uploads it as a GitHub Release artifact.
-```
-
-### Version numbering (Semantic Versioning)
-
-```
-v<MAJOR>.<MINOR>.<PATCH>
-
-MAJOR — breaking change or complete feature milestone
-MINOR — new feature, backwards compatible
-PATCH — bug fix, backwards compatible
-```
-
----
-
-## 7. What To Do When Things Go Wrong
-
-### "I accidentally committed to main/develop directly"
-
-```bash
-# Undo the commit but keep changes staged
-git reset --soft HEAD~1
-
-# Create a proper branch for your changes
-git stash
-git checkout -b fix/accidental-direct-commit
-git stash pop
-git add -A && git commit -m "fix(...): ..."
-git push -u origin fix/accidental-direct-commit
-# Then open a PR normally
-```
-
-### "I have a merge conflict"
-
-```bash
-git checkout develop
-git pull origin develop
-git checkout feat/my-feature
-git merge develop         # bring develop into your branch
-# Resolve conflicts in your editor
-git add <resolved-files>
-git merge --continue
-git push origin feat/my-feature
-```
-
-### "I pushed a secret / API key"
-
-1. **Immediately** rotate the exposed key in Supabase / Firebase dashboard.
-2. Remove the key from history:
-   ```bash
-   git filter-branch --force --index-filter \
-     'git rm --cached --ignore-unmatch path/to/file' \
-     --prune-empty --tag-name-filter cat -- --all
-   git push --force-with-lease origin --all
-   ```
-3. Notify the team immediately so they re-clone.
-
-### "My branch is very behind develop"
-
-```bash
-git checkout feat/my-feature
-git fetch origin
-git rebase origin/develop
-# Fix any conflicts, then:
-git push --force-with-lease origin feat/my-feature
-```
-
-Use `rebase` (not `merge`) when updating a feature branch from develop,
-to keep your branch's history linear.
-
----
-
-## 8. Branch Protection Rules
-
-These must be configured by a repo admin on GitHub.
-
-### Settings → Branches → Add ruleset
-
-**Ruleset: Protect main**
-- Target branch: `main`
-- Require a pull request before merging: **ON**
-  - Required approvals: **1**
-  - Dismiss stale reviews when new commits are pushed: **ON**
-- Require status checks to pass:
-  - `CI / Lint & Analyze`
-  - `CI / Run Tests`
-- Require branches to be up to date before merging: **ON**
-- Block force pushes: **ON**
-- Restrict deletions: **ON**
-
-**Ruleset: Protect develop**
-- Target branch: `develop`
-- Require a pull request before merging: **ON**
-  - Required approvals: **1**
-- Require status checks to pass:
-  - `CI / Lint & Analyze`
-  - `CI / Run Tests`
-- Block force pushes: **ON**
-
----
-
-## 9. CI/CD Pipeline
-
-Every push to `develop` and every PR triggers the pipeline defined in
-`.github/workflows/ci.yml`.
-
-```
-PR opened / push to develop
-        │
-        ├─► Lint & Analyze job
-        │     flutter pub get
-        │     dart format --check
-        │     flutter analyze --fatal-infos
-        │
-        └─► Test job (runs after Lint passes)
-              flutter pub get
-              flutter test --coverage
-              Upload coverage to Codecov
-
-Push to develop (after merge)
-        │
-        └─► Build Android job
-              flutter build apk --debug
-              Upload APK as GitHub Actions artifact (kept 7 days)
-
-Push to main (release tag)
-        │
-        └─► [Planned] Firebase App Distribution deployment
-```
-
-### Running CI checks locally before pushing
-
-```bash
-# Run all three checks in sequence — fix anything that fails
-dart format --output=none --set-exit-if-changed . && \
-flutter analyze --fatal-infos && \
+```bat
+dart format .
+flutter analyze
 flutter test
 ```
 
-Make this a habit. Every PR where CI catches something that could have
-been caught locally wastes a reviewer's time.
+Zero warnings from `flutter analyze` is a hard requirement. CI will reject anything else.
+
+### 4.2 PR Rules
+
+1. **Title** must follow Conventional Commits format — same as your commit type
+2. **Base branch** is always `develop` (never `main`, except `hotfix/` branches)
+3. **Fill the PR template** completely — empty sections are not acceptable
+4. **One PR = one concern** — don't bundle a feature and a refactor together
+5. **Minimum 1 approval** required before merging
+6. **CI must be green** — all checks (lint, test, build) must pass
+7. **Squash-merge** into `develop` to keep history linear and clean
+8. **Delete branch** immediately after merge — GitHub can do this automatically
+
+### 4.3 PR Size Guidelines
+
+| Lines changed | Status      | Notes                                    |
+|---------------|-------------|------------------------------------------|
+| < 200         | ✅ Ideal    | Easy to review thoroughly                |
+| 200–500       | ⚠️ Acceptable | Must have clear description             |
+| > 500         | ❌ Too large | Split into multiple PRs if possible     |
+
+### 4.4 Reviewer Checklist
+
+When reviewing a PR, check:
+
+- [ ] Code follows feature-first folder structure
+- [ ] No `print()` statements (use logger)
+- [ ] No hardcoded secrets or Supabase URLs
+- [ ] No unresolved TODO comments
+- [ ] Loading, error, and empty states are handled
+- [ ] Role-based access is enforced where needed
+- [ ] `dart format` and `flutter analyze` were run
+- [ ] At least one test covers the new code path
+
+---
+
+## 5. Release Process — `develop` → `main`
+
+Only the project lead performs releases. This is the flow:
+
+```
+1. All features for the release are merged to develop
+2. develop CI is green (all tests pass, app builds)
+3. Create a PR: develop → main
+   Title: chore(release): v1.2.0
+4. At least 1 other member reviews
+5. Merge with a merge commit (NOT squash — preserves history)
+6. Tag the release:
+   git tag -a v1.2.0 -m "Release v1.2.0"
+   git push origin v1.2.0
+7. GitHub Actions automatically builds the release APK
+```
+
+### Versioning
+
+We follow **[Semantic Versioning](https://semver.org/)**:
+
+```
+MAJOR.MINOR.PATCH
+
+1.0.0  → Initial release
+1.1.0  → New feature added (feat:)
+1.1.1  → Bug fix (fix:)
+2.0.0  → Breaking change (BREAKING CHANGE: in footer)
+```
+
+Update `version` in `pubspec.yaml` before every release:
+
+```yaml
+version: 1.2.0+5   # name+buildNumber
+```
+
+---
+
+## 6. Hotfix Process
+
+For critical production bugs that cannot wait for the next release:
+
+```
+1. Branch off main (NOT develop):
+   git checkout -b hotfix/auth-token-crash main
+
+2. Fix the bug with a proper commit:
+   fix(auth): prevent null pointer on expired token refresh
+
+3. Open PR → main (not develop)
+4. After merging to main, immediately merge main back into develop:
+   git checkout develop
+   git merge main
+   git push origin develop
+
+5. Tag the patch release: v1.1.1
+```
+
+---
+
+## 7. CI/CD Pipeline — GitHub Actions
+
+Every push to `develop` and every PR targeting `main` or `develop` triggers:
+
+```
+Push / PR
+    │
+    ├── [Job 1] Lint & Analyze
+    │       dart format --check
+    │       flutter analyze --fatal-infos
+    │
+    ├── [Job 2] Test  (runs after Job 1 passes)
+    │       flutter test --coverage
+    │       Upload coverage to Codecov
+    │
+    └── [Job 3] Build Android APK  (only on develop push)
+            flutter build apk --debug
+            Upload APK as artifact (7-day retention)
+```
+
+Config lives at: `.github/workflows/ci.yml`
+
+**CI is not optional.** A red CI blocks the merge. Do not bypass checks.
+
+---
+
+## 8. Branch Protection Rules (GitHub Settings)
+
+These must be configured at **GitHub → Settings → Branches** by the project lead:
+
+### For `main`:
+- ✅ Require a pull request before merging
+- ✅ Require 1 approval
+- ✅ Dismiss stale reviews when new commits are pushed
+- ✅ Require status checks: `CI / Lint & Analyze`, `CI / Run Tests`
+- ✅ Require branches to be up to date before merging
+- ✅ Do not allow bypassing the above settings
+- ✅ Restrict who can push to matching branches: project lead only
+
+### For `develop`:
+- ✅ Require a pull request before merging
+- ✅ Require 1 approval
+- ✅ Require status checks: `CI / Lint & Analyze`, `CI / Run Tests`
+- ✅ Do not allow bypassing the above settings
+
+---
+
+## 9. What Not to Commit
+
+These must never appear in the repository. They are all covered in `.gitignore`:
+
+| Category              | Examples                                              |
+|-----------------------|-------------------------------------------------------|
+| Build artifacts       | `build/`, `*.apk`, `build_log*.txt`                  |
+| Secrets               | `.env`, `google-services.json`, `key.properties`     |
+| LaTeX build artifacts | `*.aux`, `*.fls`, `*.fdb_latexmk`, `*.synctex.gz`    |
+| IDE / editor files    | `.idea/`, `.vscode/settings.json`                    |
+| CLI cache             | `supabase/.temp/`                                    |
+| Generated Dart files  | `*.g.dart`, `*.freezed.dart`                         |
+| Loose code fragments  | Files named `AlertDialog(`, `_isWorking`, etc.       |
+| Log files             | `*.log`, `analyze.log`                               |
+| Node modules          | `node_modules/`                                      |
 
 ---
 
@@ -436,41 +331,30 @@ been caught locally wastes a reviewer's time.
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                  ICTU Community Git Cheatsheet              │
+│              ICTU Community — Git Quick Reference           │
 ├─────────────────────────────────────────────────────────────┤
-│  Start a new task                                           │
-│    git checkout develop && git pull                         │
-│    git checkout -b feat/my-feature                          │
+│  Start work:                                                │
+│    git checkout develop && git pull origin develop          │
+│    git checkout -b feat/your-feature-name                   │
 │                                                             │
-│  Commit (Conventional Commits format)                       │
-│    git commit -m "feat(alerts): add CA notification"        │
-│    git commit -m "fix(auth): resolve null session on cold start"│
-│    git commit -m "chore(deps): upgrade supabase_flutter"    │
-│                                                             │
-│  Before every push                                          │
+│  Before every commit:                                       │
 │    dart format .                                            │
 │    flutter analyze                                          │
-│    flutter test                                             │
 │                                                             │
-│  Open a PR                                                  │
-│    Target branch: develop (never main)                      │
-│    Fill PR template · request 1 reviewer                    │
+│  Commit format:                                             │
+│    feat(scope): add something new                           │
+│    fix(scope): resolve something broken                     │
+│    chore(deps): upgrade some-package to x.y.z              │
 │                                                             │
-│  Branch naming                                              │
-│    feat/  fix/  chore/  docs/  refactor/  test/  hotfix/   │
-│    kebab-case · short · descriptive                         │
+│  Open PR:                                                   │
+│    Base: develop (always)                                   │
+│    Fill PR template, wait for CI green + 1 approval         │
+│    Squash-merge, delete branch                              │
 │                                                             │
-│  Branch lifetimes                                           │
-│    Delete immediately after merge — no stale branches       │
-│                                                             │
-│  Never                                                      │
-│    Push directly to main or develop                         │
-│    Commit secrets, build logs, or binary artefacts          │
-│    Leave print() statements in production code              │
-│    Use "bug fixes" or "update" as a commit message          │
+│  Never:                                                     │
+│    ❌ git push origin main                                  │
+│    ❌ Commit secrets, logs, or build artifacts              │
+│    ❌ Write "bug fixes" as a commit message                 │
+│    ❌ Leave branches alive after merging                    │
 └─────────────────────────────────────────────────────────────┘
 ```
-
----
-
-*Questions? Open a discussion issue tagged `docs` or message the team lead.*

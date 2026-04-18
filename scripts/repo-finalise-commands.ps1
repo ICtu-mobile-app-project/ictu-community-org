@@ -6,10 +6,10 @@
 
 
 # ----------------------------------------------------------------
-# STEP 1 — Switch to develop and sync
+# STEP 1 — Switch to dev and sync
 # ----------------------------------------------------------------
-git checkout develop
-git pull origin develop
+git checkout dev
+git pull origin dev
 
 
 # ----------------------------------------------------------------
@@ -20,11 +20,7 @@ git pull origin develop
 git rm --cached -r lib/assets/
 
 # LaTeX build artifacts — only the .tex source and .pdf belong, not these
-git rm --cached "pdfs/ICTU_Community.aux"
-git rm --cached "pdfs/ICTU_Community.fdb_latexmk"
-git rm --cached "pdfs/ICTU_Community.fls"
-git rm --cached "pdfs/ICTU_Community.out"
-git rm --cached "pdfs/ICTU_Community.synctex.gz"
+git rm --cached "pdfs/ICTU_Community.aux" "pdfs/ICTU_Community.fdb_latexmk" "pdfs/ICTU_Community.fls" "pdfs/ICTU_Community.out" "pdfs/ICTU_Community.synctex.gz"
 
 # Supabase CLI cache — machine-local, never commit
 git rm --cached "supabase/.temp/cli-latest"
@@ -178,9 +174,9 @@ git commit -m "chore(repo): restructure folders, remove artifacts, scaffold feat
 
 
 # ----------------------------------------------------------------
-# STEP 10 — Push the clean commit to develop
+# STEP 10 — Push the clean commit to dev
 # ----------------------------------------------------------------
-git push origin develop
+git push origin dev
 
 
 # ----------------------------------------------------------------
@@ -196,14 +192,14 @@ git push origin --delete feature-7-audio-rec-and-ai-transcription
 # Fully merged — courses are live in main (merged via PR #8)
 git push origin --delete feature-8-Course-feature
 
-# Stale duplicate of develop
-git push origin --delete dev
-
 # Copilot auto-branch — superseded entirely by auth_controller.dart on main
 git push origin --delete copilot/sub-pr-1
 
 # Copilot auto-branch — contains only build_log.txt pollution + old code
 git push origin --delete copilot/feature-8-ui-design-summary
+
+# develop — replaced by dev as the integration branch
+git push origin --delete develop
 
 
 # ----------------------------------------------------------------
@@ -216,9 +212,12 @@ git branch -a
 # ================================================================
 # DONE — Only these branches should remain:
 #   remotes/origin/main
-#   remotes/origin/develop
+#   remotes/origin/dev
 #
 # MANUAL STEPS LEFT (in GitHub Settings):
+#
+#   Settings → General → Default branch:
+#     Change from 'develop' (or 'main') to 'dev'
 #
 #   Settings → Branches → Add rule for "main":
 #     ✅ Require pull request before merging (1 approval)
@@ -227,7 +226,7 @@ git branch -a
 #     ✅ Do not allow bypassing the above settings
 #     ✅ Restrict push to project lead only
 #
-#   Repeat the same rule for "develop".
+#   Repeat the same rule for "dev".
 #
 #   Settings → General → Pull Requests:
 #     ✅ Automatically delete head branches

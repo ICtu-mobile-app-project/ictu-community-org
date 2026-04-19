@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../models/user_role.dart';
+import 'package:provider/provider.dart';
 import '../controllers/auth_controller.dart';
 import 'login_screen.dart';
 
@@ -29,7 +30,6 @@ class _SignupScreenState extends State<SignupScreen> {
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController =
       TextEditingController();
-  final AuthController _authController = AuthController();
 
   UserRole _selectedRole = UserRole.student;
   String _selectedProgram = _programs.first;
@@ -43,7 +43,6 @@ class _SignupScreenState extends State<SignupScreen> {
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
-    _authController.dispose();
     super.dispose();
   }
 
@@ -82,7 +81,8 @@ class _SignupScreenState extends State<SignupScreen> {
       return;
     }
 
-    final AuthFlowResponse response = await _authController.signUp(
+    final authController = Provider.of<AuthController>(context, listen: false);
+    final AuthFlowResponse response = await authController.signUp(
       fullName: _nameController.text.trim(),
       email: _emailController.text.trim(),
       password: _passwordController.text,

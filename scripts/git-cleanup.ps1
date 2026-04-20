@@ -5,7 +5,7 @@
 #   .\scripts\git-cleanup.ps1
 #
 # Requirements: git must be on your PATH and you must be
-# authenticated (gh CLI or HTTPS credential manager).
+# authenticated (gh CLI or HTTPS credential manager or SSH).
 # ============================================================
 
 Set-StrictMode -Version Latest
@@ -23,7 +23,8 @@ Write-Host "`n[2/4] Deleting stale local branches..." -ForegroundColor Yellow
 
 $staleBranches = @(
     "copilot/sub-pr-1",
-    "Feature-1-Authentication-branch"
+    "Feature-1-Authentication-branch",
+    "develop"
 )
 
 foreach ($branch in $staleBranches) {
@@ -31,7 +32,6 @@ foreach ($branch in $staleBranches) {
     if ($exists) {
         git branch -d $branch 2>$null
         if ($LASTEXITCODE -ne 0) {
-            # Force-delete if not fully merged
             git branch -D $branch
             Write-Host "Force-deleted (unmerged): $branch" -ForegroundColor Magenta
         } else {
@@ -46,15 +46,15 @@ foreach ($branch in $staleBranches) {
 Write-Host "`n[3/4] Remaining local branches:" -ForegroundColor Yellow
 git branch -v
 
-# ── 4. Ensure develop branch exists ──────────────────────────
-Write-Host "`n[4/4] Checking develop branch..." -ForegroundColor Yellow
-$developExists = git branch --list "develop"
-if (-not $developExists) {
-    git checkout -b develop main
-    git push -u origin develop
-    Write-Host "Created and pushed 'develop' branch." -ForegroundColor Green
+# ── 4. Ensure dev branch exists ──────────────────────────────
+Write-Host "`n[4/4] Checking dev branch..." -ForegroundColor Yellow
+$devExists = git branch --list "dev"
+if (-not $devExists) {
+    git checkout -b dev main
+    git push -u origin dev
+    Write-Host "Created and pushed 'dev' branch." -ForegroundColor Green
 } else {
-    Write-Host "'develop' already exists." -ForegroundColor Green
+    Write-Host "'dev' already exists." -ForegroundColor Green
 }
 
 Write-Host "`n=== Cleanup complete ===" -ForegroundColor Cyan
@@ -64,4 +64,5 @@ Write-Host "  2. Add branch protection rule for 'main':" -ForegroundColor Gray
 Write-Host "     - Require pull request before merging (1 approval)" -ForegroundColor Gray
 Write-Host "     - Require status checks: CI / Lint & Analyze, CI / Run Tests" -ForegroundColor Gray
 Write-Host "     - Do not allow bypassing the above settings" -ForegroundColor Gray
-Write-Host "  3. Repeat protection for 'develop'" -ForegroundColor Gray
+Write-Host "  3. Repeat protection for 'dev'" -ForegroundColor Gray
+Write-Host "  4. Set 'dev' as the default branch in Settings > General" -ForegroundColor Gray

@@ -23,12 +23,12 @@ class AuthFlowResponse {
 
 class AuthController {
   static final AuthController _instance = AuthController._internal();
-
   factory AuthController() => _instance;
 
   AuthController._internal() {
     _authSubscription = _client?.auth.onAuthStateChange.listen((event) {
-      isLoggedIn.value = event.session != null;
+      _isLoggedIn = event.session != null;
+      notifyListeners();
     });
   }
 
@@ -91,8 +91,9 @@ class AuthController {
       }
 
       final UserRole resolvedRole = await _fetchRole(user.id);
-      activeRole.value = resolvedRole;
-      isLoggedIn.value = true;
+      _activeRole = resolvedRole;
+      _isLoggedIn = true;
+      notifyListeners();
 
       return AuthFlowResponse(isSuccess: true, role: resolvedRole);
     } on AuthException catch (error) {
@@ -222,14 +223,16 @@ class AuthController {
     final User? currentUser = client.auth.currentUser;
     final Session? currentSession = client.auth.currentSession;
     if (currentUser == null || currentSession == null) {
-      isLoggedIn.value = false;
-      activeRole.value = null;
+      _isLoggedIn = false;
+      _activeRole = null;
+      notifyListeners();
       return null;
     }
 
     final UserRole role = await _fetchRole(currentUser.id);
-    activeRole.value = role;
-    isLoggedIn.value = true;
+    _activeRole = role;
+    _isLoggedIn = true;
+    notifyListeners();
     return role;
   }
 
@@ -238,8 +241,9 @@ class AuthController {
     if (client != null) {
       await client.auth.signOut();
     }
-    isLoggedIn.value = false;
-    activeRole.value = null;
+    _isLoggedIn = false;
+    _activeRole = null;
+    notifyListeners();
   }
 
   Future<UserRole> _fetchRole(String userId) async {
@@ -345,9 +349,9 @@ class AuthController {
     return 'Signup failed. Please check your information and try again.';
   }
 
+  @override
   void dispose() {
     _authSubscription?.cancel();
-    isLoggedIn.dispose();
-    activeRole.dispose();
+    super.dispose();
   }
 }

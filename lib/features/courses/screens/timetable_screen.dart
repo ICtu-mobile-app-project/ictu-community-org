@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../auth/models/user_role.dart';
+import 'package:provider/provider.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../controllers/timetable_controller.dart';
 import '../data/timetable_repository.dart';
@@ -49,7 +50,7 @@ class _TimetableScreenState extends State<TimetableScreen>
     String? lecturerName;
 
     if (role == null) {
-      final authController = AuthController();
+      final authController = Provider.of<AuthController>(context, listen: false);
       role = await authController.restoreCurrentUserRole();
     }
 

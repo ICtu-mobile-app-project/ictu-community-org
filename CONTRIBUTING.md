@@ -17,23 +17,23 @@ Welcome! This document explains how to contribute to the ICTU Community mobile a
 
 We follow a **GitFlow-inspired** model with two long-lived branches:
 
-| Branch    | Purpose                                              |
-|-----------|------------------------------------------------------|
-| `main`    | Production-ready code only. Never commit here directly. |
-| `develop` | Integration branch. All features merge here first.  |
+| Branch  | Purpose                                              |
+|---------|------------------------------------------------------|
+| `main`  | Production-ready code only. Never commit here directly. |
+| `dev`   | Integration branch. All features merge here first.  |
 
 ### Short-lived branch naming
 
-Always branch off `develop`. Use the following prefixes:
+Always branch off `dev`. Use the following prefixes:
 
-| Prefix     | When to use                          | Example                              |
-|------------|--------------------------------------|--------------------------------------|
-| `feat/`    | New feature                          | `feat/alerts-push-notifications`     |
-| `fix/`     | Bug fix                              | `fix/timetable-monday-overflow`      |
-| `chore/`   | Tooling, deps, config, CI changes    | `chore/update-supabase-sdk`          |
-| `docs/`    | Documentation only                   | `docs/update-api-endpoints`          |
-| `refactor/`| Code restructure, no behaviour change| `refactor/auth-repository-cleanup`   |
-| `test/`    | Adding or fixing tests               | `test/courses-widget-tests`          |
+| Prefix      | When to use                           | Example                              |
+|-------------|---------------------------------------|--------------------------------------|
+| `feat/`     | New feature                           | `feat/alerts-push-notifications`     |
+| `fix/`      | Bug fix                               | `fix/timetable-monday-overflow`      |
+| `chore/`    | Tooling, deps, config, CI changes     | `chore/update-supabase-sdk`          |
+| `docs/`     | Documentation only                    | `docs/update-api-endpoints`          |
+| `refactor/` | Code restructure, no behaviour change | `refactor/auth-repository-cleanup`   |
+| `test/`     | Adding or fixing tests                | `test/courses-widget-tests`          |
 
 **Rules:**
 - Use **kebab-case** only — no PascalCase, no spaces.
@@ -57,16 +57,16 @@ type(scope): short imperative description
 
 ### Types
 
-| Type       | When to use                                      |
-|------------|--------------------------------------------------|
-| `feat`     | A new feature visible to users                   |
-| `fix`      | A bug fix                                        |
-| `chore`    | Maintenance — deps, config, tooling              |
-| `docs`     | Documentation changes only                       |
-| `refactor` | Code change that neither fixes a bug nor adds a feature |
-| `test`     | Adding or updating tests                         |
-| `style`    | Formatting, whitespace (no logic changes)        |
-| `perf`     | Performance improvement                          |
+| Type       | When to use                                                     |
+|------------|-----------------------------------------------------------------|
+| `feat`     | A new feature visible to users                                  |
+| `fix`      | A bug fix                                                       |
+| `chore`    | Maintenance — deps, config, tooling                             |
+| `docs`     | Documentation changes only                                      |
+| `refactor` | Code change that neither fixes a bug nor adds a feature         |
+| `test`     | Adding or updating tests                                        |
+| `style`    | Formatting, whitespace (no logic changes)                       |
+| `perf`     | Performance improvement                                         |
 
 ### Scope (optional but encouraged)
 
@@ -94,16 +94,16 @@ WIP
 
 ## Pull Request Process
 
-1. **Always branch off `develop`**, never off `main`.
+1. **Always branch off `dev`**, never off `main`.
 2. Keep PRs focused — one feature or fix per PR.
 3. Fill in the PR template completely before requesting review.
 4. Ensure the CI pipeline is green (lint + tests must pass).
 5. At least **one approval** is required before merging.
-6. **Squash-merge** into `develop` to keep history clean.
+6. **Squash-merge** into `dev` to keep history clean.
 7. Delete your branch after merge.
 
 ### Merging to `main`
-Only the project lead merges `develop` → `main`, and only for a production release. This is tagged with a version (e.g. `v1.0.0`).
+Only the project lead merges `dev` → `main`, and only for a production release. This is tagged with a version (e.g. `v1.0.0`).
 
 ---
 

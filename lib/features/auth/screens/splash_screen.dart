@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../home/screens/lecturer_dashboard_screen.dart';
 import '../../navigation/screens/main_shell.dart';
+import 'package:provider/provider.dart';
 import '../controllers/auth_controller.dart';
 import '../models/user_role.dart';
 import 'welcome_screen.dart';
@@ -14,7 +15,6 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
-  final AuthController _authController = AuthController();
 
   @override
   void initState() {
@@ -24,13 +24,13 @@ class _SplashScreenState extends State<SplashScreen> {
 
   @override
   void dispose() {
-    _authController.dispose();
     super.dispose();
   }
 
   Future<void> _bootstrap() async {
     await Future<void>.delayed(const Duration(milliseconds: 1400));
-    final UserRole? role = await _authController.restoreCurrentUserRole();
+    final authController = Provider.of<AuthController>(context, listen: false);
+    final UserRole? role = await authController.restoreCurrentUserRole();
     if (!mounted) {
       return;
     }

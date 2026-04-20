@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'package:provider/provider.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../../auth/models/user_role.dart';
 import '../../auth/screens/welcome_screen.dart';
@@ -27,13 +28,11 @@ class MainShell extends StatefulWidget {
 
 class _MainShellState extends State<MainShell> {
   final MainNavController _controller = MainNavController();
-  final AuthController _authController = AuthController();
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   bool _isLoggingOut = false;
 
   @override
   void dispose() {
-    _authController.dispose();
     _controller.dispose();
     super.dispose();
   }
@@ -91,7 +90,8 @@ class _MainShellState extends State<MainShell> {
       _isLoggingOut = true;
     });
 
-    await _authController.signOut();
+     final authController = Provider.of<AuthController>(context, listen: false);
+     await authController.signOut();
     if (!mounted) {
       return;
     }

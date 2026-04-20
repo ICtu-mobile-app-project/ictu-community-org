@@ -1,4 +1,6 @@
 import 'package:flutter/widgets.dart';
+import 'package:provider/provider.dart';
+import 'features/auth/controllers/auth_controller.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
 import 'app.dart';
@@ -11,5 +13,10 @@ Future<void> main() async {
   await Hive.initFlutter();
 
   await SupabaseBootstrap.initialize();
-  runApp(const IctuCommunityApp());
+   runApp(
+     ChangeNotifierProvider<AuthController>(
+       create: (_) => AuthController(),
+       child: const IctuCommunityApp(),
+     ),
+   );
 }

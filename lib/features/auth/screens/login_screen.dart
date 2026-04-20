@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../home/screens/lecturer_dashboard_screen.dart';
 import '../../navigation/screens/main_shell.dart';
+import 'package:provider/provider.dart';
 import '../controllers/auth_controller.dart';
 import '../models/user_role.dart';
 import 'signup_screen.dart';
@@ -18,7 +19,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final AuthController _authController = AuthController();
   bool _isSubmitting = false;
   String? _errorText;
 
@@ -44,7 +44,8 @@ class _LoginScreenState extends State<LoginScreen> {
       _errorText = null;
     });
 
-    final AuthFlowResponse response = await _authController.signIn(
+    final authController = Provider.of<AuthController>(context, listen: false);
+    final AuthFlowResponse response = await authController.signIn(
       email: _emailController.text.trim(),
       password: _passwordController.text,
     );

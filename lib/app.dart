@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'core/supabase/supabase_bootstrap.dart';
 import 'core/theme/app_theme.dart';
+import 'package:provider/provider.dart';
 import 'features/auth/controllers/auth_controller.dart';
 import 'features/auth/models/user_role.dart';
 import 'features/auth/screens/splash_screen.dart';
@@ -21,7 +22,6 @@ class IctuCommunityApp extends StatefulWidget {
 
 class _IctuCommunityAppState extends State<IctuCommunityApp> {
   final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
-  final AuthController _authController = AuthController();
   StreamSubscription<AuthState>? _authStateSubscription;
 
   @override
@@ -44,7 +44,6 @@ class _IctuCommunityAppState extends State<IctuCommunityApp> {
   @override
   void dispose() {
     _authStateSubscription?.cancel();
-    _authController.dispose();
     super.dispose();
   }
 
@@ -57,7 +56,8 @@ class _IctuCommunityAppState extends State<IctuCommunityApp> {
       return;
     }
 
-    final UserRole? role = await _authController.restoreCurrentUserRole();
+    final authController = Provider.of<AuthController>(context, listen: false);
+    final UserRole? role = await authController.restoreCurrentUserRole();
     if (!mounted) {
       return;
     }

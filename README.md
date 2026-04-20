@@ -12,7 +12,6 @@
 - [Overview](#overview)
 - [Architecture](#architecture)
 - [Getting Started](#getting-started)
-- [Project Structure](#project-structure)
 - [Environment Setup](#environment-setup)
 - [Running & Building](#running--building)
 - [Contributing](#contributing)
@@ -69,7 +68,7 @@ features/<feature>/
 
 **Backend:** Supabase (PostgreSQL + Auth + Storage + Edge Functions)  
 **AI:** Gladia API for lecture transcription  
-**CI/CD:** GitHub Actions (lint → test → build on every PR)
+**CI/CD:** GitHub Actions (lint → test → build on every PR to dev)
 
 ---
 
@@ -119,7 +118,7 @@ flutter run
 # Analyze code (must be zero warnings before committing)
 flutter analyze
 
-# Format code
+# Format code (run before every commit)
 dart format .
 
 # Run tests
@@ -146,7 +145,7 @@ supabase functions deploy transcribe-audio
 
 Please read **[CONTRIBUTING.md](./CONTRIBUTING.md)** before opening a branch or PR. Key rules:
 
-- Branch off `develop` using `feat/`, `fix/`, `chore/`, `docs/` prefixes
+- Branch off `dev` using `feat/`, `fix/`, `chore/`, `docs/` prefixes
 - Write commits in [Conventional Commits](https://www.conventionalcommits.org/) format
 - CI (lint + tests) must be green before requesting review
 - At least one approval required to merge

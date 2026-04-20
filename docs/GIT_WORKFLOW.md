@@ -24,7 +24,7 @@ We use a **simplified GitFlow** with two permanent branches and short-lived feat
 
 ```
 main
- └── develop
+ └── dev
       ├── feat/alerts-push-notifications
       ├── fix/timetable-monday-overflow
       ├── chore/upgrade-supabase-sdk
@@ -33,16 +33,16 @@ main
 
 ### 2.1 Permanent Branches
 
-| Branch    | Purpose                                         | Who merges here        | Direct commits? |
-|-----------|-------------------------------------------------|------------------------|-----------------|
-| `main`    | Production-ready, deployed code                 | Project lead only      | ❌ Never        |
-| `develop` | Integration branch — staging for next release   | Via PR from feat/* branches | ❌ Never   |
+| Branch | Purpose                                         | Who merges here             | Direct commits? |
+|--------|-------------------------------------------------|-----------------------------|-----------------|
+| `main` | Production-ready, deployed code                 | Project lead only           | ❌ Never        |
+| `dev`  | Integration branch — staging for next release   | Via PR from feat/* branches | ❌ Never        |
 
 **`main` is sacred.** It must always build, always be deployable. No exceptions.
 
 ### 2.2 Short-lived Branches
 
-Branch off `develop`. Never branch off `main`.
+Branch off `dev`. Never branch off `main`.
 
 #### Naming Convention
 
@@ -71,13 +71,13 @@ Branch off `develop`. Never branch off `main`.
 
 #### What We Had vs What We Do Now
 
-| Old (Bad) ❌                              | New (Correct) ✅                          |
-|------------------------------------------|------------------------------------------|
-| `Feature-1-Authentication-branch`        | `feat/auth-login-signup`                 |
-| `feature-8-Course-feature`               | `feat/lecturer-courses`                  |
-| `feature-7-audio-rec-and-ai-transcription` | `feat/lecture-audio-transcription`     |
-| `dev`                                    | `develop` (single integration branch)   |
-| `copilot/sub-pr-1`                       | Merged and deleted immediately           |
+| Old (Bad) ❌                                | New (Correct) ✅                       |
+|--------------------------------------------|----------------------------------------|
+| `Feature-1-Authentication-branch`          | `feat/auth-login-signup`              |
+| `feature-8-Course-feature`                 | `feat/lecturer-courses`               |
+| `feature-7-audio-rec-and-ai-transcription` | `feat/lecture-audio-transcription`    |
+| Multiple stale branches left alive         | Deleted immediately after merge       |
+| `copilot/sub-pr-1`                         | Merged and deleted immediately        |
 
 ---
 
@@ -134,7 +134,7 @@ docs(api): document transcribe-audio edge function response schema
 
 test(courses): add unit tests for CourseCodeValidator
 
-ci: add Android APK build step to CI pipeline
+ci: update pipeline to target dev branch
 
 feat(transcription): implement Gladia polling with timeout handling
 
@@ -171,21 +171,21 @@ Zero warnings from `flutter analyze` is a hard requirement. CI will reject anyth
 ### 4.2 PR Rules
 
 1. **Title** must follow Conventional Commits format — same as your commit type
-2. **Base branch** is always `develop` (never `main`, except `hotfix/` branches)
+2. **Base branch** is always `dev` (never `main`, except `hotfix/` branches)
 3. **Fill the PR template** completely — empty sections are not acceptable
 4. **One PR = one concern** — don't bundle a feature and a refactor together
 5. **Minimum 1 approval** required before merging
 6. **CI must be green** — all checks (lint, test, build) must pass
-7. **Squash-merge** into `develop` to keep history linear and clean
+7. **Squash-merge** into `dev` to keep history linear and clean
 8. **Delete branch** immediately after merge — GitHub can do this automatically
 
 ### 4.3 PR Size Guidelines
 
-| Lines changed | Status      | Notes                                    |
-|---------------|-------------|------------------------------------------|
-| < 200         | ✅ Ideal    | Easy to review thoroughly                |
-| 200–500       | ⚠️ Acceptable | Must have clear description             |
-| > 500         | ❌ Too large | Split into multiple PRs if possible     |
+| Lines changed | Status        | Notes                                    |
+|---------------|---------------|------------------------------------------|
+| < 200         | ✅ Ideal      | Easy to review thoroughly                |
+| 200–500       | ⚠️ Acceptable | Must have clear description              |
+| > 500         | ❌ Too large  | Split into multiple PRs if possible      |
 
 ### 4.4 Reviewer Checklist
 
@@ -202,14 +202,14 @@ When reviewing a PR, check:
 
 ---
 
-## 5. Release Process — `develop` → `main`
+## 5. Release Process — `dev` → `main`
 
 Only the project lead performs releases. This is the flow:
 
 ```
-1. All features for the release are merged to develop
-2. develop CI is green (all tests pass, app builds)
-3. Create a PR: develop → main
+1. All features for the release are merged to dev
+2. dev CI is green (all tests pass, app builds)
+3. Create a PR: dev → main
    Title: chore(release): v1.2.0
 4. At least 1 other member reviews
 5. Merge with a merge commit (NOT squash — preserves history)
@@ -245,17 +245,17 @@ version: 1.2.0+5   # name+buildNumber
 For critical production bugs that cannot wait for the next release:
 
 ```
-1. Branch off main (NOT develop):
+1. Branch off main (NOT dev):
    git checkout -b hotfix/auth-token-crash main
 
 2. Fix the bug with a proper commit:
    fix(auth): prevent null pointer on expired token refresh
 
-3. Open PR → main (not develop)
-4. After merging to main, immediately merge main back into develop:
-   git checkout develop
+3. Open PR → main (not dev)
+4. After merging to main, immediately merge main back into dev:
+   git checkout dev
    git merge main
-   git push origin develop
+   git push origin dev
 
 5. Tag the patch release: v1.1.1
 ```
@@ -264,7 +264,7 @@ For critical production bugs that cannot wait for the next release:
 
 ## 7. CI/CD Pipeline — GitHub Actions
 
-Every push to `develop` and every PR targeting `main` or `develop` triggers:
+Every push to `dev` and every PR targeting `main` or `dev` triggers:
 
 ```
 Push / PR
@@ -277,7 +277,7 @@ Push / PR
     │       flutter test --coverage
     │       Upload coverage to Codecov
     │
-    └── [Job 3] Build Android APK  (only on develop push)
+    └── [Job 3] Build Android APK  (only on dev push)
             flutter build apk --debug
             Upload APK as artifact (7-day retention)
 ```
@@ -301,7 +301,7 @@ These must be configured at **GitHub → Settings → Branches** by the project 
 - ✅ Do not allow bypassing the above settings
 - ✅ Restrict who can push to matching branches: project lead only
 
-### For `develop`:
+### For `dev`:
 - ✅ Require a pull request before merging
 - ✅ Require 1 approval
 - ✅ Require status checks: `CI / Lint & Analyze`, `CI / Run Tests`
@@ -334,7 +334,7 @@ These must never appear in the repository. They are all covered in `.gitignore`:
 │              ICTU Community — Git Quick Reference           │
 ├─────────────────────────────────────────────────────────────┤
 │  Start work:                                                │
-│    git checkout develop && git pull origin develop          │
+│    git checkout dev && git pull origin dev                  │
 │    git checkout -b feat/your-feature-name                   │
 │                                                             │
 │  Before every commit:                                       │
@@ -347,7 +347,7 @@ These must never appear in the repository. They are all covered in `.gitignore`:
 │    chore(deps): upgrade some-package to x.y.z              │
 │                                                             │
 │  Open PR:                                                   │
-│    Base: develop (always)                                   │
+│    Base: dev (always)                                       │
 │    Fill PR template, wait for CI green + 1 approval         │
 │    Squash-merge, delete branch                              │
 │                                                             │

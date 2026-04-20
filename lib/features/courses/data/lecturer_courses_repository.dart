@@ -6,8 +6,26 @@ import '../../../core/services/connectivity_service.dart';
 import '../../../core/services/offline_service.dart';
 import '../models/lecturer_course_overview.dart';
 
-class LecturerCoursesRepository {
-  LecturerCoursesRepository({
+abstract class LecturerCoursesRepository {
+  Future<List<LecturerCourseOverview>> getCourses({
+    required int page,
+    int limit = 20,
+    String? searchQuery,
+    bool forceRefresh = false,
+  });
+
+  Future<void> createCourse({
+    required String courseCode,
+    required String title,
+    required String semester,
+    String description = '',
+  });
+
+  Future<int> getMyCoursesCount();
+}
+
+class SupabaseLecturerCoursesRepository implements LecturerCoursesRepository {
+  SupabaseLecturerCoursesRepository({
     SupabaseClient? client,
     OfflineService? offlineService,
     ConnectivityService? connectivityService,
@@ -19,6 +37,7 @@ class LecturerCoursesRepository {
   final OfflineService _offlineService;
   final ConnectivityService _connectivityService;
 
+  @override
   Future<List<LecturerCourseOverview>> getCourses({
     required int page,
     int limit = 20,
@@ -38,8 +57,8 @@ class LecturerCoursesRepository {
         final int to = from + limit - 1;
 
         final String query = searchQuery?.trim().toLowerCase() ?? '';
-        final List<dynamic> rows = await request
-            .select('''
+        
+        var request = _client.from('courses').select('''
               id, 
               course_code, 
               title, 
@@ -49,7 +68,16 @@ class LecturerCoursesRepository {
               course_enrollments(count),
               notes(count),
               alerts(count)
-            ''')
+            ''');
+
+        if (query.isNotEmpty) {
+          final String sanitized = query.replaceAll(',', ' ').replaceAll('%', '');
+          request = request.or(
+            'course_code.ilike.%$sanitized%,title.ilike.%$sanitized%',
+          );
+        }
+
+        final List<dynamic> rows = await request
             .eq('lecturer_id', userId)
             .order('created_at', ascending: false)
             .range(from, to);
@@ -94,6 +122,7 @@ class LecturerCoursesRepository {
     }
   }
 
+  @override
   Future<void> createCourse({
     required String courseCode,
     required String title,
@@ -120,6 +149,7 @@ class LecturerCoursesRepository {
     }
   }
 
+  @override
   Future<int> getMyCoursesCount() async {
     final String userId = _client.auth.currentUser?.id ?? '';
     if (userId.isEmpty) {

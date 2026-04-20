@@ -21,24 +21,24 @@ class AuthFlowResponse {
   final bool requiresEmailVerification;
 }
 
-class AuthController extends ChangeNotifier {
-  static const String _emailRedirectTo = String.fromEnvironment(
-    'SUPABASE_EMAIL_REDIRECT_TO',
-  );
-  static const String _schoolDomain = '@ictuniversity.edu.cm';
+class AuthController {
+  static final AuthController _instance = AuthController._internal();
+  factory AuthController() => _instance;
 
-  AuthController() {
+  AuthController._internal() {
     _authSubscription = _client?.auth.onAuthStateChange.listen((event) {
       _isLoggedIn = event.session != null;
       notifyListeners();
     });
   }
 
-  bool _isLoggedIn = false;
-  UserRole? _activeRole;
+  static const String _emailRedirectTo = String.fromEnvironment(
+    'SUPABASE_EMAIL_REDIRECT_TO',
+  );
+  static const String _schoolDomain = '@ictuniversity.edu.cm';
 
-  bool get isLoggedIn => _isLoggedIn;
-  UserRole? get activeRole => _activeRole;
+  final ValueNotifier<bool> isLoggedIn = ValueNotifier<bool>(false);
+  final ValueNotifier<UserRole?> activeRole = ValueNotifier<UserRole?>(null);
 
   StreamSubscription<AuthState>? _authSubscription;
 

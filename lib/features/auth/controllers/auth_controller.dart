@@ -22,16 +22,19 @@ class AuthFlowResponse {
 }
 
 class AuthController {
-  static const String _emailRedirectTo = String.fromEnvironment(
-    'SUPABASE_EMAIL_REDIRECT_TO',
-  );
-  static const String _schoolDomain = '@ictuniversity.edu.cm';
+  static final AuthController _instance = AuthController._internal();
+  factory AuthController() => _instance;
 
-  AuthController() {
+  AuthController._internal() {
     _authSubscription = _client?.auth.onAuthStateChange.listen((event) {
       isLoggedIn.value = event.session != null;
     });
   }
+
+  static const String _emailRedirectTo = String.fromEnvironment(
+    'SUPABASE_EMAIL_REDIRECT_TO',
+  );
+  static const String _schoolDomain = '@ictuniversity.edu.cm';
 
   final ValueNotifier<bool> isLoggedIn = ValueNotifier<bool>(false);
   final ValueNotifier<UserRole?> activeRole = ValueNotifier<UserRole?>(null);

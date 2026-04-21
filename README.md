@@ -1,158 +1,373 @@
-# ICTU Community
+# 🎓 The ICTU Community
 
-> A cross-platform mobile app connecting students, lecturers, staff, and administrators at ICT University Yaoundé, Cameroon.
+<p align="center">
+  <img src="https://img.shields.io/badge/Platform-Android-3DDC84?style=for-the-badge&logo=android&logoColor=white"/>
+  <img src="https://img.shields.io/badge/Language-Kotlin-7F52FF?style=for-the-badge&logo=kotlin&logoColor=white"/>
+  <img src="https://img.shields.io/badge/Backend-Node.js-339933?style=for-the-badge&logo=nodedotjs&logoColor=white"/>
+  <img src="https://img.shields.io/badge/Database-Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white"/>
+  <img src="https://img.shields.io/badge/Version-1.0.0-blue?style=for-the-badge"/>
+</p>
 
-**Stack:** Flutter · Dart · Supabase · Gladia AI  
-**Status:** 🟡 In active development  
-**Platform:** Android (iOS planned)
-
----
-
-## Table of Contents
-- [Overview](#overview)
-- [Architecture](#architecture)
-- [Getting Started](#getting-started)
-- [Environment Setup](#environment-setup)
-- [Running & Building](#running--building)
-- [Contributing](#contributing)
-- [Team](#team)
+> A centralized mobile platform for students, lecturers, and staff of **The ICT University (ICTU)** — connecting the campus community through alerts, events, newsletters, and AI-powered lecture materials.
 
 ---
 
-## Overview
+## 📋 Table of Contents
 
-ICTU Community is a university mobile platform providing:
-
-- 📢 **Alerts & Announcements** — CA dates, exam schedules, resits
-- 📅 **Timetable** — Live lecture schedule per programme and year
-- 📚 **Courses** — Materials, resources, and assignment management
-- 🎙️ **Lecture Transcription** — AI-powered audio-to-text via Gladia
-- 🗞️ **News & Community Feed** — Campus news and community posts
-- 👤 **Role-based Access** — Student, Lecturer, Staff, Admin views
-
----
-
-## Architecture
-
-The app follows **Feature-First Clean Architecture**:
-
-```
-lib/
-├── main.dart                  # App entry point (Supabase init)
-├── app.dart                   # Root widget, routing
-├── core/
-│   ├── supabase/              # Supabase client singleton
-│   └── theme/                 # App theme & typography
-└── features/
-    ├── auth/                  # Login, registration, session
-    ├── alerts/                # Push alerts & announcements
-    ├── community/             # Community feed
-    ├── courses/               # Course listings & materials
-    ├── home/                  # Dashboard per role
-    ├── navigation/            # Bottom nav shell
-    ├── news/                  # Campus news
-    ├── notifications/         # Notification centre
-    ├── profile/               # User profile management
-    └── transcription/         # Lecture audio transcription
-```
-
-Each feature follows the layer pattern:
-
-```
-features/<feature>/
-  screens/      # UI pages (routes)
-  widgets/      # Reusable components
-  controllers/  # State (ValueNotifier / BLoC)
-  data/         # Repositories, API calls
-```
-
-**Backend:** Supabase (PostgreSQL + Auth + Storage + Edge Functions)  
-**AI:** Gladia API for lecture transcription  
-**CI/CD:** GitHub Actions (lint → test → build on every PR to dev)
+- [Problem Statement](#-problem-statement)
+- [Our Solution](#-our-solution)
+- [Features Overview](#-features-overview)
+- [Architecture](#-architecture)
+- [Use Case Diagrams](#-use-case-diagrams)
+- [Tech Stack](#-tech-stack)
+- [Non-Functional Requirements](#-non-functional-requirements)
+- [Getting Started](#-getting-started)
+- [Contributing](#-contributing)
 
 ---
 
-## Getting Started
+## ❗ Problem Statement
+
+Students and lecturers at The ICT University rely heavily on **fragmented, informal channels** — primarily WhatsApp groups and word-of-mouth — for academic communication and information sharing. This leads to several compounding problems:
+
+- 📢 **Missed Alerts:** Assignment deadlines, CA dates, and exam schedules get buried in noisy group chats, causing students to miss critical academic information.
+- 🗓️ **Event Invisibility:** Campus events organized by clubs, the marketing department, and faculty go unnoticed by large portions of the student body.
+- 📚 **Inaccessible Learning Materials:** Lecture notes are distributed inconsistently, and there is no standardized way for students to access or revisit lecture content after class.
+- 🗞️ **No Targeted News:** Students have no structured way to receive news or resources relevant to their faculty or field of study.
+- 🔗 **Disconnected Community:** Without a unified platform, the campus community lacks a shared digital space that fosters collaboration and belonging.
+
+---
+
+## 💡 Our Solution
+
+**The ICTU Community** is a native Android mobile application that acts as a **single, unified hub** for all academic and campus life activities at The ICT University. It replaces scattered informal channels with a purpose-built platform that serves students, lecturers, and authorized staff.
+
+Key pillars of the solution:
+
+- **Role-based access** — tailored experiences for Students, Lecturers, and Authorized users (delegates, club captains, ICTO staff).
+- **Real-time push notifications** — ensures no alert, event, or news update is ever missed.
+- **AI-powered lecture summaries** — lecturers upload audio recordings and an integrated AI service automatically transcribes and summarizes them, making review effortless for students.
+- **Faculty-targeted newsletter** — news and resources are filtered to match each student's faculty, reducing noise and improving relevance.
+- **Secure, institution-verified authentication** — all accounts are tied to official university email addresses.
+
+---
+
+## ✨ Features Overview
+
+### 🔐 Authentication
+| Feature | Description |
+|---|---|
+| Student & Lecturer Login | Secure sign-in using official university email and password |
+| New Account Registration | Self-service registration for newly admitted students and new faculty |
+| Password Recovery | Email-based secure password reset flow |
+
+### 🔔 Alerts & Notifications
+| Feature | Description |
+|---|---|
+| Create Academic Alerts | Lecturers publish assignment, CA, and exam notifications |
+| Real-time Push Notifications | Students receive instant alerts as soon as they are published |
+| Alert Details | Full instructions, deadlines, and course information per alert |
+
+### 📰 Feeds & Events
+| Feature | Description |
+|---|---|
+| Event Feed | Chronological, university-wide feed of announcements and events |
+| Rich Event Content | Events support text, images, videos, and external links |
+| Category Filtering | Students filter events by type (academic, social, sports, etc.) |
+| Add to Calendar | One-tap export of event details to the device calendar |
+
+### 🗞️ Newsletter
+| Feature | Description |
+|---|---|
+| Faculty-targeted News | Articles are surfaced based on the student's faculty |
+| Content Variety | Covers tech industry trends, free resources, and faculty news |
+| Article Sharing | Students share articles via social media or messaging apps |
+
+### 📚 Lecture Materials
+| Feature | Description |
+|---|---|
+| Upload & Manage Notes | Lecturers upload PDFs and documents for each course |
+| AI Audio Summarization | Uploaded lecture recordings are transcribed and summarized by AI |
+| Summary Review & Publish | Lecturers review AI summaries before releasing them to students |
+| Offline Access | Students download notes for offline reading |
+
+### 👥 Course Delegate Management
+| Feature | Description |
+|---|---|
+| Assign Delegates | Lecturers designate a student as a course delegate |
+| Delegate Permissions | Delegates can edit notes and publish materials with lecturer approval |
+| Revoke Access | Lecturers can remove delegate privileges at any time |
+
+---
+
+## 🏗️ Architecture
+
+The application follows a **client-server architecture** with a clear separation between the mobile frontend, a RESTful backend API, and managed cloud services.
+
+```mermaid
+graph TB
+    subgraph Mobile["📱 Android Client (Kotlin)"]
+        UI[UI Layer]
+        VM[ViewModel / State]
+        Repo[Repository]
+    end
+
+    subgraph Backend["⚙️ Backend (Node.js)"]
+        API[REST API - HTTPS]
+        BL[Business Logic]
+        NotiSvc[Push Notification Service]
+    end
+
+    subgraph Cloud["☁️ Cloud Services"]
+        SB_Auth[Supabase Auth]
+        SB_DB[(Supabase Database)]
+        SB_Store[Supabase Storage]
+        AI[AI Service\nWhisper / AssemblyAI]
+        FCM[Firebase Cloud Messaging]
+    end
+
+    UI --> VM --> Repo
+    Repo -->|HTTPS / REST| API
+    API --> BL
+    BL --> SB_Auth
+    BL --> SB_DB
+    BL --> SB_Store
+    BL -->|Upload audio| AI
+    AI -->|Transcript + Summary| SB_DB
+    BL --> NotiSvc
+    NotiSvc -->|Push| FCM
+    FCM -->|Notification| Mobile
+```
+
+### Data Flow — AI Lecture Summarization
+
+```mermaid
+sequenceDiagram
+    participant L as 👨‍🏫 Lecturer
+    participant App as 📱 ICTU App
+    participant API as ⚙️ Node.js API
+    participant AI as 🤖 AI Service
+    participant DB as 🗄️ Supabase
+    participant S as 👨‍🎓 Student
+
+    L->>App: Upload lecture audio file
+    App->>API: POST /lectures/audio
+    API->>AI: Send audio for transcription
+    AI-->>API: Return transcript + summary
+    API->>DB: Save summary & status
+    API-->>App: Summarization complete
+    App-->>L: Notify: review your summary
+    L->>App: Review & approve summary
+    App->>API: PATCH /lectures/publish
+    API->>DB: Mark as published
+    S->>App: Open lecture notes
+    App->>API: GET /lectures/:courseId
+    API->>DB: Fetch notes + summary
+    DB-->>API: Return data
+    API-->>App: Lecture material
+    App-->>S: Read notes + play AI summary
+```
+
+---
+
+## 📊 Use Case Diagrams
+
+### Authentication Module
+
+```mermaid
+graph LR
+    Student(["👨‍🎓 Student"])
+    Lecturer(["👨‍🏫 Lecturer"])
+
+    subgraph Auth["Authentication"]
+        UC1([Login])
+        UC2([Register Account])
+        UC3([Reset Password])
+    end
+
+    Student --> UC1
+    Student --> UC2
+    Student --> UC3
+    Lecturer --> UC1
+    Lecturer --> UC2
+    Lecturer --> UC3
+```
+
+### Student Module
+
+```mermaid
+graph LR
+    Student(["👨‍🎓 Student"])
+
+    subgraph SM["Student Features"]
+        UC1([View Dashboard])
+        UC2([Browse Alerts])
+        UC3([View Alert Details])
+        UC4([Browse Events Feed])
+        UC5([Filter Events])
+        UC6([Add Event to Calendar])
+        UC7([Read Newsletter])
+        UC8([Share Article])
+        UC9([Browse Lecture Notes])
+        UC10([Listen to AI Summary])
+        UC11([Download Notes])
+    end
+
+    Student --> UC1
+    Student --> UC2
+    UC2 --> UC3
+    Student --> UC4
+    UC4 --> UC5
+    UC4 --> UC6
+    Student --> UC7
+    UC7 --> UC8
+    Student --> UC9
+    UC9 --> UC10
+    UC9 --> UC11
+```
+
+### Lecturer Module
+
+```mermaid
+graph LR
+    Lecturer(["👨‍🏫 Lecturer"])
+
+    subgraph LM["Lecturer Features"]
+        UC1([View Dashboard])
+        UC2([Create Alert])
+        UC3([Edit Alert])
+        UC4([Upload Lecture Notes])
+        UC5([Edit / Delete Notes])
+        UC6([Upload Audio Recording])
+        UC7([Review AI Summary])
+        UC8([Publish Summary])
+        UC9([Assign Delegate])
+        UC10([Revoke Delegate])
+        UC11([View Delegate Permissions])
+    end
+
+    Lecturer --> UC1
+    Lecturer --> UC2
+    Lecturer --> UC3
+    Lecturer --> UC4
+    UC4 --> UC5
+    Lecturer --> UC6
+    UC6 --> UC7
+    UC7 --> UC8
+    Lecturer --> UC9
+    Lecturer --> UC10
+    Lecturer --> UC11
+```
+
+### Authorized Users (Delegates / Staff)
+
+```mermaid
+graph LR
+    AuthUser(["🧑‍💼 Authorized User\n(Delegate / Club Captain / Staff)"])
+
+    subgraph AU["Authorized User Features"]
+        UC1([Create & Publish Events])
+        UC2([Manage Event Content])
+        UC3([Edit Course Notes])
+        UC4([Publish Course Materials])
+    end
+
+    AuthUser --> UC1
+    UC1 --> UC2
+    AuthUser --> UC3
+    AuthUser --> UC4
+```
+
+---
+
+## 🛠️ Tech Stack
+
+| Layer | Technology | Purpose |
+|---|---|---|
+| **Mobile** | Kotlin (Android) | Native Android application |
+| **Backend** | Node.js | RESTful API & business logic |
+| **Database** | Supabase (PostgreSQL) | Persistent data storage |
+| **Auth** | Supabase Auth | Email-based user authentication |
+| **File Storage** | Supabase Storage | Lecture notes & audio files |
+| **AI Service** | OpenAI Whisper / AssemblyAI | Audio transcription & summarization |
+| **Push Notifications** | Firebase Cloud Messaging | Real-time alerts delivery |
+| **API Communication** | HTTPS / REST | Encrypted client-server communication |
+
+---
+
+## ⚡ Non-Functional Requirements
+
+| Category | Requirement |
+|---|---|
+| **Performance** | UI transitions and data loading < 2 seconds |
+| **Scalability** | Backend handles high concurrency without performance degradation |
+| **Security** | All traffic encrypted over HTTPS; passwords hashed & salted |
+| **Reliability** | High uptime with resilient backend infrastructure |
+| **Usability** | Consistent with Android Material Design guidelines |
+| **Maintainability** | Well-structured, documented, and modular codebase |
+
+---
+
+## 🚀 Getting Started
 
 ### Prerequisites
 
-| Tool | Version |
-|------|---------|
-| Flutter | ≥ 3.x (stable channel) |
-| Dart | ≥ 3.11.0 |
-| Android Studio / VS Code | Latest |
-| Supabase CLI | Latest (for Edge Functions) |
+- Android Studio Hedgehog or newer
+- Node.js v18+
+- A Supabase project (with Auth and Storage enabled)
+- Firebase project (for push notifications)
 
-### Clone the repo
+### Backend Setup
 
 ```bash
-git clone https://github.com/ICtu-mobile-app-project/ictu-community-org.git
-cd ictu-community-org
-```
+# Clone the repository
+git clone https://github.com/ictu-community/backend.git
+cd backend
 
----
-
-## Environment Setup
-
-This project uses Supabase. You need to configure your credentials before running.
-
-1. Create a `.env` file at the root (it is gitignored):
-```
-SUPABASE_URL=your_supabase_project_url
-SUPABASE_ANON_KEY=your_supabase_anon_key
-```
-
-2. Never commit real keys. Edge Function secrets (`SUPABASE_SERVICE_ROLE_KEY`, `GLADIA_API_KEY`) live only on the Supabase dashboard — see `supabase/README_AUTH_FUNCTIONS.md`.
-
----
-
-## Running & Building
-
-```bash
 # Install dependencies
-flutter pub get
+npm install
 
-# Run on connected device / emulator
-flutter run
+# Configure environment variables
+cp .env.example .env
+# Fill in your Supabase URL, keys, AI service key, and FCM credentials
 
-# Analyze code (must be zero warnings before committing)
-flutter analyze
-
-# Format code (run before every commit)
-dart format .
-
-# Run tests
-flutter test
-
-# Build debug APK
-flutter build apk --debug
-
-# Clear build cache
-flutter clean && flutter pub get
+# Start the server
+npm run dev
 ```
 
-### Deploy Edge Functions
+### Mobile Setup
 
 ```bash
-supabase functions deploy register
-supabase functions deploy login
-supabase functions deploy transcribe-audio
+# Clone the mobile repository
+git clone https://github.com/ictu-community/android.git
+
+# Open in Android Studio
+# Sync Gradle dependencies
+# Update local.properties with your backend API base URL
+
+# Run on emulator or physical device
 ```
 
 ---
 
-## Contributing
+## 🤝 Contributing
 
-Please read **[CONTRIBUTING.md](./CONTRIBUTING.md)** before opening a branch or PR. Key rules:
+Contributions are welcome! Please follow these steps:
 
-- Branch off `dev` using `feat/`, `fix/`, `chore/`, `docs/` prefixes
-- Write commits in [Conventional Commits](https://www.conventionalcommits.org/) format
-- CI (lint + tests) must be green before requesting review
-- At least one approval required to merge
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/your-feature`)
+3. Commit your changes (`git commit -m 'Add: your feature description'`)
+4. Push to the branch (`git push origin feature/your-feature`)
+5. Open a Pull Request
+
+Please ensure your code follows the project's style guide and all tests pass before submitting.
 
 ---
 
-## Team
+## 📄 License
 
-Built by the ICT University Yaoundé student development team.  
-For questions, open an issue or reach out via the community channel.
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+
+---
+
+<p align="center">Made with ❤️ for The ICT University Community</p>

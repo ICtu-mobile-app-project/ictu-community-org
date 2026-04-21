@@ -107,7 +107,7 @@ The application follows a **client-server architecture** with a clear separation
 
 ```mermaid
 graph TB
-    subgraph Mobile["📱 Android Client (Kotlin)"]
+    subgraph Mobile["Android Client (flutter)"]
         UI[UI Layer]
         VM[ViewModel / State]
         Repo[Repository]

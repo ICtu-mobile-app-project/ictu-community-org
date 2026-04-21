@@ -1,4 +1,5 @@
-# 🎓 The ICTU Community
+<p align="center">
+   <img src="https://capsule-render.vercel.app/api?type=waving&height=260&color=0:00f3ff,50:ff2f6d,100:08090f&text=ICT%20COMMUNITY&fontColor=ffffff&fontSize=78&fontAlignY=40&animation=twinkling&desc=Retro%20Game%20Store%20Platform&descAlignY=64&descSize=19" alt="NEON GRID banner" />
 
 <p align="center">
   <img src="https://img.shields.io/badge/Platform-Android-3DDC84?style=for-the-badge&logo=android&logoColor=white"/>

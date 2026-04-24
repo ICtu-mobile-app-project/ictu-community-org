@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -140,42 +142,24 @@ class _SignupScreenState extends State<SignupScreen> {
           return Stack(
             children: [
               Container(color: isDark ? const Color(0xFF000205) : Colors.white),
-              Positioned(
-                left: 272 * sx,
-                top: 695 * sy,
-                width: 193 * sx,
-                height: 175 * sy,
-                child: _CircleDecor(
-                  color: isDark
-                      ? const Color(0xFF600063).withValues(alpha: 0.43)
-                      : const Color(0xFFF39200),
-                ),
+              _MovingCircle(
+                color: isDark
+                    ? const Color(0xFF600063).withValues(alpha: 0.43)
+                    : const Color(0xFFF39200),
+                size: Size(193 * sx, 175 * sy),
               ),
-              Positioned(
-                left: -54 * sx,
-                top: 339 * sy,
-                width: 183 * sx,
-                height: 189 * sy,
-                child: _CircleDecor(
-                  color: const Color(0xFF010F46).withValues(alpha: 0.43),
-                ),
+              _MovingCircle(
+                color: const Color(0xFF010F46).withValues(alpha: 0.43),
+                size: Size(183 * sx, 189 * sy),
               ),
-              Positioned(
-                left: 179 * sx,
-                top: 72 * sy,
-                width: 207 * sx,
-                height: 206 * sy,
-                child: _CircleDecor(
-                  color: const Color(0x6EFFC94A).withValues(alpha: 0.43),
-                ),
+              _MovingCircle(
+                color: const Color(0x6EFFC94A).withValues(alpha: 0.43),
+                size: Size(207 * sx, 206 * sy),
               ),
               if (!isDark)
-                Positioned(
-                  left: 291 * sx,
-                  top: 183 * sy,
-                  width: 95 * sx,
-                  height: 88 * sy,
-                  child: const _CircleDecor(color: Color(0xFFF39200)),
+                _MovingCircle(
+                  color: const Color(0xFFF39200),
+                  size: Size(95 * sx, 88 * sy),
                 ),
               Positioned.fill(
                 child: Container(
@@ -184,199 +168,202 @@ class _SignupScreenState extends State<SignupScreen> {
                       : const Color(0x42FFFFFF),
                 ),
               ),
-              Positioned(
-                left: 42 * sx,
-                top: 180 * sy,
-                bottom: 50 * sy,
-                width: 344 * sx,
-                child: Container(
-                  padding: EdgeInsets.fromLTRB(
-                    30 * sx,
-                    18 * sy,
-                    30 * sx,
-                    22 * sy,
-                  ),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(17),
-                    gradient: const LinearGradient(
-                      begin: Alignment(-0.95, -0.95),
-                      end: Alignment(1, 1),
-                      colors: [Color(0x33D9D9D9), Color(0x334F4E4E)],
-                    ),
-                    border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.2),
-                    ),
-                  ),
-                  child: SingleChildScrollView(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                      Image.asset(
-                        'assets/Logo.png',
-                        width: 116 * sx,
-                        height: 132 * sy,
-                      ),
-                      const SizedBox(height: 6),
-                      const _GradientText(
-                        'ICTU COMMUNITY',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 0.2,
+              Positioned.fill(
+                child: SingleChildScrollView(
+                  padding: EdgeInsets.symmetric(horizontal: 42 * sx),
+                  child: Column(
+                    children: [
+                      SizedBox(height: 100 * sy),
+                      Container(
+                        padding: EdgeInsets.fromLTRB(
+                          30 * sx,
+                          18 * sy,
+                          30 * sx,
+                          22 * sy,
                         ),
-                      ),
-                      const SizedBox(height: 2),
-                      const _GradientText(
-                        'Create Account',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      SizedBox(height: 18 * sy),
-                      _LabeledInput(
-                        label: 'Full Name',
-                        isDark: isDark,
-                        controller: _nameController,
-                      ),
-                      SizedBox(height: 10 * sy),
-                      _LabeledInput(
-                        label: 'Email Address',
-                        isDark: isDark,
-                        controller: _emailController,
-                      ),
-                      SizedBox(height: 10 * sy),
-                      _RoleSelector(
-                        role: _selectedRole,
-                        onChanged: (UserRole value) {
-                          setState(() {
-                            _selectedRole = value;
-                          });
-                        },
-                      ),
-                      SizedBox(height: 10 * sy),
-                      _ProgramSelector(
-                        selectedProgram: _selectedProgram,
-                        options: _programs,
-                        onChanged: (String value) {
-                          setState(() {
-                            _selectedProgram = value;
-                          });
-                        },
-                      ),
-                      SizedBox(height: 10 * sy),
-                      _YearLevelSelector(
-                        selectedValue: _selectedYearLevel,
-                        onChanged: (int value) {
-                          setState(() {
-                            _selectedYearLevel = value;
-                          });
-                        },
-                      ),
-                      SizedBox(height: 10 * sy),
-                      _LabeledInput(
-                        label: 'Password',
-                        isDark: isDark,
-                        controller: _passwordController,
-                        obscureText: true,
-                      ),
-                      SizedBox(height: 10 * sy),
-                      _LabeledInput(
-                        label: 'Confirm Password',
-                        isDark: isDark,
-                        controller: _confirmPasswordController,
-                        obscureText: true,
-                      ),
-                      if (_errorText != null) ...[
-                        const SizedBox(height: 8),
-                        Text(
-                          _errorText!,
-                          style: const TextStyle(
-                            color: Color(0xFFF87171),
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(17),
+                          gradient: const LinearGradient(
+                            begin: Alignment(-0.95, -0.95),
+                            end: Alignment(1, 1),
+                            colors: [Color(0x33D9D9D9), Color(0x334F4E4E)],
+                          ),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.2),
                           ),
                         ),
-                      ],
-                      SizedBox(height: 14 * sy),
-                      SizedBox(
-                        width: 222 * sx,
-                        height: 37 * sy,
-                        child: DecoratedBox(
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(54),
-                            gradient: const LinearGradient(
-                              colors: [Color(0x91D49100), Color(0x9114154C)],
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Image.asset(
+                              'assets/Logo.png',
+                              width: 116 * sx,
+                              height: 132 * sy,
                             ),
-                          ),
-                          child: Material(
-                            color: Colors.transparent,
-                            child: InkWell(
-                              borderRadius: BorderRadius.circular(54),
-                              onTap: _isSubmitting ? null : _onSignup,
-                              child: Center(
-                                child: _isSubmitting
-                                    ? const SizedBox(
-                                        width: 22,
-                                        height: 22,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                          color: Colors.white,
-                                        ),
-                                      )
-                                    : const Text(
-                                        'Sign Up',
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.w700,
-                                          fontSize: 28,
-                                          height: 1,
-                                          shadows: [
-                                            Shadow(
-                                              blurRadius: 6.4,
-                                              offset: Offset(0, 4),
-                                              color: Color(0x40000000),
-                                            ),
-                                            Shadow(
-                                              blurRadius: 4,
-                                              offset: Offset(0, 4),
-                                              color: Color(0x40000000),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
+                            const SizedBox(height: 6),
+                            const _GradientText(
+                              'ICTU COMMUNITY',
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: 0.2,
                               ),
                             ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      _GoogleAuthButton(
-                        label: 'Sign up with Google',
-                        onTap: _onGoogleSignUp,
-                      ),
-                      const SizedBox(height: 6),
-                      TextButton(
-                        onPressed: () {
-                          Navigator.of(context).pushReplacement(
-                            MaterialPageRoute<void>(
-                              builder: (_) => const LoginScreen(),
+                            const SizedBox(height: 2),
+                            const _GradientText(
+                              'Create Account',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                              ),
                             ),
-                          );
-                        },
-                        child: Text(
-                          'Already have an account? Login',
-                          style: TextStyle(
-                            color: isDark
-                                ? const Color(0xFFA6FFB6)
-                                : const Color(0xFF334155),
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                          ),
+                            SizedBox(height: 18 * sy),
+                            _LabeledInput(
+                              label: 'Full Name',
+                              isDark: isDark,
+                              controller: _nameController,
+                            ),
+                            SizedBox(height: 10 * sy),
+                            _LabeledInput(
+                              label: 'Email Address',
+                              isDark: isDark,
+                              controller: _emailController,
+                            ),
+                            SizedBox(height: 10 * sy),
+                            _RoleSelector(
+                              role: _selectedRole,
+                              onChanged: (UserRole value) {
+                                setState(() {
+                                  _selectedRole = value;
+                                });
+                              },
+                            ),
+                            SizedBox(height: 10 * sy),
+                            _ProgramSelector(
+                              selectedProgram: _selectedProgram,
+                              options: _programs,
+                              onChanged: (String value) {
+                                setState(() {
+                                  _selectedProgram = value;
+                                });
+                              },
+                            ),
+                            SizedBox(height: 10 * sy),
+                            _YearLevelSelector(
+                              selectedValue: _selectedYearLevel,
+                              onChanged: (int value) {
+                                setState(() {
+                                  _selectedYearLevel = value;
+                                });
+                              },
+                            ),
+                            SizedBox(height: 10 * sy),
+                            _LabeledInput(
+                              label: 'Password',
+                              isDark: isDark,
+                              controller: _passwordController,
+                              obscureText: true,
+                            ),
+                            SizedBox(height: 10 * sy),
+                            _LabeledInput(
+                              label: 'Confirm Password',
+                              isDark: isDark,
+                              controller: _confirmPasswordController,
+                              obscureText: true,
+                            ),
+                            if (_errorText != null) ...[
+                              const SizedBox(height: 8),
+                              Text(
+                                _errorText!,
+                                style: const TextStyle(
+                                  color: Color(0xFFF87171),
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                            SizedBox(height: 14 * sy),
+                            SizedBox(
+                              width: 222 * sx,
+                              height: 37 * sy,
+                              child: DecoratedBox(
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(54),
+                                  gradient: const LinearGradient(
+                                    colors: [Color(0x91D49100), Color(0x9114154C)],
+                                  ),
+                                ),
+                                child: Material(
+                                  color: Colors.transparent,
+                                  child: InkWell(
+                                    borderRadius: BorderRadius.circular(54),
+                                    onTap: _isSubmitting ? null : _onSignup,
+                                    child: Center(
+                                      child: _isSubmitting
+                                          ? const SizedBox(
+                                              width: 22,
+                                              height: 22,
+                                              child: CircularProgressIndicator(
+                                                strokeWidth: 2,
+                                                color: Colors.white,
+                                              ),
+                                            )
+                                          : const Text(
+                                              'Sign Up',
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                                fontWeight: FontWeight.w700,
+                                                fontSize: 28,
+                                                height: 1,
+                                                shadows: [
+                                                  Shadow(
+                                                    blurRadius: 6.4,
+                                                    offset: Offset(0, 4),
+                                                    color: Color(0x40000000),
+                                                  ),
+                                                  Shadow(
+                                                    blurRadius: 4,
+                                                    offset: Offset(0, 4),
+                                                    color: Color(0x40000000),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                            _GoogleAuthButton(
+                              label: 'Sign up with Google',
+                              onTap: _onGoogleSignUp,
+                            ),
+                            const SizedBox(height: 6),
+                            TextButton(
+                              onPressed: () {
+                                Navigator.of(context).pushReplacement(
+                                  MaterialPageRoute<void>(
+                                    builder: (_) => const LoginScreen(),
+                                  ),
+                                );
+                              },
+                              child: Text(
+                                'Already have an account? Login',
+                                style: TextStyle(
+                                  color: isDark
+                                      ? const Color(0xFFA6FFB6)
+                                      : const Color(0xFF334155),
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      ],
-                    ),
+                      SizedBox(height: 50 * sy),
+                    ],
                   ),
                 ),
               ),
@@ -672,6 +659,83 @@ class _CircleDecor extends StatelessWidget {
   Widget build(BuildContext context) {
     return DecoratedBox(
       decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+    );
+  }
+}
+
+class _MovingCircle extends StatefulWidget {
+  const _MovingCircle({required this.color, required this.size});
+  final Color color;
+  final Size size;
+
+  @override
+  State<_MovingCircle> createState() => _MovingCircleState();
+}
+
+class _MovingCircleState extends State<_MovingCircle>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<Offset> _animation;
+  late Offset _startOffset;
+  late Offset _endOffset;
+  final Random _random = Random();
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 15),
+    )..addStatusListener((status) {
+        if (status == AnimationStatus.completed) {
+          _pickNewOffsets();
+          _controller.forward(from: 0);
+        }
+      });
+
+    _startOffset = _randomOffset();
+    _endOffset = _randomOffset();
+    _animation = Tween<Offset>(begin: _startOffset, end: _endOffset).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+    _controller.forward();
+  }
+
+  Offset _randomOffset() {
+    return Offset(_random.nextDouble(), _random.nextDouble());
+  }
+
+  void _pickNewOffsets() {
+    if (mounted) {
+      setState(() {
+        _startOffset = _endOffset;
+        _endOffset = _randomOffset();
+        _animation = Tween<Offset>(begin: _startOffset, end: _endOffset).animate(
+          CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+        );
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final Size screenSize = MediaQuery.of(context).size;
+    return AnimatedBuilder(
+      animation: _animation,
+      builder: (context, child) {
+        return Positioned(
+          left: _animation.value.dx * (screenSize.width - widget.size.width),
+          top: _animation.value.dy * (screenSize.height - widget.size.height),
+          child: child!,
+        );
+      },
+      child: _CircleDecor(color: widget.color),
     );
   }
 }

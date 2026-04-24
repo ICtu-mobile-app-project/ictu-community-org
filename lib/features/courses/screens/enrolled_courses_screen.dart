@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
-import '../../../core/services/connectivity_service.dart';
-import '../../auth/models/user_role.dart';
-import '../controllers/enrolled_courses_controller.dart';
-import '../models/student_course_overview.dart';
-import 'course_search_screen.dart';
-import 'course_details_screen.dart';
+
+import 'package:ictu_community_org/core/services/connectivity_service.dart';
+import 'package:ictu_community_org/features/auth/models/user_role.dart';
+import 'package:ictu_community_org/features/courses/controllers/enrolled_courses_controller.dart';
+import 'package:ictu_community_org/features/courses/models/student_course_overview.dart';
+import 'package:ictu_community_org/features/courses/screens/course_details_screen.dart';
+import 'package:ictu_community_org/features/courses/screens/course_search_screen.dart';
 
 class EnrolledCoursesScreen extends StatefulWidget {
   const EnrolledCoursesScreen({super.key});

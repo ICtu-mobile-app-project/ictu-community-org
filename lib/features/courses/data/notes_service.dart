@@ -5,12 +5,12 @@ import 'dart:typed_data';
 import 'package:path/path.dart' as p;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../../../core/services/connectivity_service.dart';
-import '../../../core/services/offline_service.dart';
-import '../../../core/supabase/supabase_bootstrap.dart';
-import '../models/course_note.dart';
-import '../models/lecturer_course_option.dart';
-import '../models/note_upload_session.dart';
+import 'package:ictu_community_org/core/services/connectivity_service.dart';
+import 'package:ictu_community_org/core/services/offline_service.dart';
+import 'package:ictu_community_org/core/supabase/supabase_bootstrap.dart';
+import 'package:ictu_community_org/features/courses/models/course_note.dart';
+import 'package:ictu_community_org/features/courses/models/lecturer_course_option.dart';
+import 'package:ictu_community_org/features/courses/models/note_upload_session.dart';
 
 class NotesService {
   NotesService({
@@ -42,11 +42,11 @@ class NotesService {
           return const <LecturerCourseOption>[];
         }
 
-        final List<dynamic> rows = await _client
+        final List<dynamic> rows = (await _client
             .from('courses')
             .select('id, course_code, title')
             .eq('lecturer_id', userId)
-            .order('course_code');
+            .order('course_code')) as List<dynamic>;
 
         return rows
             .map(
@@ -280,31 +280,29 @@ class NotesService {
         final Map<String, dynamic> payload = _asJsonMap(response.data);
         final List<dynamic> rows = (payload['notes'] as List<dynamic>?) ?? <dynamic>[];
 
-        final notes = rows
-            .map(
-              (dynamic row) => CourseNote(
-                id: (row['id'] ?? '').toString(),
-                courseId: courseId,
-                courseCode: courseCode,
-                title: (row['title'] ?? '').toString(),
-                description: (row['description'] ?? '').toString(),
-                contentUrl: (row['content_url'] ?? '').toString(),
-                fileName: _fileNameFromPath((row['content_url'] ?? '').toString()),
-                fileSizeBytes: 0,
-                uploadedBy: (row['uploaded_by'] ?? '').toString(),
-                uploadedByName: (row['uploaded_by_name'] ?? 'Unknown').toString(),
-                createdAt:
-                    DateTime.tryParse((row['created_at'] ?? '').toString()) ??
-                    DateTime.now(),
-              ),
-            )
-            .toList(growable: false);
+        final List<CourseNote> notes = rows.map((dynamic row) {
+          final Map<String, dynamic> rowMap = row as Map<String, dynamic>;
+          return CourseNote(
+            id: (rowMap['id'] ?? '').toString(),
+            courseId: courseId,
+            courseCode: courseCode,
+            title: (rowMap['title'] ?? '').toString(),
+            description: (rowMap['description'] ?? '').toString(),
+            contentUrl: (rowMap['content_url'] ?? '').toString(),
+            fileName: _fileNameFromPath((rowMap['content_url'] ?? '').toString()),
+            fileSizeBytes: 0,
+            uploadedBy: (rowMap['uploaded_by'] ?? '').toString(),
+            uploadedByName: (rowMap['uploaded_by_name'] ?? 'Unknown').toString(),
+            createdAt: DateTime.tryParse((rowMap['created_at'] ?? '').toString()) ??
+                DateTime.now(),
+          );
+        }).toList(growable: false);
 
         // Cache for offline
         if (search.isEmpty) {
-          final List<Map<String, dynamic>> payload =
+          final List<Map<String, dynamic>> cacheData =
               notes.map((CourseNote n) => n.toJson()).toList();
-          await _offlineService.cacheNotes(courseId, payload);
+          await _offlineService.cacheNotes(courseId, cacheData);
         }
 
         return notes;

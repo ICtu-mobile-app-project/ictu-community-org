@@ -1,4 +1,4 @@
-import '../models/course_note.dart';
+import 'package:ictu_community_org/features/courses/models/course_note.dart';
 
 abstract class CourseNotesRepository {
   Future<List<CourseNote>> listNotes({

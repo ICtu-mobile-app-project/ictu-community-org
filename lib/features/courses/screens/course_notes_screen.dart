@@ -5,10 +5,10 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../../../core/supabase/supabase_bootstrap.dart';
-import '../data/course_notes_repository.dart';
-import '../data/supabase_course_notes_repository.dart';
-import '../models/course_note.dart';
+import 'package:ictu_community_org/core/supabase/supabase_bootstrap.dart';
+import 'package:ictu_community_org/features/courses/data/course_notes_repository.dart';
+import 'package:ictu_community_org/features/courses/data/supabase_course_notes_repository.dart';
+import 'package:ictu_community_org/features/courses/models/course_note.dart';
 
 class CourseNotesScreen extends StatefulWidget {
   const CourseNotesScreen({

@@ -1,9 +1,9 @@
 import 'dart:convert';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../../core/services/connectivity_service.dart';
-import '../../../core/services/offline_service.dart';
-import '../../../core/supabase/supabase_bootstrap.dart';
-import '../models/student_course_overview.dart';
+import 'package:ictu_community_org/core/services/connectivity_service.dart';
+import 'package:ictu_community_org/core/services/offline_service.dart';
+import 'package:ictu_community_org/core/supabase/supabase_bootstrap.dart';
+import 'package:ictu_community_org/features/courses/models/student_course_overview.dart';
 
 class StudentCoursesRepository {
   StudentCoursesRepository({
@@ -43,7 +43,7 @@ class StudentCoursesRepository {
         }
 
         final Map<String, dynamic> payload = _asJsonMap(response.data);
-        final List<dynamic> rows = payload['courses'] ?? [];
+        final List<dynamic> rows = (payload['courses'] as List<dynamic>?) ?? [];
         return rows.map((json) => StudentCourseOverview.fromJson(json)).toList();
       } else {
         // We don't typically cache all available courses, but we could.
@@ -74,7 +74,7 @@ class StudentCoursesRepository {
         }
 
         final Map<String, dynamic> payload = _asJsonMap(response.data);
-        final List<dynamic> rows = payload['courses'] ?? [];
+        final List<dynamic> rows = (payload['courses'] as List<dynamic>?) ?? [];
 
         final courses = rows.map((json) {
           final map = Map<String, dynamic>.from(json);

@@ -55,7 +55,7 @@ class CourseNote {
       description: (json['description'] ?? '').toString(),
       contentUrl: (json['content_url'] ?? json['contentUrl'] ?? '').toString(),
       fileName: (json['file_name'] ?? json['fileName'] ?? '').toString(),
-      fileSizeBytes: (json['file_size'] ?? json['fileSizeBytes'] ?? 0).toInt(),
+      fileSizeBytes: ((json['file_size'] ?? json['fileSizeBytes'] ?? 0) as num).toInt(),
       uploadedBy: (json['uploaded_by'] ?? json['uploadedBy'] ?? '').toString(),
       uploadedByName: (json['uploader_name'] ?? json['uploadedByName'] ?? 'Unknown').toString(),
       createdAt: DateTime.tryParse((json['created_at'] ?? json['createdAt'] ?? '').toString()) ?? DateTime.now(),

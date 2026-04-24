@@ -8,9 +8,9 @@ import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
 
-import '../../auth/models/user_role.dart';
-import '../data/notes_service.dart';
-import '../models/course_note.dart';
+import 'package:ictu_community_org/features/auth/models/user_role.dart';
+import 'package:ictu_community_org/features/courses/data/notes_service.dart';
+import 'package:ictu_community_org/features/courses/models/course_note.dart';
 
 class NoteDetailsScreen extends StatefulWidget {
   const NoteDetailsScreen({

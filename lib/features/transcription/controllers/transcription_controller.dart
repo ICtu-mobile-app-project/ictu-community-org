@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 
-import '../data/transcription_repository.dart';
+import 'package:ictu_community_org/features/transcription/data/transcription_repository.dart';
 
 class TranscriptionController {
   TranscriptionController({TranscriptionRepository? repository})

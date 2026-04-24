@@ -1,9 +1,10 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class SupabaseBootstrap {
-  static const String _url = String.fromEnvironment('SUPABASE_URL');
-  static const String _anonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
+  static String get _url => dotenv.get('SUPABASE_URL', fallback: '');
+  static String get _anonKey => dotenv.get('SUPABASE_ANON_KEY', fallback: '');
 
   static bool get isConfigured => _url.isNotEmpty && _anonKey.isNotEmpty;
 
@@ -11,7 +12,7 @@ class SupabaseBootstrap {
     if (!isConfigured) {
       if (kDebugMode) {
         debugPrint(
-          'Supabase is not configured. Pass SUPABASE_URL and SUPABASE_ANON_KEY via --dart-define.',
+          'Supabase is not configured. Ensure SUPABASE_URL and SUPABASE_ANON_KEY are set in your .env file.',
         );
       }
       return;
@@ -27,4 +28,3 @@ class SupabaseBootstrap {
     );
   }
 }
-

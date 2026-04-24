@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:ictu_community_org/core/supabase/supabase_bootstrap.dart';
@@ -31,9 +32,8 @@ class AuthController extends ChangeNotifier {
     });
   }
 
-  static const String _emailRedirectTo = String.fromEnvironment(
-    'SUPABASE_EMAIL_REDIRECT_TO',
-  );
+  static String get _emailRedirectTo =>
+      dotenv.get('SUPABASE_EMAIL_REDIRECT_TO', fallback: '');
   static const String _schoolDomain = '@ictuniversity.edu.cm';
 
   final ValueNotifier<bool> isLoggedIn = ValueNotifier<bool>(false);

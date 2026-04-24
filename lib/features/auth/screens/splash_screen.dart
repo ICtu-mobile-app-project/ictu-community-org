@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-
-import '../../home/screens/lecturer_dashboard_screen.dart';
-import '../../navigation/screens/main_shell.dart';
 import 'package:provider/provider.dart';
-import '../controllers/auth_controller.dart';
-import '../models/user_role.dart';
-import 'welcome_screen.dart';
+
+import 'package:ictu_community_org/features/auth/controllers/auth_controller.dart';
+import 'package:ictu_community_org/features/auth/models/user_role.dart';
+import 'package:ictu_community_org/features/auth/screens/welcome_screen.dart';
+import 'package:ictu_community_org/features/home/screens/lecturer_dashboard_screen.dart';
+import 'package:ictu_community_org/features/navigation/screens/main_shell.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -36,22 +36,30 @@ class _SplashScreenState extends State<SplashScreen> {
     }
 
     if (role == UserRole.lecturer) {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute<void>(builder: (_) => const LecturerDashboardScreen()),
-      );
+      if (mounted) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute<void>(
+            builder: (_) => const LecturerDashboardScreen(),
+          ),
+        );
+      }
       return;
     }
 
     if (role != null) {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute<void>(builder: (_) => MainShell(userRole: role)),
-      );
+      if (mounted) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute<void>(builder: (_) => MainShell(userRole: role)),
+        );
+      }
       return;
     }
 
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute<void>(builder: (_) => const WelcomeScreen()),
-    );
+    if (mounted) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute<void>(builder: (_) => const WelcomeScreen()),
+      );
+    }
   }
 
   @override

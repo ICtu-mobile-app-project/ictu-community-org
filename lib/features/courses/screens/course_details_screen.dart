@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
-
-import '../../alerts/screens/alert_details_screen.dart';
-import '../../auth/models/user_role.dart';
-import '../controllers/course_details_controller.dart';
-import '../models/student_course_overview.dart';
-import '../models/course_note.dart';
-import 'note_details_screen.dart';
+import 'package:ictu_community_org/features/alerts/screens/alert_details_screen.dart';
+import 'package:ictu_community_org/features/auth/models/user_role.dart';
+import 'package:ictu_community_org/features/courses/controllers/course_details_controller.dart';
+import 'package:ictu_community_org/features/courses/models/course_note.dart';
+import 'package:ictu_community_org/features/courses/models/student_course_overview.dart';
+import 'package:ictu_community_org/features/courses/screens/note_details_screen.dart';
 
 class CourseDetailsScreen extends StatefulWidget {
   const CourseDetailsScreen({

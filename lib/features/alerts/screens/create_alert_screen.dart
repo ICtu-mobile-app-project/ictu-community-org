@@ -2,11 +2,10 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
-import '../../courses/data/notes_service.dart';
-import '../../courses/models/course_note.dart';
-import '../../courses/models/lecturer_course_option.dart';
-import '../data/alerts_service.dart';
-import '../models/alert_item.dart';
+import 'package:ictu_community_org/features/alerts/data/alerts_service.dart';
+import 'package:ictu_community_org/features/alerts/models/alert_item.dart';
+import 'package:ictu_community_org/features/courses/data/notes_service.dart';
+import 'package:ictu_community_org/features/courses/models/lecturer_course_option.dart';
 
 class CreateAlertScreen extends StatefulWidget {
   const CreateAlertScreen({super.key, this.initialCourseCode});

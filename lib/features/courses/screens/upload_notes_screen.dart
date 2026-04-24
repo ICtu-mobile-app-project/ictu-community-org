@@ -3,10 +3,10 @@ import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 
-import '../data/notes_service.dart';
-import '../models/course_note.dart';
-import '../models/lecturer_course_option.dart';
-import '../models/note_upload_session.dart';
+import 'package:ictu_community_org/features/courses/data/notes_service.dart';
+import 'package:ictu_community_org/features/courses/models/course_note.dart';
+import 'package:ictu_community_org/features/courses/models/lecturer_course_option.dart';
+import 'package:ictu_community_org/features/courses/models/note_upload_session.dart';
 
 class UploadNotesScreen extends StatefulWidget {
   const UploadNotesScreen({super.key});

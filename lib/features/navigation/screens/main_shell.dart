@@ -1,21 +1,22 @@
 import 'package:flutter/material.dart';
 
 import 'package:provider/provider.dart';
-import '../../auth/controllers/auth_controller.dart';
-import '../../auth/models/user_role.dart';
-import '../../auth/screens/welcome_screen.dart';
-import '../../community/screens/community_feed_screen.dart';
-import '../../courses/screens/enrolled_courses_screen.dart';
-import '../../courses/screens/lecturer_courses_screen.dart';
-import '../../courses/screens/timetable_screen.dart';
-import '../../home/screens/home_dashboard_screen.dart';
-import '../../home/screens/lecturer_home_dashboard_screen.dart';
-import '../../home/screens/admin_home_dashboard_screen.dart';
-import '../../news/screens/campus_news_screen.dart';
-import '../../profile/screens/profile_screen.dart';
-import '../../transcription/screens/audio_ai_transcription_screen.dart';
-import '../controllers/main_nav_controller.dart';
-import '../../alerts/screens/lecturer_alerts_list_screen.dart';
+
+import 'package:ictu_community_org/features/alerts/screens/lecturer_alerts_list_screen.dart';
+import 'package:ictu_community_org/features/auth/controllers/auth_controller.dart';
+import 'package:ictu_community_org/features/auth/models/user_role.dart';
+import 'package:ictu_community_org/features/auth/screens/welcome_screen.dart';
+import 'package:ictu_community_org/features/community/screens/community_feed_screen.dart';
+import 'package:ictu_community_org/features/courses/screens/enrolled_courses_screen.dart';
+import 'package:ictu_community_org/features/courses/screens/lecturer_courses_screen.dart';
+import 'package:ictu_community_org/features/courses/screens/timetable_screen.dart';
+import 'package:ictu_community_org/features/home/screens/admin_home_dashboard_screen.dart';
+import 'package:ictu_community_org/features/home/screens/home_dashboard_screen.dart';
+import 'package:ictu_community_org/features/home/screens/lecturer_home_dashboard_screen.dart';
+import 'package:ictu_community_org/features/navigation/controllers/main_nav_controller.dart';
+import 'package:ictu_community_org/features/news/screens/campus_news_screen.dart';
+import 'package:ictu_community_org/features/profile/screens/profile_screen.dart';
+import 'package:ictu_community_org/features/transcription/screens/audio_ai_transcription_screen.dart';
 
 class MainShell extends StatefulWidget {
   const MainShell({super.key, this.userRole = UserRole.student});

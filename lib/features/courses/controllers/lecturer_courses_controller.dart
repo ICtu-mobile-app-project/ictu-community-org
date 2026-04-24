@@ -2,8 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
-import '../data/lecturer_courses_repository.dart';
-import '../models/lecturer_course.dart';
+import 'package:ictu_community_org/features/courses/data/lecturer_courses_repository.dart';
+import 'package:ictu_community_org/features/courses/models/lecturer_course.dart';
 
 class LecturerCoursesController {
   LecturerCoursesController({

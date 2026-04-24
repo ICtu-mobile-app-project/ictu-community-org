@@ -68,7 +68,7 @@ class _SplashScreenState extends State<SplashScreen> {
       body: Stack(
         fit: StackFit.expand,
         children: [
-          Image.asset('assets/school.jpeg', fit: BoxFit.cover),
+          Image.asset('assets/school2.jpeg', fit: BoxFit.cover),
           Container(color: const Color(0xB0001433)),
           Container(
             decoration: const BoxDecoration(

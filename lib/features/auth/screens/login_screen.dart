@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -100,42 +102,24 @@ class _LoginScreenState extends State<LoginScreen> {
           return Stack(
             children: [
               Container(color: isDark ? const Color(0xFF000205) : Colors.white),
-              Positioned(
-                left: 272 * sx,
-                top: 695 * sy,
-                width: 193 * sx,
-                height: 175 * sy,
-                child: _CircleDecor(
-                  color: isDark
-                      ? const Color(0xFF600063).withValues(alpha: 0.43)
-                      : const Color(0xFFF39200),
-                ),
+              _MovingCircle(
+                color: isDark
+                    ? const Color(0xFF600063).withValues(alpha: 0.43)
+                    : const Color(0xFFF39200),
+                size: Size(193 * sx, 175 * sy),
               ),
-              Positioned(
-                left: -54 * sx,
-                top: 339 * sy,
-                width: 183 * sx,
-                height: 189 * sy,
-                child: _CircleDecor(
-                  color: const Color(0xFF010F46).withValues(alpha: 0.43),
-                ),
+              _MovingCircle(
+                color: const Color(0xFF010F46).withValues(alpha: 0.43),
+                size: Size(183 * sx, 189 * sy),
               ),
-              Positioned(
-                left: 179 * sx,
-                top: 72 * sy,
-                width: 207 * sx,
-                height: 206 * sy,
-                child: _CircleDecor(
-                  color: const Color(0x6EFFC94A).withValues(alpha: 0.43),
-                ),
+              _MovingCircle(
+                color: const Color(0x6EFFC94A).withValues(alpha: 0.43),
+                size: Size(207 * sx, 206 * sy),
               ),
               if (!isDark)
-                Positioned(
-                  left: 291 * sx,
-                  top: 183 * sy,
-                  width: 95 * sx,
-                  height: 88 * sy,
-                  child: const _CircleDecor(color: Color(0xFFF39200)),
+                _MovingCircle(
+                  color: const Color(0xFFF39200),
+                  size: Size(95 * sx, 88 * sy),
                 ),
               Positioned.fill(
                 child: Container(
@@ -144,155 +128,162 @@ class _LoginScreenState extends State<LoginScreen> {
                       : const Color(0x42FFFFFF),
                 ),
               ),
-              Positioned(
-                left: 42 * sx,
-                top: 227 * sy,
-                width: 344 * sx,
-                child: Container(
-                  padding: EdgeInsets.fromLTRB(
-                    34 * sx,
-                    18 * sy,
-                    34 * sx,
-                    26 * sy,
-                  ),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(17),
-                    gradient: const LinearGradient(
-                      begin: Alignment(-0.95, -0.95),
-                      end: Alignment(1, 1),
-                      colors: [Color(0x33D9D9D9), Color(0x334F4E4E)],
-                    ),
-                    border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.2),
-                    ),
-                  ),
+              Positioned.fill(
+                child: SingleChildScrollView(
+                  padding: EdgeInsets.symmetric(horizontal: 42 * sx),
                   child: Column(
-                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      Image.asset(
-                        'assets/Logo.png',
-                        width: 136 * sx,
-                        height: 152 * sy,
-                      ),
-                      const SizedBox(height: 8),
-                      const _GradientText(
-                        'ICTU COMMUNITY',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 0.2,
+                      SizedBox(height: 170 * sy),
+                      Container(
+                        padding: EdgeInsets.fromLTRB(
+                          34 * sx,
+                          18 * sy,
+                          34 * sx,
+                          26 * sy,
                         ),
-                      ),
-                      const SizedBox(height: 2),
-                      const _GradientText(
-                        'Welcome Back',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      SizedBox(height: 30 * sy),
-                      _LabeledInput(
-                        label: 'Email Address',
-                        isDark: isDark,
-                        controller: _emailController,
-                      ),
-                      SizedBox(height: 14 * sy),
-                      _LabeledInput(
-                        label: 'Password',
-                        isDark: isDark,
-                        controller: _passwordController,
-                        obscureText: true,
-                      ),
-                      SizedBox(height: 18 * sy),
-                      SizedBox(
-                        width: 222 * sx,
-                        height: 37 * sy,
-                        child: DecoratedBox(
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(54),
-                            gradient: const LinearGradient(
-                              colors: [Color(0x91D49100), Color(0x9114154C)],
-                            ),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(17),
+                          gradient: const LinearGradient(
+                            begin: Alignment(-0.95, -0.95),
+                            end: Alignment(1, 1),
+                            colors: [Color(0x33D9D9D9), Color(0x334F4E4E)],
                           ),
-                          child: Material(
-                            color: Colors.transparent,
-                            child: InkWell(
-                              borderRadius: BorderRadius.circular(54),
-                              onTap: _isSubmitting ? null : _onLogin,
-                              child: Center(
-                                child: _isSubmitting
-                                    ? const SizedBox(
-                                        width: 22,
-                                        height: 22,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                          color: Colors.white,
-                                        ),
-                                      )
-                                    : const Text(
-                                        'Login',
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.w700,
-                                          fontSize: 32,
-                                          height: 1,
-                                          shadows: [
-                                            Shadow(
-                                              blurRadius: 6.4,
-                                              offset: Offset(0, 4),
-                                              color: Color(0x40000000),
-                                            ),
-                                            Shadow(
-                                              blurRadius: 4,
-                                              offset: Offset(0, 4),
-                                              color: Color(0x40000000),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.2),
+                          ),
+                        ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Image.asset(
+                              'assets/Logo.png',
+                              width: 136 * sx,
+                              height: 152 * sy,
+                            ),
+                            const SizedBox(height: 8),
+                            const _GradientText(
+                              'ICTU COMMUNITY',
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: 0.2,
                               ),
                             ),
-                          ),
-                        ),
-                      ),
-                      if (_errorText != null) ...[
-                        const SizedBox(height: 10),
-                        Text(
-                          _errorText!,
-                          style: const TextStyle(
-                            color: Color(0xFFF87171),
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
-                      const SizedBox(height: 10),
-                      _GoogleAuthButton(
-                        label: 'Sign in with Google',
-                        onTap: _onGoogleSignIn,
-                      ),
-                      const SizedBox(height: 8),
-                      TextButton(
-                        onPressed: () {
-                          Navigator.of(context).pushReplacement(
-                            MaterialPageRoute<void>(
-                              builder: (_) => const SignupScreen(),
+                            const SizedBox(height: 2),
+                            const _GradientText(
+                              'Welcome Back',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                              ),
                             ),
-                          );
-                        },
-                        child: Text(
-                          'Need an account? Sign Up',
-                          style: TextStyle(
-                            color: isDark
-                                ? const Color(0xFFA6FFB6)
-                                : const Color(0xFF334155),
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                          ),
+                            SizedBox(height: 30 * sy),
+                            _LabeledInput(
+                              label: 'Email Address',
+                              isDark: isDark,
+                              controller: _emailController,
+                            ),
+                            SizedBox(height: 14 * sy),
+                            _LabeledInput(
+                              label: 'Password',
+                              isDark: isDark,
+                              controller: _passwordController,
+                              obscureText: true,
+                              showVisibilityToggle: true,
+                            ),
+                            SizedBox(height: 18 * sy),
+                            SizedBox(
+                              width: 222 * sx,
+                              height: 37 * sy,
+                              child: DecoratedBox(
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(54),
+                                  gradient: const LinearGradient(
+                                    colors: [Color(0x91D49100), Color(0x9114154C)],
+                                  ),
+                                ),
+                                child: Material(
+                                  color: Colors.transparent,
+                                  child: InkWell(
+                                    borderRadius: BorderRadius.circular(54),
+                                    onTap: _isSubmitting ? null : _onLogin,
+                                    child: Center(
+                                      child: _isSubmitting
+                                          ? const SizedBox(
+                                              width: 22,
+                                              height: 22,
+                                              child: CircularProgressIndicator(
+                                                strokeWidth: 2,
+                                                color: Colors.white,
+                                              ),
+                                            )
+                                          : const Text(
+                                              'Login',
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                                fontWeight: FontWeight.w700,
+                                                fontSize: 32,
+                                                height: 1,
+                                                shadows: [
+                                                  Shadow(
+                                                    blurRadius: 6.4,
+                                                    offset: Offset(0, 4),
+                                                    color: Color(0x40000000),
+                                                  ),
+                                                  Shadow(
+                                                    blurRadius: 4,
+                                                    offset: Offset(0, 4),
+                                                    color: Color(0x40000000),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            if (_errorText != null) ...[
+                              const SizedBox(height: 10),
+                              Text(
+                                _errorText!,
+                                style: const TextStyle(
+                                  color: Color(0xFFF87171),
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ],
+                            const SizedBox(height: 10),
+                            _GoogleAuthButton(
+                              label: 'Sign in with Google',
+                              onTap: _onGoogleSignIn,
+                            ),
+                            const SizedBox(height: 8),
+                            TextButton(
+                              onPressed: () {
+                                Navigator.of(context).pushReplacement(
+                                  MaterialPageRoute<void>(
+                                    builder: (_) => const SignupScreen(),
+                                  ),
+                                );
+                              },
+                              child: Text(
+                                'Need an account? Sign Up',
+                                style: TextStyle(
+                                  color: isDark
+                                      ? const Color(0xFFA6FFB6)
+                                      : const Color(0xFF334155),
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
+                      SizedBox(height: 50 * sy),
                     ],
                   ),
                 ),
@@ -340,18 +331,33 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 }
 
-class _LabeledInput extends StatelessWidget {
+class _LabeledInput extends StatefulWidget {
   const _LabeledInput({
     required this.controller,
     required this.label,
     required this.isDark,
     this.obscureText = false,
+    this.showVisibilityToggle = false,
   });
 
   final TextEditingController controller;
   final String label;
   final bool isDark;
   final bool obscureText;
+  final bool showVisibilityToggle;
+
+  @override
+  State<_LabeledInput> createState() => _LabeledInputState();
+}
+
+class _LabeledInputState extends State<_LabeledInput> {
+  late bool _obscured;
+
+  @override
+  void initState() {
+    super.initState();
+    _obscured = widget.obscureText;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -359,10 +365,10 @@ class _LabeledInput extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          label,
+          widget.label,
           style: TextStyle(
             fontSize: 11,
-            color: isDark ? Colors.white : Colors.black,
+            color: widget.isDark ? Colors.white : Colors.black,
             fontFamily: 'Kode Mono',
           ),
         ),
@@ -370,10 +376,10 @@ class _LabeledInput extends StatelessWidget {
         SizedBox(
           height: 44,
           child: TextField(
-            controller: controller,
-            obscureText: obscureText,
+            controller: widget.controller,
+            obscureText: _obscured,
             style: TextStyle(
-              color: isDark ? Colors.white : Colors.black,
+              color: widget.isDark ? Colors.white : Colors.black,
               fontSize: 13,
             ),
             decoration: InputDecoration(
@@ -384,6 +390,20 @@ class _LabeledInput extends StatelessWidget {
               ),
               filled: true,
               fillColor: const Color(0x82D9D9D9),
+              suffixIcon: widget.showVisibilityToggle
+                  ? IconButton(
+                      icon: Icon(
+                        _obscured ? Icons.visibility_off : Icons.visibility,
+                        size: 18,
+                        color: widget.isDark ? Colors.white70 : Colors.black54,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _obscured = !_obscured;
+                        });
+                      },
+                    )
+                  : null,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(15),
                 borderSide: BorderSide.none,
@@ -447,6 +467,92 @@ class _CircleDecor extends StatelessWidget {
   Widget build(BuildContext context) {
     return DecoratedBox(
       decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+    );
+  }
+}
+
+class _MovingCircle extends StatefulWidget {
+  const _MovingCircle({required this.color, required this.size});
+  final Color color;
+  final Size size;
+
+  @override
+  State<_MovingCircle> createState() => _MovingCircleState();
+}
+
+class _MovingCircleState extends State<_MovingCircle>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<Alignment> _animation;
+  late Alignment _startAlignment;
+  late Alignment _endAlignment;
+  final Random _random = Random();
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 15),
+    )..addStatusListener((status) {
+        if (status == AnimationStatus.completed) {
+          _pickNewOffsets();
+          _controller.forward(from: 0);
+        }
+      });
+
+    _startAlignment = _randomAlignment();
+    _endAlignment = _randomAlignment();
+    _animation =
+        AlignmentTween(begin: _startAlignment, end: _endAlignment).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+    _controller.forward();
+  }
+
+  Alignment _randomAlignment() {
+    return Alignment(
+      _random.nextDouble() * 2 - 1,
+      _random.nextDouble() * 2 - 1,
+    );
+  }
+
+  void _pickNewOffsets() {
+    if (mounted) {
+      setState(() {
+        _startAlignment = _endAlignment;
+        _endAlignment = _randomAlignment();
+        _animation =
+            AlignmentTween(begin: _startAlignment, end: _endAlignment).animate(
+          CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+        );
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Positioned.fill(
+      child: AnimatedBuilder(
+        animation: _animation,
+        builder: (context, child) {
+          return Align(
+            alignment: _animation.value,
+            child: SizedBox(
+              width: widget.size.width,
+              height: widget.size.height,
+              child: child,
+            ),
+          );
+        },
+        child: _CircleDecor(color: widget.color),
+      ),
     );
   }
 }

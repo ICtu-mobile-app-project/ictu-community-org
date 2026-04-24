@@ -2,9 +2,9 @@ import 'dart:convert';
 
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../../../core/services/offline_service.dart';
-import '../models/course_note.dart';
-import 'course_notes_repository.dart';
+import 'package:ictu_community_org/core/services/offline_service.dart';
+import 'package:ictu_community_org/features/courses/models/course_note.dart';
+import 'package:ictu_community_org/features/courses/data/course_notes_repository.dart';
 
 class SupabaseCourseNotesRepository implements CourseNotesRepository {
   SupabaseCourseNotesRepository({SupabaseClient? client, OfflineService? offlineService})

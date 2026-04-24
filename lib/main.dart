@@ -1,10 +1,10 @@
 import 'package:flutter/widgets.dart';
 import 'package:provider/provider.dart';
-import 'features/auth/controllers/auth_controller.dart';
+import 'package:ictu_community_org/features/auth/controllers/auth_controller.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
-import 'app.dart';
-import 'core/supabase/supabase_bootstrap.dart';
+import 'package:ictu_community_org/app.dart';
+import 'package:ictu_community_org/core/supabase/supabase_bootstrap.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();

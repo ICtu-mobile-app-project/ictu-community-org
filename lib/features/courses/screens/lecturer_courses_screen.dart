@@ -2,11 +2,14 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
-import '../../../core/services/connectivity_service.dart';
-import '../../auth/models/user_role.dart';
-import '../data/lecturer_courses_repository.dart';
-import '../models/lecturer_course_overview.dart';
-import 'course_notes_list_screen.dart';
+import 'package:ictu_community_org/core/services/connectivity_service.dart';
+import 'package:ictu_community_org/core/supabase/supabase_bootstrap.dart';
+import 'package:ictu_community_org/features/auth/models/user_role.dart';
+import 'package:ictu_community_org/features/courses/data/in_memory_lecturer_courses_repository.dart';
+import 'package:ictu_community_org/features/courses/data/lecturer_courses_repository.dart';
+import 'package:ictu_community_org/features/courses/data/supabase_lecturer_courses_repository.dart';
+import 'package:ictu_community_org/features/courses/models/lecturer_course_overview.dart';
+import 'package:ictu_community_org/features/courses/screens/course_notes_list_screen.dart';
 import 'package:ictu_community_org/features/courses/screens/create_course_screen.dart';
 import 'package:ictu_community_org/features/courses/screens/lecturer_course_details_screen.dart';
 
@@ -20,7 +23,7 @@ class LecturerCoursesScreen extends StatefulWidget {
 class _LecturerCoursesScreenState extends State<LecturerCoursesScreen> {
   static const int _pageSize = 20;
 
-  final LecturerCoursesRepository _repository = LecturerCoursesRepository();
+  late final LecturerCoursesRepository _repository;
   final ConnectivityService _connectivity = ConnectivityService();
   final TextEditingController _searchController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
@@ -39,6 +42,9 @@ class _LecturerCoursesScreenState extends State<LecturerCoursesScreen> {
   @override
   void initState() {
     super.initState();
+    _repository = SupabaseBootstrap.isConfigured
+        ? SupabaseLecturerCoursesRepository()
+        : InMemoryLecturerCoursesRepository.instance;
     _scrollController.addListener(_onScroll);
     _checkConnectivity();
     _listenToConnectivity();

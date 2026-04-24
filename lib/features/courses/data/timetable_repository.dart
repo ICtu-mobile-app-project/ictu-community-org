@@ -1,6 +1,7 @@
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../models/schedule_item.dart';
-import '../../../core/services/offline_service.dart';
+import 'package:ictu_community_org/core/services/offline_service.dart';
+import 'package:ictu_community_org/features/courses/models/schedule_item.dart';
 
 class TimetableRepository {
   final SupabaseClient _supabase;
@@ -19,8 +20,9 @@ class TimetableRepository {
           .select('course_code')
           .eq('student_id', user.id);
       
-      final enrolledCodes = (enrollmentResponse as List)
-          .map((e) => e['course_code'] as String)
+      final List<dynamic> enrollmentList = enrollmentResponse as List<dynamic>;
+      final enrolledCodes = enrollmentList
+          .map((e) => (e as Map<String, dynamic>)['course_code'] as String)
           .toSet();
 
       // 2. Fetch ALL schedules
@@ -30,7 +32,7 @@ class TimetableRepository {
             .from('schedules')
             .select()
             .order('start_time');
-        data = scheduleResponse as List;
+        data = scheduleResponse as List<dynamic>;
         
         // Cache for offline use
         await _offlineService.cacheTimetable(data.cast<Map<String, dynamic>>());
@@ -44,7 +46,8 @@ class TimetableRepository {
         }
       }
       
-      return data.map((json) {
+      return data.map((dynamic item) {
+        final Map<String, dynamic> json = item as Map<String, dynamic>;
         final String code = json['course_code'] as String;
         return ScheduleItem.fromJson(json, isEnrolled: enrolledCodes.contains(code));
       }).toList();
@@ -62,11 +65,11 @@ class TimetableRepository {
           .order('day_of_week')
           .order('start_time');
 
-      final data = response as List;
+      final List<dynamic> data = response as List<dynamic>;
       await _offlineService.cacheTimetable(data.cast<Map<String, dynamic>>());
 
       return data
-          .map((json) => ScheduleItem.fromJson(json))
+          .map((dynamic json) => ScheduleItem.fromJson(json as Map<String, dynamic>))
           .toList();
     } catch (e) {
       final cached = await _offlineService.getCachedTimetable();
@@ -89,7 +92,7 @@ class TimetableRepository {
             .from('schedules')
             .select()
             .order('start_time');
-        scheduleData = scheduleResponse as List;
+        scheduleData = scheduleResponse as List<dynamic>;
         await _offlineService.cacheTimetable(scheduleData.cast<Map<String, dynamic>>());
       } catch (e) {
         final cached = await _offlineService.getCachedTimetable();
@@ -108,18 +111,20 @@ class TimetableRepository {
             .select('course_code')
             .eq('lecturer_id', user.id);
         
-        teachingCodes = (coursesResponse as List)
-            .map((e) => e['course_code'] as String)
+        final List<dynamic> coursesList = coursesResponse as List<dynamic>;
+        teachingCodes = coursesList
+            .map((e) => (e as Map<String, dynamic>)['course_code'] as String)
             .toSet();
       } catch (e) {
         // Silently fail highlighting logic, but keep going with the schedule
-        print('Error fetching teaching courses: $e');
+        debugPrint('Error fetching teaching courses: $e');
       }
 
       // 3. Map schedules and mark "isMine"
-      return scheduleData.map((json) {
-        final String code = json['course_code'] as String;
-        final String? schedLecturer = json['lecturer'] as String?;
+      return scheduleData.map((dynamic json) {
+        final Map<String, dynamic> row = json as Map<String, dynamic>;
+        final String code = row['course_code'] as String;
+        final String? schedLecturer = row['lecturer'] as String?;
         
         bool isMine = teachingCodes.contains(code);
         

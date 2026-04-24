@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../data/alerts_service.dart';
-import '../models/alert_item.dart';
+import 'package:ictu_community_org/features/alerts/data/alerts_service.dart';
+import 'package:ictu_community_org/features/alerts/models/alert_item.dart';
 
 class AlertDetailsScreen extends StatefulWidget {
   const AlertDetailsScreen({

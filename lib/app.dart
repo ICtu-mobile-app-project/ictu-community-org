@@ -3,15 +3,15 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import 'core/supabase/supabase_bootstrap.dart';
-import 'core/theme/app_theme.dart';
+import 'package:ictu_community_org/core/supabase/supabase_bootstrap.dart';
+import 'package:ictu_community_org/core/theme/app_theme.dart';
+import 'package:ictu_community_org/features/auth/controllers/auth_controller.dart';
+import 'package:ictu_community_org/features/auth/models/user_role.dart';
+import 'package:ictu_community_org/features/auth/screens/splash_screen.dart';
+import 'package:ictu_community_org/features/auth/screens/welcome_screen.dart';
+import 'package:ictu_community_org/features/home/screens/lecturer_dashboard_screen.dart';
+import 'package:ictu_community_org/features/navigation/screens/main_shell.dart';
 import 'package:provider/provider.dart';
-import 'features/auth/controllers/auth_controller.dart';
-import 'features/auth/models/user_role.dart';
-import 'features/auth/screens/splash_screen.dart';
-import 'features/auth/screens/welcome_screen.dart';
-import 'features/home/screens/lecturer_dashboard_screen.dart';
-import 'features/navigation/screens/main_shell.dart';
 
 class IctuCommunityApp extends StatefulWidget {
   const IctuCommunityApp({super.key});

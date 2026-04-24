@@ -4,8 +4,8 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../../../core/supabase/supabase_bootstrap.dart';
-import '../models/user_role.dart';
+import 'package:ictu_community_org/core/supabase/supabase_bootstrap.dart';
+import 'package:ictu_community_org/features/auth/models/user_role.dart';
 
 class AuthFlowResponse {
   const AuthFlowResponse({
@@ -21,14 +21,13 @@ class AuthFlowResponse {
   final bool requiresEmailVerification;
 }
 
-class AuthController {
+class AuthController extends ChangeNotifier {
   static final AuthController _instance = AuthController._internal();
   factory AuthController() => _instance;
 
   AuthController._internal() {
     _authSubscription = _client?.auth.onAuthStateChange.listen((event) {
-      _isLoggedIn = event.session != null;
-      notifyListeners();
+      isLoggedIn.value = event.session != null;
     });
   }
 
@@ -91,8 +90,8 @@ class AuthController {
       }
 
       final UserRole resolvedRole = await _fetchRole(user.id);
-      _activeRole = resolvedRole;
-      _isLoggedIn = true;
+      activeRole.value = resolvedRole;
+      isLoggedIn.value = true;
       notifyListeners();
 
       return AuthFlowResponse(isSuccess: true, role: resolvedRole);
@@ -223,15 +222,15 @@ class AuthController {
     final User? currentUser = client.auth.currentUser;
     final Session? currentSession = client.auth.currentSession;
     if (currentUser == null || currentSession == null) {
-      _isLoggedIn = false;
-      _activeRole = null;
+      isLoggedIn.value = false;
+      activeRole.value = null;
       notifyListeners();
       return null;
     }
 
     final UserRole role = await _fetchRole(currentUser.id);
-    _activeRole = role;
-    _isLoggedIn = true;
+    activeRole.value = role;
+    isLoggedIn.value = true;
     notifyListeners();
     return role;
   }
@@ -241,8 +240,8 @@ class AuthController {
     if (client != null) {
       await client.auth.signOut();
     }
-    _isLoggedIn = false;
-    _activeRole = null;
+    isLoggedIn.value = false;
+    activeRole.value = null;
     notifyListeners();
   }
 

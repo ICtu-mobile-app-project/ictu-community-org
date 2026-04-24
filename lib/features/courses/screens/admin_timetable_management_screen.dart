@@ -6,8 +6,8 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:excel/excel.dart' as excel_pkg;
 
-import '../data/timetable_repository.dart';
-import '../../../core/services/offline_service.dart';
+import 'package:ictu_community_org/core/services/offline_service.dart';
+import 'package:ictu_community_org/features/courses/data/timetable_repository.dart';
 
 class AdminTimetableManagementScreen extends StatefulWidget {
   const AdminTimetableManagementScreen({super.key});

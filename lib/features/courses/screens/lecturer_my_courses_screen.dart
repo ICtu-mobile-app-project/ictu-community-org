@@ -2,13 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:ictu_community_org/features/courses/screens/lecturer_course_details_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../../../core/supabase/supabase_bootstrap.dart';
-import '../controllers/lecturer_courses_controller.dart';
-import '../data/in_memory_lecturer_courses_repository.dart';
-import '../data/lecturer_courses_repository.dart';
-import '../data/supabase_lecturer_courses_repository.dart';
-import '../models/lecturer_course.dart';
-import 'create_course_screen.dart';
+import 'package:ictu_community_org/core/supabase/supabase_bootstrap.dart';
+import 'package:ictu_community_org/features/courses/controllers/lecturer_courses_controller.dart';
+import 'package:ictu_community_org/features/courses/data/in_memory_lecturer_courses_repository.dart';
+import 'package:ictu_community_org/features/courses/data/lecturer_courses_repository.dart';
+import 'package:ictu_community_org/features/courses/data/supabase_lecturer_courses_repository.dart';
+import 'package:ictu_community_org/features/courses/models/lecturer_course.dart';
+import 'package:ictu_community_org/features/courses/models/lecturer_course_overview.dart';
+import 'package:ictu_community_org/features/courses/screens/create_course_screen.dart';
 
 class LecturerMyCoursesScreen extends StatefulWidget {
   const LecturerMyCoursesScreen({super.key});
@@ -76,11 +77,7 @@ class _LecturerMyCoursesScreenState extends State<LecturerMyCoursesScreen> {
     final LecturerCourse? created = await Navigator.of(context)
         .push<LecturerCourse>(
           MaterialPageRoute<LecturerCourse>(
-            builder: (_) => CreateCourseScreen(
-              repository: _repository,
-              lecturerId: _lecturerId,
-              lecturerName: _lecturerName,
-            ),
+            builder: (_) => const CreateCourseScreen(),
           ),
         );
 
@@ -97,9 +94,17 @@ class _LecturerMyCoursesScreenState extends State<LecturerMyCoursesScreen> {
     await Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (_) => LecturerCourseDetailsScreen(
-          courseId: created.id,
-          repository: _repository,
-          lecturerId: _lecturerId,
+          course: LecturerCourseOverview(
+            id: created.id,
+            code: created.courseCode,
+            title: created.title,
+            description: created.description,
+            semester: created.semester,
+            students: created.studentCount,
+            notes: created.notesCount,
+            alerts: created.alertCount,
+            lastActivity: created.lastActivity,
+          ),
         ),
       ),
     );
@@ -245,9 +250,17 @@ class _LecturerMyCoursesScreenState extends State<LecturerMyCoursesScreen> {
                                             MaterialPageRoute<void>(
                                               builder: (_) =>
                                                   LecturerCourseDetailsScreen(
-                                                    courseId: course.id,
-                                                    repository: _repository,
-                                                    lecturerId: _lecturerId,
+                                                    course: LecturerCourseOverview(
+                                                      id: course.id,
+                                                      code: course.courseCode,
+                                                      title: course.title,
+                                                      description: course.description,
+                                                      semester: course.semester,
+                                                      students: course.studentCount,
+                                                      notes: course.notesCount,
+                                                      alerts: course.alertCount,
+                                                      lastActivity: course.lastActivity,
+                                                    ),
                                                   ),
                                             ),
                                           );

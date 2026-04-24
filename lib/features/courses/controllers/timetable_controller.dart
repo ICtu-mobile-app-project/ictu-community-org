@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
-import '../../auth/models/user_role.dart';
-import '../models/schedule_item.dart';
-import '../data/timetable_repository.dart';
+import 'package:ictu_community_org/features/auth/models/user_role.dart';
+import 'package:ictu_community_org/features/courses/models/schedule_item.dart';
+import 'package:ictu_community_org/features/courses/data/timetable_repository.dart';
 
 class TimetableController extends ChangeNotifier {
   final TimetableRepository _repository;

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-
-import '../models/user_role.dart';
 import 'package:provider/provider.dart';
-import '../controllers/auth_controller.dart';
-import 'login_screen.dart';
+
+import 'package:ictu_community_org/features/auth/controllers/auth_controller.dart';
+import 'package:ictu_community_org/features/auth/models/user_role.dart';
+import 'package:ictu_community_org/features/auth/screens/login_screen.dart';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});

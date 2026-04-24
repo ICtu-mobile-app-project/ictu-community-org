@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../data/lecturer_courses_repository.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:ictu_community_org/core/supabase/supabase_bootstrap.dart';
+import 'package:ictu_community_org/features/courses/data/in_memory_lecturer_courses_repository.dart';
+import 'package:ictu_community_org/features/courses/data/lecturer_courses_repository.dart';
+import 'package:ictu_community_org/features/courses/data/supabase_lecturer_courses_repository.dart';
+import 'package:ictu_community_org/features/courses/models/lecturer_course.dart';
 
 class CreateCourseScreen extends StatefulWidget {
   const CreateCourseScreen({super.key});
@@ -20,7 +25,8 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
   final TextEditingController _codeController = TextEditingController();
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
-  final LecturerCoursesRepository _repository = LecturerCoursesRepository();
+  late final LecturerCoursesRepository _repository;
+  late final String _lecturerId;
 
   String _semester = _semesters.first;
   bool _isSubmitting = false;
@@ -29,6 +35,14 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
   void initState() {
     super.initState();
     _codeController.addListener(_normalizeCode);
+    
+    _lecturerId = SupabaseBootstrap.isConfigured
+        ? (Supabase.instance.client.auth.currentUser?.id ?? 'lecturer-1')
+        : 'lecturer-1';
+        
+    _repository = SupabaseBootstrap.isConfigured
+        ? SupabaseLecturerCoursesRepository()
+        : InMemoryLecturerCoursesRepository.instance;
   }
 
   @override
@@ -64,6 +78,7 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
 
     try {
       await _repository.createCourse(
+        lecturerId: _lecturerId,
         courseCode: _codeController.text,
         title: _titleController.text,
         semester: _semester,
@@ -71,7 +86,24 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
       );
 
       if (mounted) {
-        Navigator.of(context).pop(true);
+        // Return a dummy LecturerCourse or the actual one if we had it from the repo
+        // For now, enough to signal success for refresh
+        Navigator.of(context).pop(
+          LecturerCourse(
+            id: 'new',
+            courseCode: _codeController.text,
+            title: _titleController.text,
+            description: _descriptionController.text,
+            semester: _semester,
+            lecturerId: _lecturerId,
+            lecturerName: '',
+            studentCount: 0,
+            lectureCount: 0,
+            notesCount: 0,
+            alertCount: 0,
+            lastActivity: DateTime.now(),
+          ),
+        );
       }
     } catch (e) {
       if (mounted) {

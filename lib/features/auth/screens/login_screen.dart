@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-
-import '../../home/screens/lecturer_dashboard_screen.dart';
-import '../../navigation/screens/main_shell.dart';
 import 'package:provider/provider.dart';
-import '../controllers/auth_controller.dart';
-import '../models/user_role.dart';
-import 'signup_screen.dart';
+
+import 'package:ictu_community_org/features/auth/controllers/auth_controller.dart';
+import 'package:ictu_community_org/features/auth/models/user_role.dart';
+import 'package:ictu_community_org/features/auth/screens/signup_screen.dart';
+import 'package:ictu_community_org/features/home/screens/lecturer_dashboard_screen.dart';
+import 'package:ictu_community_org/features/navigation/screens/main_shell.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});

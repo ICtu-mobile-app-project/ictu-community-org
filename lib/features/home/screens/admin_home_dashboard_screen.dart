@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import '../../auth/models/user_role.dart';
-import '../../courses/screens/timetable_screen.dart';
-import '../../courses/screens/admin_timetable_management_screen.dart';
+
+import 'package:ictu_community_org/features/auth/models/user_role.dart';
+import 'package:ictu_community_org/features/courses/screens/admin_timetable_management_screen.dart';
+import 'package:ictu_community_org/features/courses/screens/timetable_screen.dart';
 
 class AdminHomeDashboardScreen extends StatelessWidget {
   const AdminHomeDashboardScreen({

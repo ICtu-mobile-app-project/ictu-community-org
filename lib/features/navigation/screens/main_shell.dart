@@ -8,7 +8,7 @@ import 'package:ictu_community_org/features/auth/models/user_role.dart';
 import 'package:ictu_community_org/features/auth/screens/welcome_screen.dart';
 import 'package:ictu_community_org/features/community/screens/community_feed_screen.dart';
 import 'package:ictu_community_org/features/courses/screens/enrolled_courses_screen.dart';
-import 'package:ictu_community_org/features/courses/screens/lecturer_courses_screen.dart';
+import 'package:ictu_community_org/features/courses/screens/lecturer_my_courses_screen.dart';
 import 'package:ictu_community_org/features/courses/screens/timetable_screen.dart';
 import 'package:ictu_community_org/features/home/screens/admin_home_dashboard_screen.dart';
 import 'package:ictu_community_org/features/home/screens/home_dashboard_screen.dart';
@@ -138,7 +138,7 @@ class _MainShellState extends State<MainShell> {
                   courseTitle: null,
                 ),
                 TimetableScreen(userRole: widget.userRole),
-                const LecturerCoursesScreen(),
+                const LecturerMyCoursesScreen(),
                 const CampusNewsScreen(),
               ]
             : <Widget>[

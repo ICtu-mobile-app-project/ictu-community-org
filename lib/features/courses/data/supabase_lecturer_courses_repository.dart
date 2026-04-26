@@ -1,9 +1,10 @@
 import 'dart:convert';
-
+import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:ictu_community_org/core/services/connectivity_service.dart';
 import 'package:ictu_community_org/core/services/offline_service.dart';
+import 'package:ictu_community_org/core/services/manual_http_client.dart';
 import 'package:ictu_community_org/features/courses/models/course_delegate.dart';
 import 'package:ictu_community_org/features/courses/models/course_student.dart';
 import 'package:ictu_community_org/features/courses/models/lecturer_course.dart';
@@ -120,42 +121,26 @@ class SupabaseLecturerCoursesRepository implements LecturerCoursesRepository {
     int limit = 20,
     String? searchQuery,
   }) async {
-    final int from = page * limit;
-    final int to = from + limit - 1;
+    final Map<String, dynamic> body = await _call(
+      action: 'list_my_courses',
+      payload: <String, dynamic>{
+        'page': page,
+        'limit': limit,
+        'search': searchQuery ?? '',
+      },
+    );
 
-    var query = _client.from('courses').select().eq('lecturer_id', lecturerId);
-
-    if (searchQuery != null && searchQuery.isNotEmpty) {
-      query = query.or(
-        'course_code.ilike.%$searchQuery%,title.ilike.%$searchQuery%',
-      );
-    }
-
-    final List<dynamic> rows = (await query
-        .order('created_at', ascending: false)
-        .range(from, to)) as List<dynamic>;
+    final Map<String, dynamic>? data = _asJsonMap(body['data']);
+    final List<dynamic> rows = (data?['items'] as List<dynamic>? ?? <dynamic>[]);
+    final bool hasMore = data?['hasMore'] == true;
 
     final List<LecturerCourse> items = rows.map((dynamic row) {
-      final Map<String, dynamic> rowMap = row as Map<String, dynamic>;
-      return LecturerCourse(
-        id: (rowMap['id'] ?? '').toString(),
-        courseCode: (rowMap['course_code'] ?? '').toString(),
-        title: (rowMap['title'] ?? '').toString(),
-        description: (rowMap['description'] ?? '').toString(),
-        semester: (rowMap['semester'] ?? '').toString(),
-        lecturerId: (rowMap['lecturer_id'] ?? '').toString(),
-        lecturerName: '',
-        studentCount: 0,
-        lectureCount: 0,
-        notesCount: 0,
-        alertCount: 0,
-        lastActivity: DateTime.tryParse((rowMap['updated_at'] ?? rowMap['created_at'] ?? '').toString()) ?? DateTime.now(),
-      );
+      return _mapCourse(_asJsonMap(row) ?? {});
     }).toList();
 
     return LecturerCoursesResult(
       items: items,
-      hasMore: items.length == limit,
+      hasMore: hasMore,
     );
   }
 
@@ -167,25 +152,15 @@ class SupabaseLecturerCoursesRepository implements LecturerCoursesRepository {
     required String semester,
     String description = '',
   }) async {
-    final FunctionResponse response = await _client.functions.invoke(
-      'courses-api',
-      body: <String, dynamic>{
-        'course_code': courseCode.trim().toUpperCase(),
+    await _call(
+      action: 'create_course',
+      payload: <String, dynamic>{
+        'courseCode': courseCode.trim().toUpperCase(),
         'title': title.trim(),
         'description': description.trim(),
         'semester': semester.trim(),
-        'lecturer_id': lecturerId,
       },
     );
-
-    if (response.status >= 400) {
-      throw Exception(_extractError(response.data));
-    }
-
-    final Map<String, dynamic>? payload = _asJsonMap(response.data);
-    if (payload != null && payload['ok'] == false) {
-      throw Exception(_extractError(payload));
-    }
   }
 
   @override
@@ -288,10 +263,17 @@ class SupabaseLecturerCoursesRepository implements LecturerCoursesRepository {
   Future<FunctionResponse> _invoke({
     required String action,
     required Map<String, dynamic> payload,
-  }) {
-    return _client.functions.invoke(
+  }) async {
+    // Using manual HTTP client to bypass supabase_flutter body-stripping bug
+    final responseBody = await ManualHttpClient.post(
       'courses-api',
-      body: <String, dynamic>{'action': action, ...payload},
+      <String, dynamic>{'action': action, ...payload},
+    );
+    
+    // Wrap in FunctionResponse to maintain compatibility with existing code
+    return FunctionResponse(
+      data: responseBody,
+      status: 200, // ManualHttpClient throws on error, so 200 is safe here
     );
   }
 
@@ -346,6 +328,7 @@ class SupabaseLecturerCoursesRepository implements LecturerCoursesRepository {
       lectureCount: _asInt(json['lectureCount']),
       notesCount: _asInt(json['notesCount']),
       alertCount: _asInt(json['alertCount']),
+      archived: json['archived'] == true,
       lastActivity:
           DateTime.tryParse((json['lastActivity'] ?? '').toString()) ??
           DateTime.now(),

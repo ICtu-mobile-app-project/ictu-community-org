@@ -216,8 +216,29 @@ Deno.serve(async (request: Request) => {
   }
 
   try {
-    const body = await request.json();
-    const action = asText(body?.action).toLowerCase();
+    // Raw HTTP Bypass: Use arrayBuffer to avoid issues with some clients stripping bodies
+    const arrayBuffer = await request.arrayBuffer();
+    const decoder = new TextDecoder();
+    const bodyText = decoder.decode(arrayBuffer);
+
+    // Diagnostic logging
+    const contentLength = request.headers.get('content-length');
+    console.log(`LEN: ${contentLength} | BYTES: ${arrayBuffer.byteLength}`);
+
+    let body: any = {};
+    if (bodyText) {
+      try {
+        body = JSON.parse(bodyText);
+      } catch (e) {
+        console.error('Failed to parse JSON body:', e);
+      }
+    }
+
+    const action = asText(body?.action || body?.Action).toLowerCase();
+    if (action === 'ping') {
+      return json(200, { success: true, message: 'pong', bytes: arrayBuffer.byteLength });
+    }
+
     if (!action) {
       return fail(400, 'action is required');
     }

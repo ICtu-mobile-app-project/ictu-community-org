@@ -172,66 +172,74 @@ class _LecturerMyCoursesScreenState extends State<LecturerMyCoursesScreen> {
               ),
               const SizedBox(height: 12),
               Expanded(
-                child: ValueListenableBuilder<bool>(
-                  valueListenable: _controller.isLoading,
-                  builder: (_, bool isLoading, __) {
-                    return ValueListenableBuilder<List<LecturerCourse>>(
-                      valueListenable: _controller.items,
-                      builder: (_, List<LecturerCourse> courses, __) {
-                        return ValueListenableBuilder<String?>(
-                          valueListenable: _controller.errorMessage,
-                          builder: (_, String? error, __) {
-                            if (error != null && courses.isEmpty) {
-                              return Center(
-                                child: Text(
-                                  error,
-                                  style: const TextStyle(
-                                    color: Color(0xFFF87171),
+                child: RefreshIndicator(
+                  onRefresh: _controller.refresh,
+                  color: const Color(0xFFF58220),
+                  backgroundColor: const Color(0xFF1E293B),
+                  child: ValueListenableBuilder<bool>(
+                    valueListenable: _controller.isLoading,
+                    builder: (_, bool isLoading, __) {
+                      return ValueListenableBuilder<List<LecturerCourse>>(
+                        valueListenable: _controller.items,
+                        builder: (_, List<LecturerCourse> courses, __) {
+                          return ValueListenableBuilder<String?>(
+                            valueListenable: _controller.errorMessage,
+                            builder: (_, String? error, __) {
+                              if (error != null && courses.isEmpty) {
+                                return SingleChildScrollView(
+                                  physics: const AlwaysScrollableScrollPhysics(),
+                                  child: Container(
+                                    height: MediaQuery.of(context).size.height * 0.6,
+                                    alignment: Alignment.center,
+                                    child: Text(
+                                      error,
+                                      style: const TextStyle(color: Color(0xFFF87171)),
+                                      textAlign: TextAlign.center,
+                                    ),
                                   ),
-                                  textAlign: TextAlign.center,
-                                ),
-                              );
-                            }
+                                );
+                              }
 
-                            if (isLoading && courses.isEmpty) {
-                              return const Center(
-                                child: CircularProgressIndicator(
-                                  color: Color(0xFFF58220),
-                                ),
-                              );
-                            }
+                              if (isLoading && courses.isEmpty) {
+                                return const Center(
+                                  child: CircularProgressIndicator(
+                                    color: Color(0xFFF58220),
+                                  ),
+                                );
+                              }
 
-                            if (courses.isEmpty) {
-                              return const Center(
-                                child: Text(
-                                  'No courses found. Tap "Create New Course" to start.',
-                                  style: TextStyle(color: Color(0xFF94A3B8)),
-                                  textAlign: TextAlign.center,
-                                ),
-                              );
-                            }
+                              if (courses.isEmpty) {
+                                return SingleChildScrollView(
+                                  physics: const AlwaysScrollableScrollPhysics(),
+                                  child: Container(
+                                    height: MediaQuery.of(context).size.height * 0.6,
+                                    alignment: Alignment.center,
+                                    padding: const EdgeInsets.symmetric(horizontal: 32),
+                                    child: const Text(
+                                      'No courses found. Tap "Create New Course" to start, or pull down to refresh.',
+                                      style: TextStyle(color: Color(0xFF94A3B8)),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  ),
+                                );
+                              }
 
-                            return RefreshIndicator(
-                              onRefresh: _controller.refresh,
-                              child: LayoutBuilder(
+                              return LayoutBuilder(
                                 builder: (context, constraints) {
-                                  final bool isTablet =
-                                      constraints.maxWidth >= 700;
+                                  final bool isTablet = constraints.maxWidth >= 700;
                                   final int crossAxisCount = isTablet ? 3 : 2;
 
                                   return GridView.builder(
                                     controller: _scrollController,
+                                    physics: const AlwaysScrollableScrollPhysics(),
                                     padding: const EdgeInsets.only(bottom: 110),
-                                    itemCount:
-                                        courses.length +
-                                        (_controller.hasMore.value ? 1 : 0),
-                                    gridDelegate:
-                                        SliverGridDelegateWithFixedCrossAxisCount(
-                                          crossAxisCount: crossAxisCount,
-                                          crossAxisSpacing: 10,
-                                          mainAxisSpacing: 10,
-                                          childAspectRatio: 0.9,
-                                        ),
+                                    itemCount: courses.length + (_controller.hasMore.value ? 1 : 0),
+                                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                                      crossAxisCount: crossAxisCount,
+                                      crossAxisSpacing: 10,
+                                      mainAxisSpacing: 10,
+                                      childAspectRatio: 0.9,
+                                    ),
                                     itemBuilder: (context, index) {
                                       if (index >= courses.length) {
                                         return const Center(
@@ -241,42 +249,40 @@ class _LecturerMyCoursesScreenState extends State<LecturerMyCoursesScreen> {
                                         );
                                       }
 
-                                      final LecturerCourse course =
-                                          courses[index];
+                                      final LecturerCourse course = courses[index];
                                       return _CourseCard(
                                         course: course,
                                         onTap: () async {
                                           await Navigator.of(context).push(
                                             MaterialPageRoute<void>(
-                                              builder: (_) =>
-                                                  LecturerCourseDetailsScreen(
-                                                    course: LecturerCourseOverview(
-                                                      id: course.id,
-                                                      code: course.courseCode,
-                                                      title: course.title,
-                                                      description: course.description,
-                                                      semester: course.semester,
-                                                      students: course.studentCount,
-                                                      notes: course.notesCount,
-                                                      alerts: course.alertCount,
-                                                      lastActivity: course.lastActivity,
-                                                    ),
-                                                  ),
+                                              builder: (_) => LecturerCourseDetailsScreen(
+                                                course: LecturerCourseOverview(
+                                                  id: course.id,
+                                                  code: course.courseCode,
+                                                  title: course.title,
+                                                  description: course.description,
+                                                  semester: course.semester,
+                                                  students: course.studentCount,
+                                                  notes: course.notesCount,
+                                                  alerts: course.alertCount,
+                                                  lastActivity: course.lastActivity,
+                                                ),
+                                              ),
                                             ),
                                           );
-                                          await _controller.refresh();
+                                          _controller.refresh();
                                         },
                                       );
                                     },
                                   );
                                 },
-                              ),
-                            );
-                          },
-                        );
-                      },
-                    );
-                  },
+                              );
+                            },
+                          );
+                        },
+                      );
+                    },
+                  ),
                 ),
               ),
             ],

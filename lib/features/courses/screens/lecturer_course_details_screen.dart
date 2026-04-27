@@ -1,6 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:ictu_community_org/features/auth/models/user_role.dart';
 import 'package:ictu_community_org/features/alerts/screens/lecturer_alerts_list_screen.dart';
+import 'package:ictu_community_org/features/courses/data/supabase_lecturer_courses_repository.dart';
+import 'package:ictu_community_org/features/courses/data/lecturer_courses_repository.dart';
+import 'package:ictu_community_org/core/supabase/supabase_bootstrap.dart';
+import 'package:ictu_community_org/features/courses/data/in_memory_lecturer_courses_repository.dart';
+import 'package:ictu_community_org/features/courses/models/course_student.dart';
+import 'package:ictu_community_org/features/courses/models/course_delegate.dart';
 import 'package:ictu_community_org/features/courses/models/lecturer_course_overview.dart';
 import 'package:ictu_community_org/features/courses/screens/course_notes_list_screen.dart';
 
@@ -25,7 +31,7 @@ class _LecturerCourseDetailsScreenState
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this);
+    _tabController = TabController(length: 5, vsync: this);
   }
 
   @override
@@ -51,6 +57,7 @@ class _LecturerCourseDetailsScreenState
             Tab(text: 'Notes'),
             Tab(text: 'Alerts'),
             Tab(text: 'Students'),
+            Tab(text: 'Delegates'),
           ],
         ),
       ),
@@ -68,6 +75,7 @@ class _LecturerCourseDetailsScreenState
             courseTitle: widget.course.title,
           ),
           _buildStudentsTab(),
+          _buildDelegatesTab(),
         ],
       ),
     );
@@ -137,8 +145,290 @@ class _LecturerCourseDetailsScreenState
   }
 
   Widget _buildStudentsTab() {
-    return const Center(
-      child: Text('Student management coming soon', style: TextStyle(color: Color(0xFF94A3B8))),
+    return _StudentsTab(courseId: widget.course.id);
+  }
+
+  Widget _buildDelegatesTab() {
+    return _DelegatesTab(courseId: widget.course.id);
+  }
+}
+
+class _StudentsTab extends StatefulWidget {
+  const _StudentsTab({required this.courseId});
+  final String courseId;
+
+  @override
+  State<_StudentsTab> createState() => _StudentsTabState();
+}
+
+class _StudentsTabState extends State<_StudentsTab> {
+  late final LecturerCoursesRepository _repository;
+  late Future<List<CourseStudent>> _studentsFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _repository = SupabaseBootstrap.isConfigured
+        ? SupabaseLecturerCoursesRepository()
+        : InMemoryLecturerCoursesRepository.instance;
+    _studentsFuture = _repository.getEnrolledStudents(widget.courseId);
+  }
+
+  void _refresh() {
+    setState(() {
+      _studentsFuture = _repository.getEnrolledStudents(widget.courseId);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<List<CourseStudent>>(
+      future: _studentsFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator(color: Color(0xFFF58220)));
+        }
+
+        if (snapshot.hasError) {
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Error: ${snapshot.error}',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(color: Color(0xFFF87171)),
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: _refresh,
+                    child: const Text('Retry'),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+
+        final students = snapshot.data ?? [];
+
+        if (students.isEmpty) {
+          return const Center(
+            child: Text(
+              'No students enrolled in this course yet.',
+              style: TextStyle(color: Color(0xFF94A3B8)),
+            ),
+          );
+        }
+
+        return RefreshIndicator(
+          onRefresh: () async => _refresh(),
+          color: const Color(0xFFF58220),
+          child: ListView.separated(
+            padding: const EdgeInsets.all(20),
+            itemCount: students.length,
+            separatorBuilder: (_, __) => const SizedBox(height: 12),
+            itemBuilder: (context, index) {
+              final student = students[index];
+              return Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.05),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+                ),
+                child: Row(
+                  children: [
+                    CircleAvatar(
+                      backgroundColor: const Color(0xFFF58220).withOpacity(0.1),
+                      child: Text(
+                        student.fullName.isNotEmpty ? student.fullName[0].toUpperCase() : '?',
+                        style: const TextStyle(color: Color(0xFFF58220), fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            student.fullName,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            student.email,
+                            style: const TextStyle(
+                              color: Color(0xFF94A3B8),
+                              fontSize: 13,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _DelegatesTab extends StatefulWidget {
+  const _DelegatesTab({required this.courseId});
+  final String courseId;
+
+  @override
+  State<_DelegatesTab> createState() => _DelegatesTabState();
+}
+
+class _DelegatesTabState extends State<_DelegatesTab> {
+  late final LecturerCoursesRepository _repository;
+  late Future<List<CourseDelegate>> _delegatesFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _repository = SupabaseBootstrap.isConfigured
+        ? SupabaseLecturerCoursesRepository()
+        : InMemoryLecturerCoursesRepository.instance;
+    _delegatesFuture = _repository.getDelegates(widget.courseId);
+  }
+
+  void _refresh() {
+    setState(() {
+      _delegatesFuture = _repository.getDelegates(widget.courseId);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<List<CourseDelegate>>(
+      future: _delegatesFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator(color: Color(0xFFF58220)));
+        }
+
+        if (snapshot.hasError) {
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Error: ${snapshot.error}',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(color: Color(0xFFF87171)),
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: _refresh,
+                    child: const Text('Retry'),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+
+        final delegates = snapshot.data ?? [];
+
+        if (delegates.isEmpty) {
+          return const Center(
+            child: Text(
+              'No delegates assigned for this course.',
+              style: TextStyle(color: Color(0xFF94A3B8)),
+            ),
+          );
+        }
+
+        return RefreshIndicator(
+          onRefresh: () async => _refresh(),
+          color: const Color(0xFFF58220),
+          child: ListView.separated(
+            padding: const EdgeInsets.all(20),
+            itemCount: delegates.length,
+            separatorBuilder: (_, __) => const SizedBox(height: 12),
+            itemBuilder: (context, index) {
+              final delegate = delegates[index];
+              return Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.05),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+                ),
+                child: Row(
+                  children: [
+                    CircleAvatar(
+                      backgroundColor: const Color(0xFFF58220).withOpacity(0.1),
+                      child: Text(
+                        delegate.studentName.isNotEmpty ? delegate.studentName[0].toUpperCase() : '?',
+                        style: const TextStyle(color: Color(0xFFF58220), fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Text(
+                                delegate.studentName,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF58220).withOpacity(0.2),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: const Text(
+                                  'Delegate',
+                                  style: TextStyle(
+                                    color: Color(0xFFF58220),
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            delegate.studentEmail,
+                            style: const TextStyle(
+                              color: Color(0xFF94A3B8),
+                              fontSize: 13,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        );
+      },
     );
   }
 }

@@ -9,6 +9,7 @@ import 'package:ictu_community_org/features/courses/models/course_student.dart';
 import 'package:ictu_community_org/features/courses/models/course_delegate.dart';
 import 'package:ictu_community_org/features/courses/models/lecturer_course_overview.dart';
 import 'package:ictu_community_org/features/courses/screens/course_notes_list_screen.dart';
+import 'dart:async';
 
 class LecturerCourseDetailsScreen extends StatefulWidget {
   const LecturerCourseDetailsScreen({
@@ -149,7 +150,10 @@ class _LecturerCourseDetailsScreenState
   }
 
   Widget _buildDelegatesTab() {
-    return _DelegatesTab(courseId: widget.course.id);
+    return _DelegatesTab(
+      courseId: widget.course.id,
+      courseCode: widget.course.code,
+    );
   }
 }
 
@@ -284,8 +288,13 @@ class _StudentsTabState extends State<_StudentsTab> {
 }
 
 class _DelegatesTab extends StatefulWidget {
-  const _DelegatesTab({required this.courseId});
+  const _DelegatesTab({
+    required this.courseId,
+    required this.courseCode,
+  });
+
   final String courseId;
+  final String courseCode;
 
   @override
   State<_DelegatesTab> createState() => _DelegatesTabState();
@@ -294,6 +303,7 @@ class _DelegatesTab extends StatefulWidget {
 class _DelegatesTabState extends State<_DelegatesTab> {
   late final LecturerCoursesRepository _repository;
   late Future<List<CourseDelegate>> _delegatesFuture;
+  bool _isRemoving = false;
 
   @override
   void initState() {
@@ -310,125 +320,344 @@ class _DelegatesTabState extends State<_DelegatesTab> {
     });
   }
 
+  Future<void> _removeDelegate(CourseDelegate delegate) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF1E293B),
+        title: const Text('Remove Delegate', style: TextStyle(color: Colors.white)),
+        content: Text(
+          'Are you sure you want to remove ${delegate.studentName} as a delegate for ${widget.courseCode}?',
+          style: const TextStyle(color: Color(0xFF94A3B8)),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel', style: TextStyle(color: Color(0xFF94A3B8))),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Remove', style: TextStyle(color: Color(0xFFF87171))),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    setState(() => _isRemoving = true);
+    try {
+      await _repository.removeDelegate(
+        courseId: widget.courseId,
+        studentId: delegate.studentId,
+      );
+      _refresh();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('${delegate.studentName} removed as delegate')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isRemoving = false);
+    }
+  }
+
+  Future<void> _showAssignDialog() async {
+    final student = await showDialog<CourseStudent>(
+      context: context,
+      builder: (context) => _AssignDelegateDialog(repository: _repository),
+    );
+
+    if (student == null) return;
+
+    try {
+      await _repository.assignDelegate(
+        courseId: widget.courseId,
+        studentId: student.id,
+      );
+      _refresh();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('${student.fullName} assigned as delegate')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<List<CourseDelegate>>(
-      future: _delegatesFuture,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator(color: Color(0xFFF58220)));
-        }
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      floatingActionButton: FloatingActionButton(
+        onPressed: _showAssignDialog,
+        backgroundColor: const Color(0xFFF58220),
+        child: const Icon(Icons.add, color: Colors.white),
+      ),
+      body: FutureBuilder<List<CourseDelegate>>(
+        future: _delegatesFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator(color: Color(0xFFF58220)));
+          }
 
-        if (snapshot.hasError) {
-          return Center(
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    'Error: ${snapshot.error}',
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(color: Color(0xFFF87171)),
-                  ),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: _refresh,
-                    child: const Text('Retry'),
-                  ),
-                ],
-              ),
-            ),
-          );
-        }
-
-        final delegates = snapshot.data ?? [];
-
-        if (delegates.isEmpty) {
-          return const Center(
-            child: Text(
-              'No delegates assigned for this course.',
-              style: TextStyle(color: Color(0xFF94A3B8)),
-            ),
-          );
-        }
-
-        return RefreshIndicator(
-          onRefresh: () async => _refresh(),
-          color: const Color(0xFFF58220),
-          child: ListView.separated(
-            padding: const EdgeInsets.all(20),
-            itemCount: delegates.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 12),
-            itemBuilder: (context, index) {
-              final delegate = delegates[index];
-              return Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.05),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
-                ),
-                child: Row(
+          if (snapshot.hasError) {
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    CircleAvatar(
-                      backgroundColor: const Color(0xFFF58220).withOpacity(0.1),
-                      child: Text(
-                        delegate.studentName.isNotEmpty ? delegate.studentName[0].toUpperCase() : '?',
-                        style: const TextStyle(color: Color(0xFFF58220), fontWeight: FontWeight.bold),
-                      ),
+                    Text(
+                      'Error: ${snapshot.error}',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(color: Color(0xFFF87171)),
                     ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Text(
-                                delegate.studentName,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFF58220).withOpacity(0.2),
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                                child: const Text(
-                                  'Delegate',
-                                  style: TextStyle(
-                                    color: Color(0xFFF58220),
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            delegate.studentEmail,
-                            style: const TextStyle(
-                              color: Color(0xFF94A3B8),
-                              fontSize: 13,
-                            ),
-                          ),
-                        ],
-                      ),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: _refresh,
+                      child: const Text('Retry'),
                     ),
                   ],
                 ),
-              );
-            },
-          ),
-        );
-      },
+              ),
+            );
+          }
+
+          final delegates = snapshot.data ?? [];
+
+          if (delegates.isEmpty) {
+            return const Center(
+              child: Text(
+                'No delegates assigned for this course.',
+                style: TextStyle(color: Color(0xFF94A3B8)),
+              ),
+            );
+          }
+
+          return RefreshIndicator(
+            onRefresh: () async => _refresh(),
+            color: const Color(0xFFF58220),
+            child: ListView.separated(
+              padding: const EdgeInsets.all(20),
+              itemCount: delegates.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 12),
+              itemBuilder: (context, index) {
+                final delegate = delegates[index];
+                return Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.05),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+                  ),
+                  child: Row(
+                    children: [
+                      CircleAvatar(
+                        backgroundColor: const Color(0xFFF58220).withOpacity(0.1),
+                        child: Text(
+                          delegate.studentName.isNotEmpty ? delegate.studentName[0].toUpperCase() : '?',
+                          style: const TextStyle(color: Color(0xFFF58220), fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    delegate.studentName,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFF58220).withOpacity(0.2),
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: const Text(
+                                    'Delegate',
+                                    style: TextStyle(
+                                      color: Color(0xFFF58220),
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              delegate.studentEmail,
+                              style: const TextStyle(
+                                color: Color(0xFF94A3B8),
+                                fontSize: 13,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.person_remove_outlined, color: Color(0xFFF87171), size: 20),
+                        onPressed: _isRemoving ? null : () => _removeDelegate(delegate),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _AssignDelegateDialog extends StatefulWidget {
+  const _AssignDelegateDialog({required this.repository});
+  final LecturerCoursesRepository repository;
+
+  @override
+  State<_AssignDelegateDialog> createState() => _AssignDelegateDialogState();
+}
+
+class _AssignDelegateDialogState extends State<_AssignDelegateDialog> {
+  final _searchController = TextEditingController();
+  List<CourseStudent> _searchResults = [];
+  bool _isSearching = false;
+  Timer? _debounce;
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    _debounce?.cancel();
+    super.dispose();
+  }
+
+  void _onSearchChanged(String query) {
+    if (_debounce?.isActive ?? false) _debounce!.cancel();
+    _debounce = Timer(const Duration(milliseconds: 500), () async {
+      if (query.length < 2) {
+        setState(() {
+          _searchResults = [];
+          _isSearching = false;
+        });
+        return;
+      }
+
+      setState(() => _isSearching = true);
+      try {
+        final results = await widget.repository.searchStudents(query);
+        setState(() => _searchResults = results);
+      } catch (e) {
+        debugPrint('Search error: $e');
+      } finally {
+        setState(() => _isSearching = false);
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: const Color(0xFF0A0C10),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      child: Container(
+        padding: const EdgeInsets.all(24),
+        constraints: const BoxConstraints(maxHeight: 500),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Assign New Delegate',
+              style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _searchController,
+              onChanged: _onSearchChanged,
+              autofocus: true,
+              style: const TextStyle(color: Colors.white),
+              decoration: InputDecoration(
+                hintText: 'Search by name or email...',
+                hintStyle: const TextStyle(color: Color(0xFF64748B)),
+                prefixIcon: const Icon(Icons.search, color: Color(0xFFF58220)),
+                filled: true,
+                fillColor: Colors.white.withValues(alpha: 0.05),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: BorderSide.none,
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Expanded(
+              child: _isSearching
+                  ? const Center(child: CircularProgressIndicator(color: Color(0xFFF58220)))
+                  : _searchResults.isEmpty
+                      ? Center(
+                          child: Text(
+                            _searchController.text.length < 2
+                                ? 'Type at least 2 characters'
+                                : 'No students found',
+                            style: const TextStyle(color: Color(0xFF64748B)),
+                          ),
+                        )
+                      : ListView.separated(
+                          shrinkWrap: true,
+                          itemCount: _searchResults.length,
+                          separatorBuilder: (_, __) => const SizedBox(height: 8),
+                          itemBuilder: (context, index) {
+                            final student = _searchResults[index];
+                            return ListTile(
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+                              leading: CircleAvatar(
+                                backgroundColor: const Color(0xFFF58220).withOpacity(0.1),
+                                child: Text(
+                                  student.fullName[0].toUpperCase(),
+                                  style: const TextStyle(color: Color(0xFFF58220)),
+                                ),
+                              ),
+                              title: Text(student.fullName, style: const TextStyle(color: Colors.white)),
+                              subtitle: Text(student.email, style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12)),
+                              onTap: () => Navigator.pop(context, student),
+                            );
+                          },
+                        ),
+            ),
+            const SizedBox(height: 16),
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancel', style: TextStyle(color: Color(0xFF94A3B8))),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

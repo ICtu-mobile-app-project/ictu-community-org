@@ -213,6 +213,7 @@ class SupabaseLecturerCoursesRepository implements LecturerCoursesRepository {
         .toList(growable: false);
   }
 
+  @override
   Future<List<CourseDelegate>> getDelegates(String courseId) async {
     final Map<String, dynamic> body = await _call(
       action: 'list_delegates',
@@ -226,6 +227,49 @@ class SupabaseLecturerCoursesRepository implements LecturerCoursesRepository {
       final Map<String, dynamic> rowMap = _asJsonMap(row) ?? <String, dynamic>{};
       return _mapDelegateJson(rowMap);
     }).toList(growable: false);
+  }
+
+  @override
+  Future<List<CourseStudent>> searchStudents(String query) async {
+    final Map<String, dynamic> body = await _call(
+      action: 'search_students',
+      payload: <String, dynamic>{'query': query},
+    );
+
+    final Map<String, dynamic>? data = _asJsonMap(body['data']);
+    final List<dynamic> rows = (data?['items'] as List<dynamic>? ?? <dynamic>[]);
+
+    return rows
+        .map((dynamic row) => _mapStudent(_asJsonMap(row) ?? {}))
+        .toList(growable: false);
+  }
+
+  @override
+  Future<void> assignDelegate({
+    required String courseId,
+    required String studentId,
+  }) async {
+    await _call(
+      action: 'assign_delegate',
+      payload: <String, dynamic>{
+        'courseId': courseId,
+        'studentId': studentId,
+      },
+    );
+  }
+
+  @override
+  Future<void> removeDelegate({
+    required String courseId,
+    required String studentId,
+  }) async {
+    await _call(
+      action: 'remove_delegate',
+      payload: <String, dynamic>{
+        'courseId': courseId,
+        'studentId': studentId,
+      },
+    );
   }
 
 

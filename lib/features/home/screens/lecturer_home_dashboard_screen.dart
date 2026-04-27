@@ -73,7 +73,7 @@ class _LecturerHomeDashboardScreenState extends State<LecturerHomeDashboardScree
     bool online = false;
     try {
       final List<InternetAddress> lookup = await InternetAddress.lookup(
-        'grlrrdaarzczjnqdeahh.supabase.co',
+        'google.com',
       );
       online = lookup.isNotEmpty;
     } on SocketException {
@@ -263,17 +263,7 @@ class _LecturerHomeDashboardScreenState extends State<LecturerHomeDashboardScree
                     child: _ActionPill(
                       icon: Icons.groups_rounded,
                       label: 'Delegates',
-                      onTap: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute<void>(
-                            builder: (_) => const CourseNotesListScreen(
-                              courseId: 'demo-course-1',
-                              courseCode: 'SEN3141',
-                              role: UserRole.lecturer,
-                            ),
-                          ),
-                        );
-                      },
+                      onTap: widget.onOpenSearch, // Redirect to my courses to select a course
                     ),
                   ),
                 ],

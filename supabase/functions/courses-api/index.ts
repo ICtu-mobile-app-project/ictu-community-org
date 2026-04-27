@@ -435,7 +435,12 @@ Deno.serve(async (request: Request) => {
 
       const { data, error } = await client
         .from('course_enrollments')
-        .select('id, enrolled_at, student_id, profiles:student_id(id, full_name, email)')
+        .select(`
+          id,
+          enrolled_at,
+          student_id,
+          profiles:student_id(id, full_name, email, faculty, program, year_level)
+        `)
         .eq('course_code', course.course_code)
         .order('enrolled_at', { ascending: false });
       if (error) return fail(400, error.message);
@@ -445,6 +450,9 @@ Deno.serve(async (request: Request) => {
         fullName: r.profiles?.full_name ?? 'Unknown Student',
         email: r.profiles?.email ?? '',
         enrolledAt: r.enrolled_at,
+        faculty: r.profiles?.faculty,
+        program: r.profiles?.program,
+        yearLevel: r.profiles?.year_level,
       }));
 
       return json(200, { success: true, data: { items } });
@@ -456,7 +464,7 @@ Deno.serve(async (request: Request) => {
 
       const { data, error } = await client
         .from('profiles')
-        .select('id, full_name, email, role')
+        .select('id, full_name, email, role, faculty, program, year_level')
         .eq('role', 'student')
         .ilike('email', `%${query}%`)
         .limit(25);
@@ -467,6 +475,9 @@ Deno.serve(async (request: Request) => {
         fullName: r.full_name ?? 'Unknown Student',
         email: r.email ?? '',
         enrolledAt: new Date().toISOString(),
+        faculty: r.faculty,
+        program: r.program,
+        yearLevel: r.year_level,
       }));
 
       return json(200, { success: true, data: { items } });

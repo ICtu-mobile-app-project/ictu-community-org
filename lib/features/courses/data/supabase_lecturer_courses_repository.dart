@@ -387,6 +387,9 @@ class SupabaseLecturerCoursesRepository implements LecturerCoursesRepository {
       enrolledAt:
           DateTime.tryParse((json['enrolledAt'] ?? '').toString()) ??
           DateTime.now(),
+      faculty: json['faculty']?.toString(),
+      program: json['program']?.toString(),
+      yearLevel: _asInt(json['yearLevel']),
     );
   }
 

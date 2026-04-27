@@ -184,6 +184,13 @@ class _StudentsTabState extends State<_StudentsTab> {
     });
   }
 
+  void _showStudentDetails(BuildContext context, CourseStudent student) {
+    showDialog(
+      context: context,
+      builder: (context) => _StudentDetailsDialog(student: student),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<List<CourseStudent>>(
@@ -236,47 +243,52 @@ class _StudentsTabState extends State<_StudentsTab> {
             separatorBuilder: (_, __) => const SizedBox(height: 12),
             itemBuilder: (context, index) {
               final student = students[index];
-              return Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.05),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
-                ),
-                child: Row(
-                  children: [
-                    CircleAvatar(
-                      backgroundColor: const Color(0xFFF58220).withOpacity(0.1),
-                      child: Text(
-                        student.fullName.isNotEmpty ? student.fullName[0].toUpperCase() : '?',
-                        style: const TextStyle(color: Color(0xFFF58220), fontWeight: FontWeight.bold),
+              return InkWell(
+                onTap: () => _showStudentDetails(context, student),
+                borderRadius: BorderRadius.circular(16),
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.05),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+                  ),
+                  child: Row(
+                    children: [
+                      CircleAvatar(
+                        backgroundColor: const Color(0xFFF58220).withOpacity(0.1),
+                        child: Text(
+                          student.fullName.isNotEmpty ? student.fullName[0].toUpperCase() : '?',
+                          style: const TextStyle(color: Color(0xFFF58220), fontWeight: FontWeight.bold),
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            student.fullName,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              student.fullName,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            student.email,
-                            style: const TextStyle(
-                              color: Color(0xFF94A3B8),
-                              fontSize: 13,
+                            const SizedBox(height: 4),
+                            Text(
+                              student.email,
+                              style: const TextStyle(
+                                color: Color(0xFF94A3B8),
+                                fontSize: 13,
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
+                      const Icon(Icons.chevron_right, color: Color(0xFF64748B), size: 20),
+                    ],
+                  ),
                 ),
               );
             },
@@ -530,6 +542,93 @@ class _DelegatesTabState extends State<_DelegatesTab> {
           );
         },
       ),
+    );
+  }
+}
+
+class _StudentDetailsDialog extends StatelessWidget {
+  const _StudentDetailsDialog({required this.student});
+  final CourseStudent student;
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: const Color(0xFF0A0C10),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CircleAvatar(
+              radius: 40,
+              backgroundColor: const Color(0xFFF58220).withOpacity(0.1),
+              child: Text(
+                student.fullName.isNotEmpty ? student.fullName[0].toUpperCase() : '?',
+                style: const TextStyle(
+                  color: Color(0xFFF58220),
+                  fontSize: 32,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              student.fullName,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              student.email,
+              style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 14),
+            ),
+            const SizedBox(height: 24),
+            const Divider(color: Colors.white10),
+            const SizedBox(height: 16),
+            _buildInfoRow(Icons.calendar_today_outlined, 'Enrolled On', 
+              '${student.enrolledAt.day}/${student.enrolledAt.month}/${student.enrolledAt.year}'),
+            const SizedBox(height: 12),
+            _buildInfoRow(Icons.school_outlined, 'Faculty', student.faculty ?? 'Not Specified'),
+            const SizedBox(height: 12),
+            _buildInfoRow(Icons.book_outlined, 'Program', student.program ?? 'Not Specified'),
+            const SizedBox(height: 12),
+            _buildInfoRow(Icons.layers_outlined, 'Level', 
+              student.yearLevel != null ? 'Year ${student.yearLevel}' : 'Not Specified'),
+            const SizedBox(height: 12),
+            _buildInfoRow(Icons.fingerprint, 'Student ID', student.id.substring(0, 8).toUpperCase()),
+            const SizedBox(height: 32),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () => Navigator.pop(context),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFF58220),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                ),
+                child: const Text('Close'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInfoRow(IconData icon, String label, String value) {
+    return Row(
+      children: [
+        Icon(icon, color: const Color(0xFFF58220), size: 18),
+        const SizedBox(width: 12),
+        Text(label, style: const TextStyle(color: Color(0xFF64748B), fontSize: 13)),
+        const Spacer(),
+        Text(value, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500)),
+      ],
     );
   }
 }

@@ -1,3 +1,5 @@
+import 'package:ictu_community_org/features/courses/models/course_delegate.dart';
+import 'package:ictu_community_org/features/courses/models/course_student.dart';
 import 'package:ictu_community_org/features/courses/models/lecturer_course.dart';
 import 'package:ictu_community_org/features/courses/models/lecturer_course_overview.dart';
 import 'package:ictu_community_org/features/courses/data/lecturer_courses_repository.dart';
@@ -147,5 +149,31 @@ class InMemoryLecturerCoursesRepository implements LecturerCoursesRepository {
   @override
   Future<int> getMyCoursesCount() async {
     return _courses.length;
+  }
+
+  @override
+  Future<List<CourseStudent>> getEnrolledStudents(String courseId) async {
+    await Future<void>.delayed(const Duration(milliseconds: 150));
+    return [
+      CourseStudent(
+        id: 'std-1',
+        fullName: 'John Doe',
+        email: 'john.doe@ictuniversity.org',
+        enrolledAt: DateTime.now(),
+      ),
+    ];
+  }
+
+  @override
+  Future<List<CourseDelegate>> getDelegates(String courseId) async {
+    await Future<void>.delayed(const Duration(milliseconds: 150));
+    return [
+      CourseDelegate(
+        id: 'del-1',
+        studentId: 'std-1',
+        studentName: 'John Doe',
+        studentEmail: 'john.doe@ictuniversity.org',
+      ),
+    ];
   }
 }

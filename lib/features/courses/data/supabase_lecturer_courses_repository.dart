@@ -352,9 +352,6 @@ class SupabaseLecturerCoursesRepository implements LecturerCoursesRepository {
       studentId: (json['studentId'] ?? '').toString(),
       studentName: (json['studentName'] ?? '').toString(),
       studentEmail: (json['studentEmail'] ?? '').toString(),
-      canUploadNotes: json['canUploadNotes'] == true,
-      canEditNotes: json['canEditNotes'] == true,
-      canDeleteNotes: json['canDeleteNotes'] == true,
     );
   }
 

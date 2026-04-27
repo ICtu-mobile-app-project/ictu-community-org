@@ -201,7 +201,7 @@ Deno.serve(async (request: Request) => {
       }
     }
 
-    const action = asText(body?.action || body?.Action).toLowerCase();
+    const action = asText(body?.action || body?.Action).toLowerCase().trim();
 
     // Ping action for health checks (doesn't require auth)
     if (action === 'ping') {
@@ -211,16 +211,30 @@ Deno.serve(async (request: Request) => {
     const auth = await resolveAuth(request);
     const client = auth.serviceClient;
 
+    console.log(`REQ: action="${action}" | user="${auth.userId}" | role="${auth.role}"`);
+
     if (!action) {
       return fail(400, 'action is required');
     }
 
-    if (
-      action !== 'list_my_courses' &&
-      action !== 'search_students' &&
-      auth.role !== 'lecturer'
-    ) {
-      return fail(403, 'Only lecturers can perform this action');
+    // List of actions allowed for students/delegates
+    const publicActions = ['list_my_courses', 'search_students', 'ping'];
+
+    // List of all supported actions to verify if it's actually supported
+    const allActions = [
+      'ping', 'create_course', 'list_my_courses', 'get_course_details',
+      'update_course', 'delete_course', 'list_students', 'search_students',
+      'add_students', 'remove_student', 'list_delegates', 'assign_delegate',
+      'update_delegate', 'remove_delegate'
+    ];
+
+    if (!allActions.includes(action)) {
+      console.error(`ERROR: Action "${action}" not found in allActions list`);
+      return fail(400, `Unsupported action: ${action}`);
+    }
+
+    if (!publicActions.includes(action) && auth.role !== 'lecturer') {
+      return fail(403, `Forbidden: Role ${auth.role} cannot perform ${action}`);
     }
 
     if (action === 'create_course') {

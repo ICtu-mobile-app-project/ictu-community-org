@@ -41,4 +41,16 @@ abstract class LecturerCoursesRepository {
   Future<List<CourseStudent>> getEnrolledStudents(String courseId);
 
   Future<List<CourseDelegate>> getDelegates(String courseId);
+
+  Future<List<CourseStudent>> searchStudents(String query);
+
+  Future<void> assignDelegate({
+    required String courseId,
+    required String studentId,
+  });
+
+  Future<void> removeDelegate({
+    required String courseId,
+    required String studentId,
+  });
 }

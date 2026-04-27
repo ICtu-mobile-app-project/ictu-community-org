@@ -176,4 +176,27 @@ class InMemoryLecturerCoursesRepository implements LecturerCoursesRepository {
       ),
     ];
   }
+
+  @override
+  Future<List<CourseStudent>> searchStudents(String query) async {
+    await Future<void>.delayed(const Duration(milliseconds: 300));
+    final q = query.toLowerCase();
+    final students = [
+      CourseStudent(id: 'std-1', fullName: 'John Doe', email: 'john.doe@student.ictu-university.cm', enrolledAt: DateTime.now()),
+      CourseStudent(id: 'std-2', fullName: 'Jane Smith', email: 'jane.smith@student.ictu-university.cm', enrolledAt: DateTime.now()),
+      CourseStudent(id: 'std-3', fullName: 'Alice Johnson', email: 'alice.j@student.ictu-university.cm', enrolledAt: DateTime.now()),
+    ];
+    
+    return students.where((s) => s.fullName.toLowerCase().contains(q) || s.email.toLowerCase().contains(q)).toList();
+  }
+
+  @override
+  Future<void> assignDelegate({required String courseId, required String studentId}) async {
+    await Future<void>.delayed(const Duration(milliseconds: 200));
+  }
+
+  @override
+  Future<void> removeDelegate({required String courseId, required String studentId}) async {
+    await Future<void>.delayed(const Duration(milliseconds: 200));
+  }
 }

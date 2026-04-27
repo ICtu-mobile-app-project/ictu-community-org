@@ -124,7 +124,7 @@ async function getCourseMetrics(client: any, courseId: string, courseCode: strin
     client
       .from('course_enrollments')
       .select('id', { count: 'exact', head: true })
-      .eq('course_id', courseId),
+      .eq('course_code', courseCode),
     client
       .from('course_delegates')
       .select('id', { count: 'exact', head: true })
@@ -134,9 +134,9 @@ async function getCourseMetrics(client: any, courseId: string, courseCode: strin
       .select('id', { count: 'exact', head: true })
       .eq('course_code', courseCode),
     client
-      .from('lecture_notes')
+      .from('notes')
       .select('id', { count: 'exact', head: true })
-      .eq('course_id', courseId),
+      .eq('course_code', courseCode),
     client
       .from('alerts')
       .select('id', { count: 'exact', head: true })
@@ -167,7 +167,7 @@ function mapCourseRow(row: any) {
     studentCount: row.course_enrollments?.[0]?.count ?? 0,
     delegateCount: row.course_delegates?.[0]?.count ?? 0,
     lectureCount: 0,
-    notesCount: row.lecture_notes?.[0]?.count ?? 0,
+    notesCount: row.notes?.[0]?.count ?? 0,
     alertCount: row.alerts?.[0]?.count ?? 0,
     lastActivity: row.updated_at ?? row.created_at,
   };
@@ -275,7 +275,7 @@ Deno.serve(async (request: Request) => {
           lecturer_id: auth.userId,
         })
         .select(
-          'id, course_code, title, description, semester, lecturer_id, archived, created_at, updated_at, profiles:lecturer_id(full_name), course_enrollments(count), course_delegates(count), lecture_notes(count), alerts(count)',
+          'id, course_code, title, description, semester, lecturer_id, archived, created_at, updated_at, profiles:lecturer_id(full_name), course_enrollments(count), course_delegates(count), notes(count), alerts(count)',
         )
         .single();
 
@@ -302,7 +302,7 @@ Deno.serve(async (request: Request) => {
       let query = client
         .from('courses')
         .select(
-          'id, course_code, title, description, semester, lecturer_id, archived, created_at, updated_at, profiles:lecturer_id(full_name), course_enrollments(count), course_delegates(count), lecture_notes(count), alerts(count)',
+          'id, course_code, title, description, semester, lecturer_id, archived, created_at, updated_at, profiles:lecturer_id(full_name), course_enrollments(count), course_delegates(count), notes(count), alerts(count)',
           { count: 'exact' },
         )
         .eq('lecturer_id', auth.userId)
@@ -382,7 +382,7 @@ Deno.serve(async (request: Request) => {
         .from('courses')
         .update({ title, description, semester, archived })
         .eq('id', courseId)
-        .select('id, course_code, title, description, semester, lecturer_id, archived, created_at, updated_at, profiles:lecturer_id(full_name), course_enrollments(count), course_delegates(count), lecture_notes(count), alerts(count)')
+        .select('id, course_code, title, description, semester, lecturer_id, archived, created_at, updated_at, profiles:lecturer_id(full_name), course_enrollments(count), course_delegates(count), notes(count), alerts(count)')
         .single();
       if (error) return fail(400, error.message);
 
@@ -431,12 +431,12 @@ Deno.serve(async (request: Request) => {
     if (action === 'list_students') {
       const courseId = asText(body.courseId);
       if (!courseId) return fail(400, 'courseId is required');
-      await assertCourseOwner(client, courseId, auth.userId);
+      const course = await assertCourseOwner(client, courseId, auth.userId);
 
       const { data, error } = await client
         .from('course_enrollments')
         .select('id, enrolled_at, student_id, profiles:student_id(id, full_name, email)')
-        .eq('course_id', courseId)
+        .eq('course_code', course.course_code)
         .order('enrolled_at', { ascending: false });
       if (error) return fail(400, error.message);
 
@@ -479,16 +479,16 @@ Deno.serve(async (request: Request) => {
         : [];
       if (!courseId) return fail(400, 'courseId is required');
       if (studentIds.length === 0) return fail(400, 'studentIds is required');
-      await assertCourseOwner(client, courseId, auth.userId);
+      const course = await assertCourseOwner(client, courseId, auth.userId);
 
       const rows = studentIds.map((id: string) => ({
-        course_id: courseId,
+        course_code: course.course_code,
         student_id: id,
       }));
 
       const { error } = await client
         .from('course_enrollments')
-        .upsert(rows, { onConflict: 'course_id,student_id', ignoreDuplicates: true });
+        .upsert(rows, { onConflict: 'course_code,student_id', ignoreDuplicates: true });
       if (error) return fail(400, error.message);
 
       return json(200, { success: true, data: { added: studentIds.length } });
@@ -498,12 +498,12 @@ Deno.serve(async (request: Request) => {
       const courseId = asText(body.courseId);
       const studentId = asText(body.studentId);
       if (!courseId || !studentId) return fail(400, 'courseId and studentId are required');
-      await assertCourseOwner(client, courseId, auth.userId);
+      const course = await assertCourseOwner(client, courseId, auth.userId);
 
       const { error: deleteEnrollmentError } = await client
         .from('course_enrollments')
         .delete()
-        .eq('course_id', courseId)
+        .eq('course_code', course.course_code)
         .eq('student_id', studentId);
       if (deleteEnrollmentError) return fail(400, deleteEnrollmentError.message);
 

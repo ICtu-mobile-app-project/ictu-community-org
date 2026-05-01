@@ -21,16 +21,11 @@ class GlassCard extends StatelessWidget {
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
         child: Container(
-          padding: padding ?? const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: Colors.white.withValues(alpha: 0.04),
             borderRadius: BorderRadius.circular(borderRadius),
-            border: Border(
-              top: BorderSide(color: Colors.white.withValues(alpha: 0.10)),
-              left: BorderSide(color: Colors.white.withValues(alpha: 0.10)),
-              right: BorderSide(color: Colors.white.withValues(alpha: 0.05)),
-              bottom: BorderSide(color: Colors.white.withValues(alpha: 0.05)),
-            ),
+            // Must be uniform when combined with a borderRadius.
+            border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.18),
@@ -39,7 +34,57 @@ class GlassCard extends StatelessWidget {
               ),
             ],
           ),
-          child: child,
+          child: Stack(
+            children: [
+              Padding(
+                padding: padding ?? const EdgeInsets.all(16),
+                child: child,
+              ),
+              // "Light leak" accent (top + left edges) to preserve the glass look.
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                height: 1,
+                child: IgnorePointer(
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.centerLeft,
+                        end: Alignment.centerRight,
+                        colors: [
+                          Colors.white.withValues(alpha: 0.12),
+                          Colors.white.withValues(alpha: 0.08),
+                          Colors.white.withValues(alpha: 0.04),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              Positioned(
+                top: 0,
+                left: 0,
+                bottom: 0,
+                width: 1,
+                child: IgnorePointer(
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.white.withValues(alpha: 0.12),
+                          Colors.white.withValues(alpha: 0.08),
+                          Colors.white.withValues(alpha: 0.04),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

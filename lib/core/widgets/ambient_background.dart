@@ -12,9 +12,13 @@ class AmbientBackground extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        Container(color: AppColors.background),
+    return SizedBox.expand(
+      child: Stack(
+        fit: StackFit.expand,
+        clipBehavior: Clip.none,
+        children: [
+          // Base layer must fill the screen; with StackFit.expand it receives tight constraints.
+          const ColoredBox(color: AppColors.background),
         Positioned(
           top: -120,
           left: -100,
@@ -49,8 +53,9 @@ class AmbientBackground extends StatelessWidget {
             ),
           ),
         ),
-        child,
-      ],
+          Positioned.fill(child: child),
+        ],
+      ),
     );
   }
 }

@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
-import '../data/student_courses_repository.dart';
-import '../models/student_course_overview.dart';
+import 'package:ictu_community_org/features/courses/data/student_courses_repository.dart';
+import 'package:ictu_community_org/features/courses/models/student_course_overview.dart';
 
 class EnrolledCoursesController extends ChangeNotifier {
   EnrolledCoursesController({StudentCoursesRepository? repository})

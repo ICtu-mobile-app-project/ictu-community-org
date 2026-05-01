@@ -2,10 +2,10 @@ import 'dart:convert';
 
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../../../core/services/connectivity_service.dart';
-import '../../../core/services/offline_service.dart';
-import '../../../core/supabase/supabase_bootstrap.dart';
-import '../models/alert_item.dart';
+import 'package:ictu_community_org/core/services/connectivity_service.dart';
+import 'package:ictu_community_org/core/services/offline_service.dart';
+import 'package:ictu_community_org/core/supabase/supabase_bootstrap.dart';
+import 'package:ictu_community_org/features/alerts/models/alert_item.dart';
 
 class AlertsService {
   AlertsService({

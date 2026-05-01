@@ -1,5 +1,6 @@
-import '../models/lecturer_course_overview.dart';
-import 'lecturer_courses_repository.dart';
+import 'package:ictu_community_org/features/courses/models/lecturer_course.dart';
+import 'package:ictu_community_org/features/courses/models/lecturer_course_overview.dart';
+import 'package:ictu_community_org/features/courses/data/lecturer_courses_repository.dart';
 
 class InMemoryLecturerCoursesRepository implements LecturerCoursesRepository {
   InMemoryLecturerCoursesRepository._();
@@ -74,7 +75,53 @@ class InMemoryLecturerCoursesRepository implements LecturerCoursesRepository {
   }
 
   @override
+  Future<LecturerCoursesResult> getMyCourses({
+    required String lecturerId,
+    required int page,
+    int limit = 20,
+    String? searchQuery,
+  }) async {
+    await Future<void>.delayed(const Duration(milliseconds: 200));
+
+    final String query = searchQuery?.trim().toLowerCase() ?? '';
+    final List<LecturerCourseOverview> filtered = _courses.where((c) {
+      if (query.isEmpty) return true;
+      return c.code.toLowerCase().contains(query) ||
+          c.title.toLowerCase().contains(query);
+    }).toList();
+
+    final int from = page * limit;
+    if (from >= filtered.length) {
+      return const LecturerCoursesResult(items: [], hasMore: false);
+    }
+
+    final int to = (from + limit).clamp(0, filtered.length);
+    final List<LecturerCourse> items = filtered
+        .sublist(from, to)
+        .map(
+          (c) => LecturerCourse(
+            id: c.id,
+            courseCode: c.code,
+            title: c.title,
+            description: c.description,
+            semester: c.semester,
+            lecturerId: lecturerId,
+            lecturerName: 'Prof. Victor Mbarika',
+            studentCount: c.students,
+            lectureCount: 0,
+            notesCount: c.notes,
+            alertCount: c.alerts,
+            lastActivity: c.lastActivity,
+          ),
+        )
+        .toList();
+
+    return LecturerCoursesResult(items: items, hasMore: to < filtered.length);
+  }
+
+  @override
   Future<void> createCourse({
+    required String lecturerId,
     required String courseCode,
     required String title,
     required String semester,

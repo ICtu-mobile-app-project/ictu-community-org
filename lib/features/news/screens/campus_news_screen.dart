@@ -1,23 +1,27 @@
 import 'package:flutter/material.dart';
 
+import 'package:ictu_community_org/core/theme/app_colors.dart';
+import 'package:ictu_community_org/core/widgets/ambient_background.dart';
+import 'package:ictu_community_org/core/widgets/glass_card.dart';
+
 class CampusNewsScreen extends StatelessWidget {
   const CampusNewsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      color: const Color(0xFF0A0C10),
-      child: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 16, 20, 110),
-        children: [
-          const Text(
-            'News & Updates',
-            style: TextStyle(
-              color: Color(0xFFF1F5F9),
-              fontWeight: FontWeight.w800,
-              fontSize: 24,
+    return AmbientBackground(
+      child: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 110),
+          children: [
+            const Text(
+              'News & Updates',
+              style: TextStyle(
+                color: Color(0xFFF1F5F9),
+                fontWeight: FontWeight.w800,
+                fontSize: 24,
+              ),
             ),
-          ),
           const SizedBox(height: 14),
           const Row(
             children: [
@@ -64,7 +68,8 @@ class CampusNewsScreen extends StatelessWidget {
             title: 'Career Fair 2026',
             meta: 'Apr 02 • Conference Center • 10:00 AM',
           ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -75,12 +80,9 @@ class CampusNewsScreen extends StatelessWidget {
     required String title,
     required String description,
   }) {
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(18),
-        color: Colors.white.withValues(alpha: 0.03),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
-      ),
+    return GlassCard(
+      borderRadius: 18,
+      padding: EdgeInsets.zero,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -105,12 +107,12 @@ class CampusNewsScreen extends StatelessWidget {
                   ),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(8),
-                    color: const Color(0x1AF59E0B),
+                    color: AppColors.primaryContainer.withValues(alpha: 0.12),
                   ),
                   child: Text(
                     category,
                     style: const TextStyle(
-                      color: Color(0xFFF97316),
+                      color: AppColors.primaryContainer,
                       fontWeight: FontWeight.w700,
                       fontSize: 12,
                     ),
@@ -153,7 +155,7 @@ class _NewsFilter extends StatelessWidget {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
         color: selected
-            ? const Color(0xFFF59E0B)
+            ? AppColors.primaryContainer
             : Colors.white.withValues(alpha: 0.05),
         border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
       ),
@@ -176,26 +178,23 @@ class _EventTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(14),
-        color: Colors.white.withValues(alpha: 0.03),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
-      ),
-      child: Row(
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: GlassCard(
+        borderRadius: 14,
+        padding: const EdgeInsets.all(14),
+        child: Row(
         children: [
           Container(
             width: 36,
             height: 36,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(10),
-              color: const Color(0x1AF59E0B),
+              color: AppColors.primaryContainer.withValues(alpha: 0.12),
             ),
             child: const Icon(
               Icons.event_rounded,
-              color: Color(0xFFF59E0B),
+              color: AppColors.primaryContainer,
               size: 20,
             ),
           ),
@@ -224,6 +223,7 @@ class _EventTile extends StatelessWidget {
             ),
           ),
         ],
+        ),
       ),
     );
   }

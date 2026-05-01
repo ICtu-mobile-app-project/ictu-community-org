@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../auth/models/user_role.dart';
+import 'package:ictu_community_org/core/services/offline_service.dart';
+import 'package:ictu_community_org/features/auth/controllers/auth_controller.dart';
+import 'package:ictu_community_org/features/auth/models/user_role.dart';
+import 'package:ictu_community_org/features/courses/controllers/timetable_controller.dart';
+import 'package:ictu_community_org/features/courses/data/timetable_repository.dart';
+import 'package:ictu_community_org/features/courses/models/schedule_item.dart';
+import 'package:ictu_community_org/features/courses/screens/admin_timetable_management_screen.dart';
 import 'package:provider/provider.dart';
-import '../../auth/controllers/auth_controller.dart';
-import '../controllers/timetable_controller.dart';
-import '../data/timetable_repository.dart';
-import '../../../core/services/offline_service.dart';
-import '../models/schedule_item.dart';
-import 'admin_timetable_management_screen.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class TimetableScreen extends StatefulWidget {
   const TimetableScreen({super.key, this.userRole});

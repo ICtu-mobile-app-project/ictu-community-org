@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../../auth/models/user_role.dart';
-import '../data/notes_service.dart';
-import '../models/course_note.dart';
+import 'package:ictu_community_org/features/auth/models/user_role.dart';
+import 'package:ictu_community_org/features/courses/data/notes_service.dart';
+import 'package:ictu_community_org/features/courses/models/course_note.dart';
 import 'package:ictu_community_org/features/courses/screens/note_details_screen.dart';
 import 'package:ictu_community_org/features/courses/screens/upload_notes_screen.dart';
 

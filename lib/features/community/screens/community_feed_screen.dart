@@ -1,15 +1,19 @@
 import 'package:flutter/material.dart';
 
+import 'package:ictu_community_org/core/theme/app_colors.dart';
+import 'package:ictu_community_org/core/widgets/ambient_background.dart';
+import 'package:ictu_community_org/core/widgets/glass_card.dart';
+
 class CommunityFeedScreen extends StatelessWidget {
   const CommunityFeedScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      color: const Color(0xFF0A0C10),
-      child: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 16, 20, 110),
-        children: [
+    return AmbientBackground(
+      child: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 110),
+          children: [
           const Text(
             'Community & Feed',
             style: TextStyle(
@@ -114,7 +118,8 @@ class CommunityFeedScreen extends StatelessWidget {
               ],
             ),
           ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -176,15 +181,12 @@ class _ChatTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(18),
-        color: Colors.white.withValues(alpha: 0.04),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
-      ),
-      child: Row(
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: GlassCard(
+        borderRadius: 18,
+        padding: const EdgeInsets.all(14),
+        child: Row(
         children: [
           const CircleAvatar(
             radius: 20,
@@ -228,7 +230,7 @@ class _ChatTile extends StatelessWidget {
               if (unread > 0)
                 CircleAvatar(
                   radius: 10,
-                  backgroundColor: const Color(0xFFF58220),
+                  backgroundColor: AppColors.primaryContainer,
                   child: Text(
                     '$unread',
                     style: const TextStyle(
@@ -241,6 +243,7 @@ class _ChatTile extends StatelessWidget {
             ],
           ),
         ],
+        ),
       ),
     );
   }
@@ -313,7 +316,7 @@ class _Chip extends StatelessWidget {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(24),
         color: selected
-            ? const Color(0xFFF59E0B)
+            ? AppColors.primaryContainer
             : Colors.white.withValues(alpha: 0.05),
         border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
       ),

@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
 
+import 'app_colors.dart';
+
 class AppTheme {
   const AppTheme._();
 
   static ThemeData get dark => ThemeData(
     colorScheme: ColorScheme.fromSeed(
-      seedColor: const Color(0xFFF59E0B),
+      seedColor: AppColors.primaryContainer,
       brightness: Brightness.dark,
     ),
-    scaffoldBackgroundColor: const Color(0xFF050913),
+    scaffoldBackgroundColor: AppColors.background,
     fontFamily: 'Segoe UI',
     useMaterial3: true,
   );

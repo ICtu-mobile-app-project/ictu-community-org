@@ -8,9 +8,9 @@ import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
 
-import '../../auth/models/user_role.dart';
-import '../data/notes_service.dart';
-import '../models/course_note.dart';
+import 'package:ictu_community_org/features/auth/models/user_role.dart';
+import 'package:ictu_community_org/features/courses/data/notes_service.dart';
+import 'package:ictu_community_org/features/courses/models/course_note.dart';
 
 class NoteDetailsScreen extends StatefulWidget {
   const NoteDetailsScreen({
@@ -131,37 +131,87 @@ class _NoteDetailsScreenState extends State<NoteDetailsScreen> {
     }
   }
 
-  Future<void> _editTitle() async {
-    final TextEditingController ctrl = TextEditingController(
-      text: widget.note.title,
-    );
+  Future<void> _editNote() async {
+    final TextEditingController titleCtrl = TextEditingController(text: widget.note.title);
+    final TextEditingController descCtrl = TextEditingController(text: widget.note.description);
+    final TextEditingController summaryCtrl = TextEditingController(text: widget.note.summary);
+    String currentStatus = widget.note.status;
+
     final bool? save = await showDialog<bool>(
       context: context,
-      builder:
-          (BuildContext context) => AlertDialog(
-            title: const Text('Edit Note Title'),
-            content: TextField(controller: ctrl),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(false),
-                child: const Text('Cancel'),
-              ),
-              ElevatedButton(
-                onPressed: () => Navigator.of(context).pop(true),
-                child: const Text('Save'),
-              ),
-            ],
+      builder: (BuildContext context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('Edit Note Details'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: titleCtrl,
+                  decoration: const InputDecoration(labelText: 'Title'),
+                ),
+                TextField(
+                  controller: descCtrl,
+                  decoration: const InputDecoration(labelText: 'Description'),
+                  maxLines: 2,
+                ),
+                TextField(
+                  controller: summaryCtrl,
+                  decoration: const InputDecoration(labelText: 'Summary (Optional)'),
+                  maxLines: 3,
+                ),
+                const SizedBox(height: 16),
+                DropdownButtonFormField<String>(
+                  value: currentStatus,
+                  decoration: const InputDecoration(labelText: 'Status'),
+                  items: const [
+                    DropdownMenuItem(value: 'published', child: Text('Published')),
+                    DropdownMenuItem(value: 'draft', child: Text('Draft')),
+                  ],
+                  onChanged: (val) {
+                    if (val != null) setDialogState(() => currentStatus = val);
+                  },
+                ),
+              ],
+            ),
           ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Save'),
+            ),
+          ],
+        ),
+      ),
     );
 
     if (save != true) return;
-    await _service.updateNoteTitle(widget.note.id, ctrl.text.trim());
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Title updated. Refresh notes list to see changes.'),
-      ),
-    );
+    
+    setState(() => _isWorking = true);
+    try {
+      await _service.updateNote(
+        noteId: widget.note.id,
+        title: titleCtrl.text.trim(),
+        description: descCtrl.text.trim(),
+        summary: summaryCtrl.text.trim(),
+        status: currentStatus,
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Note updated successfully.')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Update failed: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _isWorking = false);
+    }
   }
 
   Future<void> _delete() async {
@@ -210,45 +260,97 @@ class _NoteDetailsScreenState extends State<NoteDetailsScreen> {
         children: [
           Padding(
             padding: const EdgeInsets.all(16),
-            child: Row(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                ElevatedButton.icon(
-                  onPressed: _isWorking ? null : _download,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFF58220),
-                    foregroundColor: Colors.white,
+                if (widget.note.status == 'draft')
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                    margin: const EdgeInsets.only(bottom: 16),
+                    decoration: BoxDecoration(
+                      color: Colors.amber.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.amber),
+                    ),
+                    child: const Row(
+                      children: [
+                        Icon(Icons.warning_amber_rounded, color: Colors.amber, size: 20),
+                        SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'This note is a DRAFT. Students cannot see it.',
+                            style: TextStyle(color: Colors.amber, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                  icon: Icon(
-                    _localFilePath != null
-                        ? Icons.open_in_new_rounded
-                        : Icons.download_rounded,
+                if (widget.note.description.isNotEmpty) ...[
+                  Text(
+                    widget.note.description,
+                    style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 14),
                   ),
-                  label: Text(
-                    _isWorking
-                        ? '${(_downloadProgress * 100).toInt()}%'
-                        : (_localFilePath != null ? 'Open' : 'Download'),
+                  const SizedBox(height: 8),
+                ],
+                if (widget.note.summary.isNotEmpty) ...[
+                  const Text(
+                    'Summary',
+                    style: TextStyle(
+                      color: Color(0xFFF58220),
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
+                  const SizedBox(height: 4),
+                  Text(
+                    widget.note.summary,
+                    style: const TextStyle(color: Colors.white, fontSize: 14),
+                  ),
+                  const SizedBox(height: 16),
+                ],
+                Row(
+                  children: [
+                    ElevatedButton.icon(
+                      onPressed: _isWorking ? null : _download,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFF58220),
+                        foregroundColor: Colors.white,
+                      ),
+                      icon: Icon(
+                        _localFilePath != null
+                            ? Icons.open_in_new_rounded
+                            : Icons.download_rounded,
+                      ),
+                      label: Text(
+                        _isWorking
+                            ? '${(_downloadProgress * 100).toInt()}%'
+                            : (_localFilePath != null ? 'Open' : 'Download'),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    OutlinedButton.icon(
+                      onPressed: _isWorking ? null : _share,
+                      icon: const Icon(Icons.share_rounded),
+                      label: const Text('Share'),
+                    ),
+                    const Spacer(),
+                    if (_isOwnerActionAllowed)
+                      IconButton(
+                        onPressed: _isWorking ? null : _editNote,
+                        icon: const Icon(Icons.edit_rounded, color: Colors.white),
+                      ),
+                    if (_isOwnerActionAllowed)
+                      IconButton(
+                        onPressed: _delete,
+                        icon: const Icon(Icons.delete_rounded, color: Colors.red),
+                      ),
+                  ],
                 ),
-                const SizedBox(width: 10),
-                OutlinedButton.icon(
-                  onPressed: _isWorking ? null : _share,
-                  icon: const Icon(Icons.share_rounded),
-                  label: const Text('Share'),
-                ),
-                const Spacer(),
-                if (_isOwnerActionAllowed)
-                  IconButton(
-                    onPressed: _editTitle,
-                    icon: const Icon(Icons.edit_rounded, color: Colors.white),
-                  ),
-                if (_isOwnerActionAllowed)
-                  IconButton(
-                    onPressed: _delete,
-                    icon: const Icon(Icons.delete_rounded, color: Colors.red),
-                  ),
               ],
             ),
           ),
+          const Divider(color: Colors.white12),
           Expanded(
             child:
                 widget.note.isPdf

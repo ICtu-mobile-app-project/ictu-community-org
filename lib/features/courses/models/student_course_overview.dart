@@ -36,9 +36,9 @@ class StudentCourseOverview {
       lecturer: (json['lecturer_name'] ?? 'Unknown Lecturer').toString(),
       description: (json['description'] ?? '').toString(),
       isEnrolled: json['is_enrolled'] == true || json['is_enrolled'] == 'true',
-      progress: (json['progress'] ?? 0.0).toDouble(),
-      notesCount: (json['notes_count'] ?? 0).toInt(),
-      alertsCount: (json['alerts_count'] ?? 0).toInt(),
+      progress: ((json['progress'] ?? 0.0) as num).toDouble(),
+      notesCount: ((json['notes_count'] ?? 0) as num).toInt(),
+      alertsCount: ((json['alerts_count'] ?? 0) as num).toInt(),
     );
   }
 

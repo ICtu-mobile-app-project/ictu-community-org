@@ -2,13 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:ictu_community_org/features/courses/screens/lecturer_course_details_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../../../core/supabase/supabase_bootstrap.dart';
-import '../controllers/lecturer_courses_controller.dart';
-import '../data/in_memory_lecturer_courses_repository.dart';
-import '../data/lecturer_courses_repository.dart';
-import '../data/supabase_lecturer_courses_repository.dart';
-import '../models/lecturer_course.dart';
-import 'create_course_screen.dart';
+import 'package:ictu_community_org/core/supabase/supabase_bootstrap.dart';
+import 'package:ictu_community_org/core/theme/app_colors.dart';
+import 'package:ictu_community_org/core/widgets/ambient_background.dart';
+import 'package:ictu_community_org/core/widgets/glass_input.dart';
+import 'package:ictu_community_org/features/courses/controllers/lecturer_courses_controller.dart';
+import 'package:ictu_community_org/features/courses/data/in_memory_lecturer_courses_repository.dart';
+import 'package:ictu_community_org/features/courses/data/lecturer_courses_repository.dart';
+import 'package:ictu_community_org/features/courses/data/supabase_lecturer_courses_repository.dart';
+import 'package:ictu_community_org/features/courses/models/lecturer_course.dart';
+import 'package:ictu_community_org/features/courses/models/lecturer_course_overview.dart';
+import 'package:ictu_community_org/features/courses/screens/create_course_screen.dart';
 
 class LecturerMyCoursesScreen extends StatefulWidget {
   const LecturerMyCoursesScreen({super.key});
@@ -76,11 +80,7 @@ class _LecturerMyCoursesScreenState extends State<LecturerMyCoursesScreen> {
     final LecturerCourse? created = await Navigator.of(context)
         .push<LecturerCourse>(
           MaterialPageRoute<LecturerCourse>(
-            builder: (_) => CreateCourseScreen(
-              repository: _repository,
-              lecturerId: _lecturerId,
-              lecturerName: _lecturerName,
-            ),
+            builder: (_) => const CreateCourseScreen(),
           ),
         );
 
@@ -97,9 +97,17 @@ class _LecturerMyCoursesScreenState extends State<LecturerMyCoursesScreen> {
     await Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (_) => LecturerCourseDetailsScreen(
-          courseId: created.id,
-          repository: _repository,
-          lecturerId: _lecturerId,
+          course: LecturerCourseOverview(
+            id: created.id,
+            code: created.courseCode,
+            title: created.title,
+            description: created.description,
+            semester: created.semester,
+            students: created.studentCount,
+            notes: created.notesCount,
+            alerts: created.alertCount,
+            lastActivity: created.lastActivity,
+          ),
         ),
       ),
     );
@@ -110,20 +118,21 @@ class _LecturerMyCoursesScreenState extends State<LecturerMyCoursesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0C10),
+      backgroundColor: Colors.transparent,
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _openCreateCourse,
-        backgroundColor: const Color(0xFFF58220),
+        backgroundColor: AppColors.primaryContainer,
         foregroundColor: Colors.white,
         icon: const Icon(Icons.add_rounded),
         label: const Text('Create New Course'),
       ),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+      body: AmbientBackground(
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
               const Text(
                 'My Courses',
                 style: TextStyle(
@@ -138,135 +147,130 @@ class _LecturerMyCoursesScreenState extends State<LecturerMyCoursesScreen> {
                 style: TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
               ),
               const SizedBox(height: 14),
-              TextField(
+              GlassInput(
+                label: 'Search',
                 controller: _searchController,
-                style: const TextStyle(color: Color(0xFFF1F5F9)),
-                decoration: InputDecoration(
-                  hintText: 'Search by course code or title',
-                  hintStyle: const TextStyle(color: Color(0xFF94A3B8)),
-                  prefixIcon: const Icon(
-                    Icons.search_rounded,
-                    color: Color(0xFF94A3B8),
-                  ),
-                  filled: true,
-                  fillColor: Colors.white.withValues(alpha: 0.03),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    borderSide: BorderSide(
-                      color: Colors.white.withValues(alpha: 0.08),
-                    ),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    borderSide: BorderSide(
-                      color: Colors.white.withValues(alpha: 0.08),
-                    ),
-                  ),
-                ),
+                icon: Icons.search_rounded,
+                placeholder: 'Search by course code or title',
                 onChanged: _controller.onSearchChanged,
               ),
               const SizedBox(height: 12),
               Expanded(
-                child: ValueListenableBuilder<bool>(
-                  valueListenable: _controller.isLoading,
-                  builder: (_, bool isLoading, __) {
-                    return ValueListenableBuilder<List<LecturerCourse>>(
-                      valueListenable: _controller.items,
-                      builder: (_, List<LecturerCourse> courses, __) {
-                        return ValueListenableBuilder<String?>(
-                          valueListenable: _controller.errorMessage,
-                          builder: (_, String? error, __) {
-                            if (error != null && courses.isEmpty) {
-                              return Center(
-                                child: Text(
-                                  error,
-                                  style: const TextStyle(
-                                    color: Color(0xFFF87171),
+                child: RefreshIndicator(
+                  onRefresh: _controller.refresh,
+                  color: AppColors.primaryContainer,
+                  backgroundColor: const Color(0xFF1E293B),
+                  child: ValueListenableBuilder<bool>(
+                    valueListenable: _controller.isLoading,
+                    builder: (_, bool isLoading, __) {
+                      return ValueListenableBuilder<List<LecturerCourse>>(
+                        valueListenable: _controller.items,
+                        builder: (_, List<LecturerCourse> courses, __) {
+                          return ValueListenableBuilder<String?>(
+                            valueListenable: _controller.errorMessage,
+                            builder: (_, String? error, __) {
+                              if (error != null && courses.isEmpty) {
+                                return SingleChildScrollView(
+                                  physics: const AlwaysScrollableScrollPhysics(),
+                                  child: Container(
+                                    height: MediaQuery.of(context).size.height * 0.6,
+                                    alignment: Alignment.center,
+                                    child: Text(
+                                      error,
+                                      style: const TextStyle(color: Color(0xFFF87171)),
+                                      textAlign: TextAlign.center,
+                                    ),
                                   ),
-                                  textAlign: TextAlign.center,
-                                ),
-                              );
-                            }
+                                );
+                              }
 
-                            if (isLoading && courses.isEmpty) {
-                              return const Center(
-                                child: CircularProgressIndicator(
-                                  color: Color(0xFFF58220),
-                                ),
-                              );
-                            }
+                              if (isLoading && courses.isEmpty) {
+                                return const Center(
+                                  child: CircularProgressIndicator(
+                                    color: AppColors.primaryContainer,
+                                  ),
+                                );
+                              }
 
-                            if (courses.isEmpty) {
-                              return const Center(
-                                child: Text(
-                                  'No courses found. Tap "Create New Course" to start.',
-                                  style: TextStyle(color: Color(0xFF94A3B8)),
-                                  textAlign: TextAlign.center,
-                                ),
-                              );
-                            }
+                              if (courses.isEmpty) {
+                                return SingleChildScrollView(
+                                  physics: const AlwaysScrollableScrollPhysics(),
+                                  child: Container(
+                                    height: MediaQuery.of(context).size.height * 0.6,
+                                    alignment: Alignment.center,
+                                    padding: const EdgeInsets.symmetric(horizontal: 32),
+                                    child: const Text(
+                                      'No courses found. Tap "Create New Course" to start, or pull down to refresh.',
+                                      style: TextStyle(color: Color(0xFF94A3B8)),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  ),
+                                );
+                              }
 
-                            return RefreshIndicator(
-                              onRefresh: _controller.refresh,
-                              child: LayoutBuilder(
+                              return LayoutBuilder(
                                 builder: (context, constraints) {
-                                  final bool isTablet =
-                                      constraints.maxWidth >= 700;
+                                  final bool isTablet = constraints.maxWidth >= 700;
                                   final int crossAxisCount = isTablet ? 3 : 2;
 
                                   return GridView.builder(
                                     controller: _scrollController,
+                                    physics: const AlwaysScrollableScrollPhysics(),
                                     padding: const EdgeInsets.only(bottom: 110),
-                                    itemCount:
-                                        courses.length +
-                                        (_controller.hasMore.value ? 1 : 0),
-                                    gridDelegate:
-                                        SliverGridDelegateWithFixedCrossAxisCount(
-                                          crossAxisCount: crossAxisCount,
-                                          crossAxisSpacing: 10,
-                                          mainAxisSpacing: 10,
-                                          childAspectRatio: 0.9,
-                                        ),
+                                    itemCount: courses.length + (_controller.hasMore.value ? 1 : 0),
+                                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                                      crossAxisCount: crossAxisCount,
+                                      crossAxisSpacing: 10,
+                                      mainAxisSpacing: 10,
+                                      childAspectRatio: 0.9,
+                                    ),
                                     itemBuilder: (context, index) {
                                       if (index >= courses.length) {
                                         return const Center(
                                           child: CircularProgressIndicator(
-                                            color: Color(0xFFF58220),
+                                            color: AppColors.primaryContainer,
                                           ),
                                         );
                                       }
 
-                                      final LecturerCourse course =
-                                          courses[index];
+                                      final LecturerCourse course = courses[index];
                                       return _CourseCard(
                                         course: course,
                                         onTap: () async {
                                           await Navigator.of(context).push(
                                             MaterialPageRoute<void>(
-                                              builder: (_) =>
-                                                  LecturerCourseDetailsScreen(
-                                                    courseId: course.id,
-                                                    repository: _repository,
-                                                    lecturerId: _lecturerId,
-                                                  ),
+                                              builder: (_) => LecturerCourseDetailsScreen(
+                                                course: LecturerCourseOverview(
+                                                  id: course.id,
+                                                  code: course.courseCode,
+                                                  title: course.title,
+                                                  description: course.description,
+                                                  semester: course.semester,
+                                                  students: course.studentCount,
+                                                  notes: course.notesCount,
+                                                  alerts: course.alertCount,
+                                                  lastActivity: course.lastActivity,
+                                                ),
+                                              ),
                                             ),
                                           );
-                                          await _controller.refresh();
+                                          _controller.refresh();
                                         },
                                       );
                                     },
                                   );
                                 },
-                              ),
-                            );
-                          },
-                        );
-                      },
-                    );
-                  },
+                              );
+                            },
+                          );
+                        },
+                      );
+                    },
+                  ),
                 ),
               ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

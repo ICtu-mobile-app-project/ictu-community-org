@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
-import '../../auth/models/user_role.dart';
-import '../../courses/controllers/enrolled_courses_controller.dart';
-import '../../courses/models/student_course_overview.dart';
-import '../../courses/screens/course_details_screen.dart';
-import '../../courses/screens/course_search_screen.dart';
-import '../../notifications/screens/notifications_screen.dart';
-import '../../profile/controllers/profile_controller.dart';
-import '../../profile/screens/profile_screen.dart';
-import '../../transcription/screens/audio_ai_transcription_screen.dart';
+
+import 'package:ictu_community_org/core/widgets/ambient_background.dart';
+import 'package:ictu_community_org/features/auth/models/user_role.dart';
+import 'package:ictu_community_org/features/courses/controllers/enrolled_courses_controller.dart';
+import 'package:ictu_community_org/features/courses/models/student_course_overview.dart';
+import 'package:ictu_community_org/features/courses/screens/course_details_screen.dart';
+import 'package:ictu_community_org/features/courses/screens/course_search_screen.dart';
+import 'package:ictu_community_org/features/notifications/screens/notifications_screen.dart';
+import 'package:ictu_community_org/features/profile/controllers/profile_controller.dart';
+import 'package:ictu_community_org/features/profile/screens/profile_screen.dart';
+import 'package:ictu_community_org/features/transcription/screens/audio_ai_transcription_screen.dart';
 
 class HomeDashboardScreen extends StatefulWidget {
   const HomeDashboardScreen({
@@ -59,8 +61,7 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
             widget.userDisplayName ??
             _defaultDisplayName;
 
-        return Container(
-          color: const Color(0xFF0A0C10),
+        return AmbientBackground(
           child: Stack(
             children: [
               ListView(

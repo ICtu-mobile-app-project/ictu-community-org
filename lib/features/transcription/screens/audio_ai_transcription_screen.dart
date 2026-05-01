@@ -12,8 +12,10 @@ import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:record/record.dart';
 
-import '../controllers/transcription_controller.dart';
-import '../data/lecture_upload_service.dart';
+import 'package:ictu_community_org/core/theme/app_colors.dart';
+import 'package:ictu_community_org/core/widgets/ambient_background.dart';
+import 'package:ictu_community_org/features/transcription/controllers/transcription_controller.dart';
+import 'package:ictu_community_org/features/transcription/data/lecture_upload_service.dart';
 
 const Duration _maxRecordingDuration = Duration(hours: 3);
 const Duration _segmentedTranscriptionThreshold = Duration(minutes: 30);
@@ -52,9 +54,9 @@ class _AudioAiTranscriptionScreenState extends State<AudioAiTranscriptionScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0C10),
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF0A0C10),
+        backgroundColor: Colors.transparent,
         iconTheme: const IconThemeData(color: Colors.white),
         title: const Text(
           'Audio/AI Transcription',
@@ -72,16 +74,18 @@ class _AudioAiTranscriptionScreenState extends State<AudioAiTranscriptionScreen>
           ),
         ),
       ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          _RecordTab(
-            recordedAudio: _recordedAudio,
-            onContinue: () => _tabController.animateTo(1),
-            onRecordingStopped: _openUploadQueueTab,
-          ),
-          _UploadTab(recordedAudio: _recordedAudio),
-        ],
+      body: AmbientBackground(
+        child: TabBarView(
+          controller: _tabController,
+          children: [
+            _RecordTab(
+              recordedAudio: _recordedAudio,
+              onContinue: () => _tabController.animateTo(1),
+              onRecordingStopped: _openUploadQueueTab,
+            ),
+            _UploadTab(recordedAudio: _recordedAudio),
+          ],
+        ),
       ),
     );
   }
@@ -105,7 +109,7 @@ class _DashboardTabBar extends StatelessWidget {
         indicator: BoxDecoration(
           borderRadius: BorderRadius.circular(14),
           gradient: const LinearGradient(
-            colors: [Color(0xFFF58220), Color(0xFF1A2235)],
+            colors: [AppColors.primaryContainer, Color(0xFF1A2235)],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
@@ -1022,14 +1026,16 @@ class _UploadTabState extends State<_UploadTab> {
             final String? controllerError =
                 _transcriptionController.errorMessage.value;
             final String? error = _localError ?? controllerError;
-            final Map<String, dynamic>? data =
-                result?['data'] as Map<String, dynamic>?;
-            final Map<String, dynamic>? rich =
-                data?['transcription_result'] as Map<String, dynamic>?;
-            final Map<String, dynamic> analysis = rich ?? data ?? {};
-            final String summary = (analysis['summary'] ?? '').toString();
-            final String title = (rich?['title'] ?? 'Lecture transcription')
-                .toString();
+      final Map<String, dynamic> response =
+          result?['data'] as Map<String, dynamic>? ?? <String, dynamic>{};
+      final Map<String, dynamic> rich =
+          response['transcription_result'] as Map<String, dynamic>? ??
+          <String, dynamic>{};
+      final Map<String, dynamic> analysis =
+          rich.isNotEmpty ? rich : response;
+      final String summary = (analysis['summary'] ?? '').toString();
+      final String title =
+          (rich['title'] ?? 'Lecture transcription').toString();
 
             return ListView(
               padding: const EdgeInsets.fromLTRB(20, 20, 20, 120),
@@ -1516,7 +1522,7 @@ class _TranscriptionResultCardState extends State<_TranscriptionResultCard> {
   ];
 
   String _getContent() {
-    final dynamic d = widget.data;
+    final Map<String, dynamic> d = widget.data;
     dynamic value;
 
     switch (_selectedFormat) {
@@ -1545,23 +1551,23 @@ class _TranscriptionResultCardState extends State<_TranscriptionResultCard> {
       return 'No information available for this category.';
     }
 
-    if (value is List) {
+    if (value is List<dynamic>) {
       if (value.isEmpty) {
         return 'No items found for this category.';
       }
-      return value.map((item) => '• $item').join('\n\n');
+      return value.map((dynamic item) => '• $item').join('\n\n');
     }
 
-    if (value is Map) {
-      final List<String> lines = [];
-      value.forEach((key, val) {
-        final String title = key.toString().replaceAll('_', ' ').toUpperCase();
+    if (value is Map<String, dynamic>) {
+      final List<String> lines = <String>[];
+      value.forEach((String key, dynamic val) {
+        final String title = key.replaceAll('_', ' ').toUpperCase();
         lines.add('[$title]');
-        if (val is List) {
+        if (val is List<dynamic>) {
           if (val.isEmpty) {
             lines.add('  None');
           } else {
-            lines.addAll(val.map((item) => '  • $item'));
+            lines.addAll(val.map((dynamic item) => '  • $item'));
           }
         } else {
           lines.add('  $val');
@@ -1591,7 +1597,7 @@ class _TranscriptionResultCardState extends State<_TranscriptionResultCard> {
         // Note: For just the Download folder, sometimes basic storage is enough or MANAGE is needed 
         // depending on the manufacturer, but we declared MANAGE in manifest so we use it for consistency.
         if (!await Permission.manageExternalStorage.isGranted) {
-          final status = await Permission.manageExternalStorage.request();
+          final PermissionStatus status = await Permission.manageExternalStorage.request();
           if (!status.isGranted) {
              // Fallback to basic storage check if user denied 'All Files' but might have basic 'Storage'
              if (!await Permission.storage.request().isGranted) {
@@ -1605,7 +1611,7 @@ class _TranscriptionResultCardState extends State<_TranscriptionResultCard> {
       }
 
       // 2. Create directory
-      if (!await targetDir!.exists()) {
+      if (!await targetDir.exists()) {
         await targetDir.create(recursive: true);
       }
 
@@ -1634,6 +1640,7 @@ class _TranscriptionResultCardState extends State<_TranscriptionResultCard> {
     }
   }
 
+  /*
   Future<int> _getAndroidSdkVersion() async {
     if (!Platform.isAndroid) return 0;
     try {
@@ -1645,6 +1652,7 @@ class _TranscriptionResultCardState extends State<_TranscriptionResultCard> {
       return 33;
     }
   }
+  */
 
   @override
   Widget build(BuildContext context) {

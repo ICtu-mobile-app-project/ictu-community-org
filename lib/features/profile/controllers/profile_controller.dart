@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../../core/supabase/supabase_bootstrap.dart';
+import 'package:ictu_community_org/core/supabase/supabase_bootstrap.dart';
 
 class ProfileController extends ChangeNotifier {
   bool isLoading = false;

@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 
 import 'package:ictu_community_org/core/supabase/supabase_bootstrap.dart';
+import 'package:ictu_community_org/core/widgets/ambient_background.dart';
 import 'package:ictu_community_org/features/auth/models/user_role.dart';
 import 'package:ictu_community_org/features/courses/data/in_memory_lecturer_courses_repository.dart';
 import 'package:ictu_community_org/features/courses/data/lecturer_courses_repository.dart';
@@ -94,8 +95,7 @@ class _LecturerHomeDashboardScreenState extends State<LecturerHomeDashboardScree
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      color: const Color(0xFF0A0C10),
+    return AmbientBackground(
       child: Stack(
         children: [
           ListView(

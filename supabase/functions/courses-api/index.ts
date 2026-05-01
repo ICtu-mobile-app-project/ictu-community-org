@@ -395,7 +395,7 @@ Deno.serve(async (request: Request) => {
           .select('id', { count: 'exact', head: true })
           .eq('course_code', courseId),
         client
-          .from('lecture_notes')
+          .from('notes')
           .select('id', { count: 'exact', head: true })
           .eq('course_id', courseId),
       ]);

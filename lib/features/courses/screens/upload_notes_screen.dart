@@ -19,6 +19,8 @@ class _UploadNotesScreenState extends State<UploadNotesScreen> {
   final NotesService _service = NotesService();
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
+  final TextEditingController _summaryController = TextEditingController();
+  String _status = 'published';
 
   List<LecturerCourseOption> _courses = <LecturerCourseOption>[];
   LecturerCourseOption? _selectedCourse;
@@ -38,6 +40,7 @@ class _UploadNotesScreenState extends State<UploadNotesScreen> {
   void dispose() {
     _titleController.dispose();
     _descriptionController.dispose();
+    _summaryController.dispose();
     super.dispose();
   }
 
@@ -106,6 +109,8 @@ class _UploadNotesScreenState extends State<UploadNotesScreen> {
         courseId: _selectedCourse!.id,
         courseCode: _selectedCourse!.code,
         description: _descriptionController.text.trim(),
+        summary: _summaryController.text.trim(),
+        status: _status,
         strategy: NoteUploadStrategy.chunkedRetry,
         onProgress: (NoteUploadProgress progress) {
           if (!mounted) {
@@ -202,12 +207,44 @@ class _UploadNotesScreenState extends State<UploadNotesScreen> {
           _glass(
             TextField(
               controller: _descriptionController,
-              maxLines: 4,
+              maxLines: 2,
               style: const TextStyle(color: Colors.white),
               decoration: const InputDecoration(
                 labelText: 'Description (optional)',
                 labelStyle: TextStyle(color: Color(0xFF94A3B8)),
               ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          _glass(
+            TextField(
+              controller: _summaryController,
+              maxLines: 3,
+              style: const TextStyle(color: Colors.white),
+              decoration: const InputDecoration(
+                labelText: 'AI Summary or Highlights (optional)',
+                labelStyle: TextStyle(color: Color(0xFF94A3B8)),
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          _glass(
+            DropdownButtonFormField<String>(
+              value: _status,
+              dropdownColor: const Color(0xFF111827),
+              style: const TextStyle(color: Colors.white),
+              decoration: const InputDecoration(
+                labelText: 'Status',
+                labelStyle: TextStyle(color: Color(0xFF94A3B8)),
+              ),
+              items: const [
+                DropdownMenuItem(value: 'published', child: Text('Published')),
+                DropdownMenuItem(value: 'draft', child: Text('Draft')),
+              ],
+              onChanged: (String? value) {
+                if (value == null) return;
+                setState(() => _status = value);
+              },
             ),
           ),
           const SizedBox(height: 12),

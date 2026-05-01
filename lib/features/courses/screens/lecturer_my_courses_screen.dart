@@ -3,6 +3,9 @@ import 'package:ictu_community_org/features/courses/screens/lecturer_course_deta
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:ictu_community_org/core/supabase/supabase_bootstrap.dart';
+import 'package:ictu_community_org/core/theme/app_colors.dart';
+import 'package:ictu_community_org/core/widgets/ambient_background.dart';
+import 'package:ictu_community_org/core/widgets/glass_input.dart';
 import 'package:ictu_community_org/features/courses/controllers/lecturer_courses_controller.dart';
 import 'package:ictu_community_org/features/courses/data/in_memory_lecturer_courses_repository.dart';
 import 'package:ictu_community_org/features/courses/data/lecturer_courses_repository.dart';
@@ -115,20 +118,21 @@ class _LecturerMyCoursesScreenState extends State<LecturerMyCoursesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0C10),
+      backgroundColor: Colors.transparent,
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _openCreateCourse,
-        backgroundColor: const Color(0xFFF58220),
+        backgroundColor: AppColors.primaryContainer,
         foregroundColor: Colors.white,
         icon: const Icon(Icons.add_rounded),
         label: const Text('Create New Course'),
       ),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+      body: AmbientBackground(
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
               const Text(
                 'My Courses',
                 style: TextStyle(
@@ -143,38 +147,18 @@ class _LecturerMyCoursesScreenState extends State<LecturerMyCoursesScreen> {
                 style: TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
               ),
               const SizedBox(height: 14),
-              TextField(
+              GlassInput(
+                label: 'Search',
                 controller: _searchController,
-                style: const TextStyle(color: Color(0xFFF1F5F9)),
-                decoration: InputDecoration(
-                  hintText: 'Search by course code or title',
-                  hintStyle: const TextStyle(color: Color(0xFF94A3B8)),
-                  prefixIcon: const Icon(
-                    Icons.search_rounded,
-                    color: Color(0xFF94A3B8),
-                  ),
-                  filled: true,
-                  fillColor: Colors.white.withValues(alpha: 0.03),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    borderSide: BorderSide(
-                      color: Colors.white.withValues(alpha: 0.08),
-                    ),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    borderSide: BorderSide(
-                      color: Colors.white.withValues(alpha: 0.08),
-                    ),
-                  ),
-                ),
+                icon: Icons.search_rounded,
+                placeholder: 'Search by course code or title',
                 onChanged: _controller.onSearchChanged,
               ),
               const SizedBox(height: 12),
               Expanded(
                 child: RefreshIndicator(
                   onRefresh: _controller.refresh,
-                  color: const Color(0xFFF58220),
+                  color: AppColors.primaryContainer,
                   backgroundColor: const Color(0xFF1E293B),
                   child: ValueListenableBuilder<bool>(
                     valueListenable: _controller.isLoading,
@@ -203,7 +187,7 @@ class _LecturerMyCoursesScreenState extends State<LecturerMyCoursesScreen> {
                               if (isLoading && courses.isEmpty) {
                                 return const Center(
                                   child: CircularProgressIndicator(
-                                    color: Color(0xFFF58220),
+                                    color: AppColors.primaryContainer,
                                   ),
                                 );
                               }
@@ -244,7 +228,7 @@ class _LecturerMyCoursesScreenState extends State<LecturerMyCoursesScreen> {
                                       if (index >= courses.length) {
                                         return const Center(
                                           child: CircularProgressIndicator(
-                                            color: Color(0xFFF58220),
+                                            color: AppColors.primaryContainer,
                                           ),
                                         );
                                       }
@@ -285,7 +269,8 @@ class _LecturerMyCoursesScreenState extends State<LecturerMyCoursesScreen> {
                   ),
                 ),
               ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

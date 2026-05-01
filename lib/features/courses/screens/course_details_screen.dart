@@ -595,6 +595,8 @@ class _MaterialTile extends StatelessWidget {
                 courseCode: courseCode,
                 title: item.name,
                 description: '',
+                summary: '',
+                status: 'published',
                 contentUrl: item.path,
                 fileName: item.name,
                 fileSizeBytes: 0,

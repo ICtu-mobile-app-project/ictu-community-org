@@ -1,5 +1,11 @@
 import 'package:flutter/material.dart';
 
+import 'package:ictu_community_org/core/theme/app_colors.dart';
+import 'package:ictu_community_org/core/theme/app_text_styles.dart';
+import 'package:ictu_community_org/core/widgets/ambient_background.dart';
+import 'package:ictu_community_org/core/widgets/app_top_bar.dart';
+import 'package:ictu_community_org/core/widgets/glass_card.dart';
+import 'package:ictu_community_org/core/widgets/primary_button.dart';
 import 'package:ictu_community_org/features/auth/screens/login_screen.dart';
 import 'package:ictu_community_org/features/auth/screens/signup_screen.dart';
 
@@ -9,124 +15,78 @@ class WelcomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          Image.asset('assets/school.jpeg', fit: BoxFit.cover),
-          Container(color: const Color(0x8A020916)),
-          Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [Color(0x22000C2A), Color(0xD9020B1F)],
-              ),
-            ),
-          ),
-          SafeArea(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 18),
-              child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  minHeight: MediaQuery.of(context).size.height - 36,
-                ),
-                child: Column(
-                  children: [
-                    const SizedBox(height: 32),
-                    Container(
-                    width: 148,
-                    height: 148,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.08),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(18),
-                      child: Image.asset('assets/Logo.png'),
-                    ),
+      extendBodyBehindAppBar: true,
+      backgroundColor: Colors.transparent,
+      appBar: const AppTopBar(title: 'Welcome'),
+      body: AmbientBackground(
+        child: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 18),
+            child: Column(
+              children: [
+                const SizedBox(height: 16),
+                Container(
+                  width: 132,
+                  height: 132,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.08),
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
                   ),
-                  const SizedBox(height: 16),
-                  Container(
-                    padding: const EdgeInsets.fromLTRB(24, 24, 24, 18),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.86),
-                      borderRadius: BorderRadius.circular(30),
-                      border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.55),
-                      ),
-                      boxShadow: const [
-                        BoxShadow(
-                          color: Color(0x36000000),
-                          blurRadius: 24,
-                          offset: Offset(0, 12),
-                        ),
-                      ],
-                    ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(18),
+                    child: Image.asset('assets/Logo.png'),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 520),
+                  child: GlassCard(
+                    padding: const EdgeInsets.fromLTRB(22, 22, 22, 16),
                     child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         Text(
-                          'Welcome to ICT-U',
-                          style: Theme.of(context).textTheme.headlineMedium
-                              ?.copyWith(
-                                color: const Color(0xFFF97316),
-                                fontWeight: FontWeight.w800,
-                              ),
+                          'Welcome to ICTU',
+                          style: AppTextStyles.h1,
+                          textAlign: TextAlign.center,
                         ),
                         const SizedBox(height: 8),
-                        const Text(
-                          'Your Gateway to Academic Excellence',
+                        Text(
+                          'Your gateway to academic excellence',
                           textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: Color(0xFF475569),
-                            fontSize: 14.5,
-                            fontWeight: FontWeight.w600,
+                          style: AppTextStyles.bodyMd.copyWith(
+                            color: AppColors.onSurfaceVariant,
                           ),
                         ),
                         const SizedBox(height: 20),
                         const _FeatureTile(
                           icon: Icons.menu_book_rounded,
                           title: 'Access courses anywhere',
-                          subtitle:
-                              'View lectures, assignments, and grades on the go.',
+                          subtitle: 'View lectures, assignments, and materials on the go.',
                         ),
                         const SizedBox(height: 12),
                         const _FeatureTile(
                           icon: Icons.campaign_rounded,
                           title: 'Stay updated',
-                          subtitle:
-                              'Get instant alerts for campus news and events.',
+                          subtitle: 'Get alerts for deadlines and campus updates.',
                         ),
                         const SizedBox(height: 12),
                         const _FeatureTile(
                           icon: Icons.groups_rounded,
-                          title: 'Connect with community',
-                          subtitle:
-                              'Chat with peers and collaborate with faculty.',
+                          title: 'Connect with the community',
+                          subtitle: 'Chat with peers and collaborate with faculty.',
                         ),
                         const SizedBox(height: 22),
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFFF48A17),
-                              foregroundColor: Colors.white,
-                              minimumSize: const Size.fromHeight(56),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
+                        PrimaryButton(
+                          label: 'Get started',
+                          onTap: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute<void>(
+                                builder: (_) => const LoginScreen(),
                               ),
-                            ),
-                            onPressed: () {
-                              Navigator.of(context).push(
-                                MaterialPageRoute<void>(
-                                  builder: (_) => const LoginScreen(),
-                                ),
-                              );
-                            },
-                            child: const Text(
-                              'Get Started',
-                              style: TextStyle(fontWeight: FontWeight.w700),
-                            ),
-                          ),
+                            );
+                          },
                         ),
                         const SizedBox(height: 8),
                         TextButton(
@@ -137,24 +97,23 @@ class WelcomeScreen extends StatelessWidget {
                               ),
                             );
                           },
-                          child: const Text(
-                            'New here? Create Account',
-                            style: TextStyle(
-                              color: Color(0xFF64748B),
-                              fontWeight: FontWeight.w700,
+                          style: TextButton.styleFrom(
+                            foregroundColor: AppColors.primaryContainer,
+                            textStyle: AppTextStyles.labelSm.copyWith(
+                              color: AppColors.primaryContainer,
                             ),
                           ),
+                          child: const Text('New here? Create Account'),
                         ),
                       ],
                     ),
                   ),
-                    const SizedBox(height: 24),
-                  ],
                 ),
-              ),
+                const SizedBox(height: 24),
+              ],
             ),
           ),
-        ],
+        ),
       ),
     );
   }
@@ -180,10 +139,11 @@ class _FeatureTile extends StatelessWidget {
           width: 44,
           height: 44,
           decoration: BoxDecoration(
-            color: const Color(0xFFFDE6D3),
+            color: AppColors.primaryContainer.withValues(alpha: 0.12),
             borderRadius: BorderRadius.circular(13),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
           ),
-          child: Icon(icon, color: const Color(0xFFF48A17), size: 21),
+          child: Icon(icon, color: AppColors.primaryContainer, size: 21),
         ),
         const SizedBox(width: 14),
         Expanded(
@@ -192,19 +152,13 @@ class _FeatureTile extends StatelessWidget {
             children: [
               Text(
                 title,
-                style: const TextStyle(
-                  color: Color(0xFF1E293B),
-                  fontWeight: FontWeight.w800,
-                  fontSize: 18,
-                ),
+                style: AppTextStyles.bodyLg.copyWith(fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: 2),
               Text(
                 subtitle,
-                style: const TextStyle(
-                  color: Color(0xFF64748B),
-                  fontWeight: FontWeight.w500,
-                  fontSize: 14,
+                style: AppTextStyles.bodyMd.copyWith(
+                  color: AppColors.onSurfaceVariant.withValues(alpha: 0.95),
                 ),
               ),
             ],

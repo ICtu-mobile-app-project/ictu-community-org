@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -40,12 +41,11 @@ class AuthController extends ChangeNotifier {
   );
 
   // Needed for native Google Sign-In to return an idToken on Android.
-  // Provide via: --dart-define=GOOGLE_WEB_CLIENT_ID=...
-  static const String _googleWebClientId = String.fromEnvironment(
-    'GOOGLE_WEB_CLIENT_ID',
-    defaultValue:
-        '890066574240-t243ddk6vd8hak5cn00n8r9dkc9b7up5.apps.googleusercontent.com',
-  );
+  static String get _googleWebClientId {
+    return const String.fromEnvironment('GOOGLE_WEB_CLIENT_ID').isNotEmpty
+        ? const String.fromEnvironment('GOOGLE_WEB_CLIENT_ID')
+        : dotenv.get('GOOGLE_WEB_CLIENT_ID', fallback: '');
+  }
 
   // Used for Supabase OAuth redirect (PKCE) flows. This must match the deep link
   // configured in AndroidManifest.xml (and iOS URL schemes if enabled).

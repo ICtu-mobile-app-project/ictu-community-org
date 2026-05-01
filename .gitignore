@@ -39,6 +39,8 @@ assets/data/analyze.log
 .env.local
 .env.production
 supabase/.env
+android/app/client_secret_*.json
+google-services.json
 
 # Node (Firebase CLI / tooling only — not app code)
 node_modules/

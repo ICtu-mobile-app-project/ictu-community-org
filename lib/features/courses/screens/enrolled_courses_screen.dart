@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
+import 'package:ictu_community_org/core/theme/app_colors.dart';
 import 'package:ictu_community_org/core/services/connectivity_service.dart';
+import 'package:ictu_community_org/core/widgets/ambient_background.dart';
 import 'package:ictu_community_org/features/auth/models/user_role.dart';
 import 'package:ictu_community_org/features/courses/controllers/enrolled_courses_controller.dart';
 import 'package:ictu_community_org/features/courses/models/student_course_overview.dart';
@@ -52,14 +54,15 @@ class _EnrolledCoursesScreenState extends State<EnrolledCoursesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0C10),
-      body: AnimatedBuilder(
-        animation: _controller,
-        builder: (context, _) {
-          return RefreshIndicator(
-            onRefresh: _controller.refresh,
-            child: CustomScrollView(
-              slivers: [
+      backgroundColor: Colors.transparent,
+      body: AmbientBackground(
+        child: AnimatedBuilder(
+          animation: _controller,
+          builder: (context, _) {
+            return RefreshIndicator(
+              onRefresh: _controller.refresh,
+              child: CustomScrollView(
+                slivers: [
                 SliverToBoxAdapter(
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(20, 24, 20, 8),
@@ -81,17 +84,27 @@ class _EnrolledCoursesScreenState extends State<EnrolledCoursesScreen> {
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                 decoration: BoxDecoration(
-                                  color: Colors.orange.withValues(alpha: 0.2),
+                                  color: AppColors.primaryContainer.withValues(alpha: 0.16),
                                   borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(color: Colors.orange.withValues(alpha: 0.5)),
+                                  border: Border.all(
+                                    color: AppColors.primaryContainer.withValues(alpha: 0.45),
+                                  ),
                                 ),
                                 child: Row(
                                   children: [
-                                    const Icon(Icons.cloud_off, size: 14, color: Colors.orange),
+                                    const Icon(
+                                      Icons.cloud_off,
+                                      size: 14,
+                                      color: AppColors.primaryContainer,
+                                    ),
                                     const SizedBox(width: 4),
                                     const Text(
                                       'Offline',
-                                      style: TextStyle(color: Colors.orange, fontSize: 11, fontWeight: FontWeight.bold),
+                                      style: TextStyle(
+                                        color: AppColors.primaryContainer,
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
                                   ],
                                 ),
@@ -120,7 +133,9 @@ class _EnrolledCoursesScreenState extends State<EnrolledCoursesScreen> {
                 if (_controller.isLoading)
                   const SliverFillRemaining(
                     child: Center(
-                      child: CircularProgressIndicator(color: Color(0xFFF58220)),
+                          child: CircularProgressIndicator(
+                            color: AppColors.primaryContainer,
+                          ),
                     ),
                   )
                 else if (_controller.error != null)
@@ -172,9 +187,10 @@ class _EnrolledCoursesScreenState extends State<EnrolledCoursesScreen> {
                     ),
                   ),
               ],
-            ),
-          );
-        },
+              ),
+            );
+          },
+        ),
       ),
     );
   }
@@ -187,7 +203,7 @@ class _DiscoverButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: const Color(0xFFF58220).withValues(alpha: 0.1),
+      color: AppColors.primaryContainer.withValues(alpha: 0.10),
       borderRadius: BorderRadius.circular(12),
       child: InkWell(
         onTap: onTap,
@@ -196,12 +212,16 @@ class _DiscoverButton extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           child: Row(
             children: [
-              const Icon(Icons.add_rounded, color: Color(0xFFF58220), size: 20),
+              const Icon(
+                Icons.add_rounded,
+                color: AppColors.primaryContainer,
+                size: 20,
+              ),
               const SizedBox(width: 4),
               const Text(
                 'Discover',
                 style: TextStyle(
-                  color: Color(0xFFF58220),
+                  color: AppColors.primaryContainer,
                   fontWeight: FontWeight.bold,
                   fontSize: 13,
                 ),

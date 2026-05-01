@@ -12,6 +12,8 @@ import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:record/record.dart';
 
+import 'package:ictu_community_org/core/theme/app_colors.dart';
+import 'package:ictu_community_org/core/widgets/ambient_background.dart';
 import 'package:ictu_community_org/features/transcription/controllers/transcription_controller.dart';
 import 'package:ictu_community_org/features/transcription/data/lecture_upload_service.dart';
 
@@ -52,9 +54,9 @@ class _AudioAiTranscriptionScreenState extends State<AudioAiTranscriptionScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0C10),
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF0A0C10),
+        backgroundColor: Colors.transparent,
         iconTheme: const IconThemeData(color: Colors.white),
         title: const Text(
           'Audio/AI Transcription',
@@ -72,16 +74,18 @@ class _AudioAiTranscriptionScreenState extends State<AudioAiTranscriptionScreen>
           ),
         ),
       ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          _RecordTab(
-            recordedAudio: _recordedAudio,
-            onContinue: () => _tabController.animateTo(1),
-            onRecordingStopped: _openUploadQueueTab,
-          ),
-          _UploadTab(recordedAudio: _recordedAudio),
-        ],
+      body: AmbientBackground(
+        child: TabBarView(
+          controller: _tabController,
+          children: [
+            _RecordTab(
+              recordedAudio: _recordedAudio,
+              onContinue: () => _tabController.animateTo(1),
+              onRecordingStopped: _openUploadQueueTab,
+            ),
+            _UploadTab(recordedAudio: _recordedAudio),
+          ],
+        ),
       ),
     );
   }
@@ -105,7 +109,7 @@ class _DashboardTabBar extends StatelessWidget {
         indicator: BoxDecoration(
           borderRadius: BorderRadius.circular(14),
           gradient: const LinearGradient(
-            colors: [Color(0xFFF58220), Color(0xFF1A2235)],
+            colors: [AppColors.primaryContainer, Color(0xFF1A2235)],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),

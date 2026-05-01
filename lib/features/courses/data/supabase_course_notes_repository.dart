@@ -58,7 +58,9 @@ class SupabaseCourseNotesRepository implements CourseNotesRepository {
   Future<CourseNote> createNote({
     required String courseId,
     required String title,
-    required String description,
+    String? description,
+    String? summary,
+    String status = 'published',
     required String contentUrl,
     required String fileName,
     required int fileSizeBytes,
@@ -69,6 +71,8 @@ class SupabaseCourseNotesRepository implements CourseNotesRepository {
         'courseId': courseId,
         'title': title,
         'description': description,
+        'summary': summary,
+        'status': status,
         'contentUrl': contentUrl,
         'fileName': fileName,
         'fileSizeBytes': fileSizeBytes,
@@ -79,13 +83,22 @@ class SupabaseCourseNotesRepository implements CourseNotesRepository {
   }
 
   @override
-  Future<CourseNote> updateNoteTitle({
+  Future<CourseNote> updateNote({
     required String noteId,
-    required String newTitle,
+    String? title,
+    String? description,
+    String? summary,
+    String? status,
   }) async {
     final Map<String, dynamic> response = await _call(
-      action: 'update_note_title',
-      payload: <String, dynamic>{'noteId': noteId, 'title': newTitle},
+      action: 'update_note',
+      payload: <String, dynamic>{
+        'noteId': noteId,
+        if (title != null) 'title': title,
+        if (description != null) 'description': description,
+        if (summary != null) 'summary': summary,
+        if (status != null) 'status': status,
+      },
     );
 
     return _mapNote(_asJsonMap(response['data']));
@@ -191,6 +204,8 @@ class SupabaseCourseNotesRepository implements CourseNotesRepository {
       courseId: (json['courseId'] ?? '').toString(),
       title: (json['title'] ?? '').toString(),
       description: (json['description'] ?? '').toString(),
+      summary: (json['summary'] ?? '').toString(),
+      status: (json['status'] ?? 'published').toString(),
       contentUrl: (json['contentUrl'] ?? '').toString(),
       fileName: (json['fileName'] ?? '').toString(),
       fileSizeBytes: _toInt(json['fileSizeBytes']),

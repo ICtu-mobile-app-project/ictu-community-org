@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'package:ictu_community_org/core/theme/app_colors.dart';
+import 'package:ictu_community_org/core/widgets/ambient_background.dart';
 import 'package:ictu_community_org/features/auth/models/user_role.dart';
 import 'package:ictu_community_org/features/courses/screens/admin_timetable_management_screen.dart';
 import 'package:ictu_community_org/features/courses/screens/timetable_screen.dart';
@@ -15,9 +17,10 @@ class AdminHomeDashboardScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0C10),
-      body: SafeArea(
-        child: ListView(
+      backgroundColor: Colors.transparent,
+      body: AmbientBackground(
+        child: SafeArea(
+          child: ListView(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
           children: [
             Row(
@@ -30,7 +33,10 @@ class AdminHomeDashboardScreen extends StatelessWidget {
                     padding: const EdgeInsets.all(2),
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      border: Border.all(color: const Color(0xFFF58220), width: 2),
+                      border: Border.all(
+                        color: AppColors.primaryContainer,
+                        width: 2,
+                      ),
                     ),
                     child: const CircleAvatar(
                       backgroundImage: AssetImage('assets/students.jpg'),
@@ -104,6 +110,7 @@ class AdminHomeDashboardScreen extends StatelessWidget {
               },
             ),
           ],
+          ),
         ),
       ),
     );

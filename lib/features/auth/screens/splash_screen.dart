@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import 'package:ictu_community_org/core/widgets/ambient_background.dart';
 import 'package:ictu_community_org/features/auth/controllers/auth_controller.dart';
 import 'package:ictu_community_org/features/auth/models/user_role.dart';
 import 'package:ictu_community_org/features/auth/screens/welcome_screen.dart';
@@ -65,29 +66,16 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          Image.asset('assets/school2.jpeg', fit: BoxFit.cover),
-          Container(color: const Color(0xB0001433)),
-          Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [Color(0x33001533), Color(0xAA00122E)],
-              ),
-            ),
+      backgroundColor: Colors.transparent,
+      body: AmbientBackground(
+        child: Center(
+          child: Image.asset(
+            'assets/Logo.png',
+            width: 180,
+            height: 180,
+            fit: BoxFit.contain,
           ),
-          Center(
-            child: Image.asset(
-              'assets/Logo.png',
-              width: 180,
-              height: 180,
-              fit: BoxFit.contain,
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }

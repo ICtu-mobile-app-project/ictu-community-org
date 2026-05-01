@@ -2,6 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:ictu_community_org/core/supabase/supabase_bootstrap.dart';
+import 'package:ictu_community_org/core/theme/app_colors.dart';
+import 'package:ictu_community_org/core/widgets/ambient_background.dart';
+import 'package:ictu_community_org/core/widgets/app_top_bar.dart';
+import 'package:ictu_community_org/core/widgets/glass_card.dart';
+import 'package:ictu_community_org/core/widgets/primary_button.dart';
 import 'package:ictu_community_org/features/courses/data/in_memory_lecturer_courses_repository.dart';
 import 'package:ictu_community_org/features/courses/data/lecturer_courses_repository.dart';
 import 'package:ictu_community_org/features/courses/data/supabase_lecturer_courses_repository.dart';
@@ -123,18 +128,20 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0C10),
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        title: const Text('Create New Course'),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+      extendBodyBehindAppBar: true,
+      backgroundColor: Colors.transparent,
+      appBar: const AppTopBar(showBack: true, title: 'Create Course'),
+      body: AmbientBackground(
+        child: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: GlassCard(
+              padding: const EdgeInsets.all(20),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
               const Text(
                 'Course Code',
                 style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
@@ -185,22 +192,16 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
                 decoration: _inputDecoration('Brief overview of the course'),
               ),
               const SizedBox(height: 48),
-              SizedBox(
-                width: double.infinity,
+              PrimaryButton(
+                label: 'Create Course',
+                onTap: _isSubmitting ? null : _submit,
+                isLoading: _isSubmitting,
                 height: 56,
-                child: ElevatedButton(
-                  onPressed: _isSubmitting ? null : _submit,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFF58220),
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                  ),
-                  child: _isSubmitting 
-                    ? const CircularProgressIndicator(color: Colors.white)
-                    : const Text('Create Course', style: TextStyle(fontWeight: FontWeight.bold)),
+              ),
+                  ],
                 ),
               ),
-            ],
+            ),
           ),
         ),
       ),
@@ -214,6 +215,10 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
       filled: true,
       fillColor: Colors.white.withValues(alpha: 0.05),
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: AppColors.primaryContainer),
+      ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
     );
   }

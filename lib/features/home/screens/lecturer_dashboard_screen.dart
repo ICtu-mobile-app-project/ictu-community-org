@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../auth/models/user_role.dart';
-import '../../navigation/screens/main_shell.dart';
+import 'package:ictu_community_org/features/auth/models/user_role.dart';
+import 'package:ictu_community_org/features/navigation/screens/main_shell.dart';
 
 class LecturerDashboardScreen extends StatelessWidget {
   const LecturerDashboardScreen({super.key});

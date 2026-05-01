@@ -1,6 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../data/lecturer_courses_repository.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:ictu_community_org/core/supabase/supabase_bootstrap.dart';
+import 'package:ictu_community_org/core/theme/app_colors.dart';
+import 'package:ictu_community_org/core/widgets/ambient_background.dart';
+import 'package:ictu_community_org/core/widgets/app_top_bar.dart';
+import 'package:ictu_community_org/core/widgets/glass_card.dart';
+import 'package:ictu_community_org/core/widgets/primary_button.dart';
+import 'package:ictu_community_org/features/courses/data/in_memory_lecturer_courses_repository.dart';
+import 'package:ictu_community_org/features/courses/data/lecturer_courses_repository.dart';
+import 'package:ictu_community_org/features/courses/data/supabase_lecturer_courses_repository.dart';
+import 'package:ictu_community_org/features/courses/models/lecturer_course.dart';
 
 class CreateCourseScreen extends StatefulWidget {
   const CreateCourseScreen({super.key});
@@ -20,7 +30,8 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
   final TextEditingController _codeController = TextEditingController();
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
-  final LecturerCoursesRepository _repository = LecturerCoursesRepository();
+  late final LecturerCoursesRepository _repository;
+  late final String _lecturerId;
 
   String _semester = _semesters.first;
   bool _isSubmitting = false;
@@ -29,6 +40,14 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
   void initState() {
     super.initState();
     _codeController.addListener(_normalizeCode);
+    
+    _lecturerId = SupabaseBootstrap.isConfigured
+        ? (Supabase.instance.client.auth.currentUser?.id ?? 'lecturer-1')
+        : 'lecturer-1';
+        
+    _repository = SupabaseBootstrap.isConfigured
+        ? SupabaseLecturerCoursesRepository()
+        : InMemoryLecturerCoursesRepository.instance;
   }
 
   @override
@@ -64,6 +83,7 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
 
     try {
       await _repository.createCourse(
+        lecturerId: _lecturerId,
         courseCode: _codeController.text,
         title: _titleController.text,
         semester: _semester,
@@ -71,7 +91,24 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
       );
 
       if (mounted) {
-        Navigator.of(context).pop(true);
+        // Return a dummy LecturerCourse or the actual one if we had it from the repo
+        // For now, enough to signal success for refresh
+        Navigator.of(context).pop(
+          LecturerCourse(
+            id: 'new',
+            courseCode: _codeController.text,
+            title: _titleController.text,
+            description: _descriptionController.text,
+            semester: _semester,
+            lecturerId: _lecturerId,
+            lecturerName: '',
+            studentCount: 0,
+            lectureCount: 0,
+            notesCount: 0,
+            alertCount: 0,
+            lastActivity: DateTime.now(),
+          ),
+        );
       }
     } catch (e) {
       if (mounted) {
@@ -91,18 +128,20 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0C10),
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        title: const Text('Create New Course'),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+      extendBodyBehindAppBar: true,
+      backgroundColor: Colors.transparent,
+      appBar: const AppTopBar(showBack: true, title: 'Create Course'),
+      body: AmbientBackground(
+        child: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: GlassCard(
+              padding: const EdgeInsets.all(20),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
               const Text(
                 'Course Code',
                 style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
@@ -153,22 +192,16 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
                 decoration: _inputDecoration('Brief overview of the course'),
               ),
               const SizedBox(height: 48),
-              SizedBox(
-                width: double.infinity,
+              PrimaryButton(
+                label: 'Create Course',
+                onTap: _isSubmitting ? null : _submit,
+                isLoading: _isSubmitting,
                 height: 56,
-                child: ElevatedButton(
-                  onPressed: _isSubmitting ? null : _submit,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFF58220),
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                  ),
-                  child: _isSubmitting 
-                    ? const CircularProgressIndicator(color: Colors.white)
-                    : const Text('Create Course', style: TextStyle(fontWeight: FontWeight.bold)),
+              ),
+                  ],
                 ),
               ),
-            ],
+            ),
           ),
         ),
       ),
@@ -182,6 +215,10 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
       filled: true,
       fillColor: Colors.white.withValues(alpha: 0.05),
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: AppColors.primaryContainer),
+      ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
     );
   }

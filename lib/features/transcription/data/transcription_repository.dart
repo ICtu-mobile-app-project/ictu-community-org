@@ -1,4 +1,4 @@
-import 'transcription_api.dart';
+import 'package:ictu_community_org/features/transcription/data/transcription_api.dart';
 
 class TranscriptionRepository {
   TranscriptionRepository({TranscriptionApi? api})

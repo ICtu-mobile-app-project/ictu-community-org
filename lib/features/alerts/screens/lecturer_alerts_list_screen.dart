@@ -2,11 +2,10 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import 'package:ictu_community_org/features/alerts/data/alerts_service.dart';
+import 'package:ictu_community_org/features/alerts/models/alert_item.dart';
 import 'package:ictu_community_org/features/alerts/screens/alert_details_screen.dart';
 import 'package:ictu_community_org/features/alerts/screens/create_alert_screen.dart';
-
-import '../data/alerts_service.dart';
-import '../models/alert_item.dart';
 
 class LecturerAlertsListScreen extends StatefulWidget {
   const LecturerAlertsListScreen({
@@ -207,7 +206,7 @@ class _LecturerAlertsListScreenState extends State<LecturerAlertsListScreen> {
             ),
             const SizedBox(height: 10),
             DropdownButtonFormField<String>(
-              value: _sort,
+              initialValue: _sort,
               dropdownColor: const Color(0xFF111827),
               style: const TextStyle(color: Colors.white),
               decoration: InputDecoration(

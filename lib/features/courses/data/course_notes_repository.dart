@@ -1,4 +1,4 @@
-import '../models/course_note.dart';
+import 'package:ictu_community_org/features/courses/models/course_note.dart';
 
 abstract class CourseNotesRepository {
   Future<List<CourseNote>> listNotes({
@@ -10,15 +10,20 @@ abstract class CourseNotesRepository {
   Future<CourseNote> createNote({
     required String courseId,
     required String title,
-    required String description,
+    String? description,
+    String? summary,
+    String status = 'published',
     required String contentUrl,
     required String fileName,
     required int fileSizeBytes,
   });
 
-  Future<CourseNote> updateNoteTitle({
+  Future<CourseNote> updateNote({
     required String noteId,
-    required String newTitle,
+    String? title,
+    String? description,
+    String? summary,
+    String? status,
   });
 
   Future<void> deleteNote({required String noteId});

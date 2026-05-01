@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'package:ictu_community_org/core/constants/ictu_constants.dart';
 import '../../../core/supabase/supabase_bootstrap.dart';
 import '../models/user_role.dart';
 
@@ -35,7 +36,6 @@ class AuthController {
   static const String _emailRedirectTo = String.fromEnvironment(
     'SUPABASE_EMAIL_REDIRECT_TO',
   );
-  static const String _schoolDomain = '@ictuniversity.edu.cm';
 
   final ValueNotifier<bool> isLoggedIn = ValueNotifier<bool>(false);
   final ValueNotifier<UserRole?> activeRole = ValueNotifier<UserRole?>(null);
@@ -127,14 +127,6 @@ class AuthController {
     }
 
     if (!_isSchoolEmail(normalizedEmail)) {
-      return const AuthFlowResponse(
-        isSuccess: false,
-        message:
-            'Use your ICT University email ending with @ictuniversity.edu.cm.',
-      );
-    }
-
-    if (!_isEmailAllowedForRole(email: normalizedEmail)) {
       return const AuthFlowResponse(
         isSuccess: false,
         message:
@@ -328,11 +320,7 @@ class AuthController {
 
   bool _isSchoolEmail(String email) {
     final String value = email.toLowerCase();
-    return value.endsWith(_schoolDomain);
-  }
-
-  bool _isEmailAllowedForRole({required String email}) {
-    return _isSchoolEmail(email);
+    return value.endsWith(ICTUConstants.schoolEmailDomain);
   }
 
   String _extractFunctionErrorMessage(dynamic payload) {

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../home/screens/lecturer_dashboard_screen.dart';
 import '../../navigation/screens/main_shell.dart';
 import 'package:provider/provider.dart';
+import 'package:ictu_community_org/core/constants/ictu_constants.dart';
 import '../controllers/auth_controller.dart';
 import '../models/user_role.dart';
 import 'signup_screen.dart';
@@ -15,8 +16,6 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  static const String _schoolDomain = '@ictuniversity.edu.cm';
-
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   bool _isSubmitting = false;
@@ -31,10 +30,10 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> _onLogin() async {
     final String normalizedEmail = _emailController.text.trim().toLowerCase();
-    if (!normalizedEmail.endsWith(_schoolDomain)) {
+    if (!normalizedEmail.endsWith(ICTUConstants.schoolEmailDomain)) {
       setState(() {
         _errorText =
-            'Please login with your ICT University email (@ictuniversity.edu.cm).';
+            'Please login with your ICT University email (${ICTUConstants.schoolEmailDomain}).';
       });
       return;
     }

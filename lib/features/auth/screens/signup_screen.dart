@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/user_role.dart';
 import 'package:provider/provider.dart';
+import 'package:ictu_community_org/core/constants/ictu_constants.dart';
 import '../controllers/auth_controller.dart';
 import 'login_screen.dart';
 
@@ -23,7 +24,6 @@ class _SignupScreenState extends State<SignupScreen> {
     'BSc Renewable Energy',
     'BSc JMC',
   ];
-  static const String _schoolDomain = '@ictuniversity.edu.cm';
 
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
@@ -72,11 +72,11 @@ class _SignupScreenState extends State<SignupScreen> {
     }
 
     final String normalizedEmail = _emailController.text.trim().toLowerCase();
-    if (!normalizedEmail.endsWith(_schoolDomain)) {
+    if (!normalizedEmail.endsWith(ICTUConstants.schoolEmailDomain)) {
       setState(() {
         _isSubmitting = false;
         _errorText =
-            'Please register with your ICT University email (@ictuniversity.edu.cm).';
+            'Please register with your ICT University email (${ICTUConstants.schoolEmailDomain}).';
       });
       return;
     }

@@ -2,7 +2,7 @@
 8c0783bfa6a025854a37690207f93fd19da743c1 commit	refs/heads/feat/alerts-create-manage
 8c0783bfa6a025854a37690207f93fd19da743c1 commit	refs/heads/feat/alerts-view
 77688351d94e4edabf501c04bd6a6a08754061cd commit	refs/heads/feat/auth-login-signup
-1b5e1d6ff801b7e51dfd37858e82ae07bc919188 commit	refs/heads/feat/auth-session-routing
+ecb001bf5f85a128194484cfc9e060973c219395 commit	refs/heads/feat/auth-session-routing
 8d30133ea1bb9a889d6d0f6d2321850f0981a150 commit	refs/heads/feat/courses-lecturer-management
 8c0783bfa6a025854a37690207f93fd19da743c1 commit	refs/heads/feat/courses-student-enrollment
 8c0783bfa6a025854a37690207f93fd19da743c1 commit	refs/heads/feat/courses-timetable

@@ -47,6 +47,13 @@ class AuthController extends ChangeNotifier {
         : dotenv.get('GOOGLE_WEB_CLIENT_ID', fallback: '');
   }
 
+  // Google Client Secret (kept for potential server-side verification or future use)
+  static String get _googleClientSecret {
+    return const String.fromEnvironment('GOOGLE_CLIENT_SECRET').isNotEmpty
+        ? const String.fromEnvironment('GOOGLE_CLIENT_SECRET')
+        : dotenv.get('GOOGLE_CLIENT_SECRET', fallback: '');
+  }
+
   // Used for Supabase OAuth redirect (PKCE) flows. This must match the deep link
   // configured in AndroidManifest.xml (and iOS URL schemes if enabled).
   // Override via: --dart-define=SUPABASE_OAUTH_REDIRECT_TO=...

@@ -1,1 +1,3 @@
-Update AGENTS.md
+Add .git-rewrite metadata
+
+Add a .git-rewrite directory produced by a history rewrite. Files include backup-refs, raw-refs, heads, commit metadata (message: "Update AGENTS.md"), mapping objects, parse/index/revs files. These files preserve old→new commit mappings and backup refs to support the rewrite and potential recovery.

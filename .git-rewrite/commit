@@ -1,6 +1,8 @@
-tree d71729a70df0a85de4b09eeeef2e077dbe3be535
-parent d54f070c90b9b8b07085d063251af34047b28070
-author Asongwe Lewis Fon <fonasongwelewis@gmail.com> 1775530045 +0100
-committer Asongwe Lewis Fon <fonasongwelewis@gmail.com> 1775530045 +0100
+tree 3742e0a831509095df0ebf7fd340c24678011567
+parent 1b5e1d6ff801b7e51dfd37858e82ae07bc919188
+author Asongwe Lewis Fon <fonasongwelewis@gmail.com> 1777680901 +0100
+committer Asongwe Lewis Fon <fonasongwelewis@gmail.com> 1777680901 +0100
 
-Update AGENTS.md
+Add .git-rewrite metadata
+
+Add a .git-rewrite directory produced by a history rewrite. Files include backup-refs, raw-refs, heads, commit metadata (message: "Update AGENTS.md"), mapping objects, parse/index/revs files. These files preserve old→new commit mappings and backup refs to support the rewrite and potential recovery.

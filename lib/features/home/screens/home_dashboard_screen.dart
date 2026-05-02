@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'package:ictu_community_org/core/widgets/ambient_background.dart';
 import 'package:ictu_community_org/features/auth/models/user_role.dart';
 import 'package:ictu_community_org/features/courses/controllers/enrolled_courses_controller.dart';
 import 'package:ictu_community_org/features/courses/models/student_course_overview.dart';
@@ -60,8 +61,7 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
             widget.userDisplayName ??
             _defaultDisplayName;
 
-        return Container(
-          color: const Color(0xFF0A0C10),
+        return AmbientBackground(
           child: Stack(
             children: [
               ListView(

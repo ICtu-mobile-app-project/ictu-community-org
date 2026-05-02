@@ -1,5 +1,6 @@
 class ICTUConstants {
   static const String faculty = 'Engineering & Technology';
+  static const String schoolEmailDomain = '@ictuniversity.edu.cm';
 
   static const List<String> programs = <String>[
     'BSc ICT',

@@ -119,8 +119,8 @@ async function assertCourseOwner(
   return data;
 }
 
-async function getCourseMetrics(client: any, courseId: string) {
-  const [studentsRes, delegatesRes, lecturesRes, notesRes] = await Promise.all([
+async function getCourseMetrics(client: any, courseId: string, courseCode: string) {
+  const [studentsRes, delegatesRes, lecturesRes, notesRes, alertsRes] = await Promise.all([
     client
       .from('course_enrollments')
       .select('id', { count: 'exact', head: true })
@@ -132,11 +132,15 @@ async function getCourseMetrics(client: any, courseId: string) {
     client
       .from('lectures')
       .select('id', { count: 'exact', head: true })
-      .or(`course_code.eq.${courseId},course_code.eq.UNKNOWN`),
+      .eq('course_code', courseCode),
     client
-      .from('lecture_notes')
+      .from('notes')
       .select('id', { count: 'exact', head: true })
       .eq('course_id', courseId),
+    client
+      .from('alerts')
+      .select('id', { count: 'exact', head: true })
+      .eq('course_code', courseCode),
   ]);
 
   return {
@@ -144,6 +148,7 @@ async function getCourseMetrics(client: any, courseId: string) {
     delegates: delegatesRes.count ?? 0,
     lectures: lecturesRes.count ?? 0,
     notes: notesRes.count ?? 0,
+    alerts: alertsRes.count ?? 0,
   };
 }
 
@@ -162,8 +167,8 @@ function mapCourseRow(row: any) {
     studentCount: row.course_enrollments?.[0]?.count ?? 0,
     delegateCount: row.course_delegates?.[0]?.count ?? 0,
     lectureCount: 0,
-    notesCount: row.lecture_notes?.[0]?.count ?? 0,
-    alertCount: 0,
+    notesCount: row.notes?.[0]?.count ?? 0,
+    alertCount: row.alerts?.[0]?.count ?? 0,
     lastActivity: row.updated_at ?? row.created_at,
   };
 }
@@ -178,8 +183,30 @@ Deno.serve(async (request: Request) => {
   }
 
   try {
-    const body = await request.json();
-    const action = asText(body?.action).toLowerCase();
+    // Raw HTTP Bypass: Use arrayBuffer to avoid issues with some clients stripping bodies
+    const arrayBuffer = await request.arrayBuffer();
+    const decoder = new TextDecoder();
+    const bodyText = decoder.decode(arrayBuffer);
+
+    // Diagnostic logging for body delivery issues
+    const contentLength = request.headers.get('content-length');
+    console.log(`LEN: ${contentLength} | BYTES: ${arrayBuffer.byteLength}`);
+
+    let body: any = {};
+    if (bodyText) {
+      try {
+        body = JSON.parse(bodyText);
+      } catch (e) {
+        console.error('Failed to parse JSON body:', e);
+      }
+    }
+
+    const action = asText(body?.action || body?.Action).toLowerCase();
+
+    // Ping action for health checks (doesn't require auth)
+    if (action === 'ping') {
+      return json(200, { success: true, message: 'pong', bytes: arrayBuffer.byteLength });
+    }
 
     const auth = await resolveAuth(request);
     const client = auth.serviceClient;
@@ -234,7 +261,7 @@ Deno.serve(async (request: Request) => {
           lecturer_id: auth.userId,
         })
         .select(
-          'id, course_code, title, description, semester, lecturer_id, archived, created_at, updated_at, profiles:lecturer_id(full_name), course_enrollments(count), course_delegates(count), lecture_notes(count)',
+          'id, course_code, title, description, semester, lecturer_id, archived, created_at, updated_at, profiles:lecturer_id(full_name), course_enrollments(count), course_delegates(count), notes(count), alerts(count)',
         )
         .single();
 
@@ -261,7 +288,7 @@ Deno.serve(async (request: Request) => {
       let query = client
         .from('courses')
         .select(
-          'id, course_code, title, description, semester, lecturer_id, archived, created_at, updated_at, profiles:lecturer_id(full_name), course_enrollments(count), course_delegates(count), lecture_notes(count)',
+          'id, course_code, title, description, semester, lecturer_id, archived, created_at, updated_at, profiles:lecturer_id(full_name), course_enrollments(count), course_delegates(count), notes(count), alerts(count)',
           { count: 'exact' },
         )
         .eq('lecturer_id', auth.userId)
@@ -296,7 +323,7 @@ Deno.serve(async (request: Request) => {
       }
 
       const row = await assertCourseOwner(client, courseId, auth.userId);
-      const metrics = await getCourseMetrics(client, courseId);
+      const metrics = await getCourseMetrics(client, courseId, row.course_code);
 
       const { data: lecturerProfile } = await client
         .from('profiles')
@@ -318,7 +345,7 @@ Deno.serve(async (request: Request) => {
           studentCount: metrics.students,
           lectureCount: metrics.lectures,
           notesCount: metrics.notes,
-          alertCount: 0,
+          alertCount: metrics.alerts,
           lastActivity: row.updated_at ?? row.created_at,
         },
       });
@@ -341,7 +368,7 @@ Deno.serve(async (request: Request) => {
         .from('courses')
         .update({ title, description, semester, archived })
         .eq('id', courseId)
-        .select('id, course_code, title, description, semester, lecturer_id, archived, created_at, updated_at, profiles:lecturer_id(full_name), course_enrollments(count), course_delegates(count), lecture_notes(count)')
+        .select('id, course_code, title, description, semester, lecturer_id, archived, created_at, updated_at, profiles:lecturer_id(full_name), course_enrollments(count), course_delegates(count), notes(count), alerts(count)')
         .single();
       if (error) return fail(400, error.message);
 
@@ -368,7 +395,7 @@ Deno.serve(async (request: Request) => {
           .select('id', { count: 'exact', head: true })
           .eq('course_code', courseId),
         client
-          .from('lecture_notes')
+          .from('notes')
           .select('id', { count: 'exact', head: true })
           .eq('course_id', courseId),
       ]);

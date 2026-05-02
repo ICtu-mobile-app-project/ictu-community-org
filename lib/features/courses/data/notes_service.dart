@@ -2,11 +2,13 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:http/http.dart' as http;
 import 'package:path/path.dart' as p;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:ictu_community_org/core/services/connectivity_service.dart';
 import 'package:ictu_community_org/core/services/offline_service.dart';
+import 'package:ictu_community_org/core/services/manual_http_client.dart';
 import 'package:ictu_community_org/core/supabase/supabase_bootstrap.dart';
 import 'package:ictu_community_org/features/courses/models/course_note.dart';
 import 'package:ictu_community_org/features/courses/models/lecturer_course_option.dart';
@@ -72,7 +74,9 @@ class NotesService {
     required String title,
     required String courseId,
     required String courseCode,
-    String description = '',
+    String? description,
+    String? summary,
+    String status = 'published',
     NoteUploadStrategy strategy = NoteUploadStrategy.chunkedRetry,
     void Function(NoteUploadProgress progress)? onProgress,
   }) async {
@@ -120,45 +124,29 @@ class NotesService {
       onProgress: onProgress,
     );
 
-    final FunctionResponse response = await _client.functions.invoke(
+    final Map<String, dynamic> responseData = await ManualHttpClient.post(
       'notes-api',
-      body: <String, dynamic>{
+      <String, dynamic>{
         'action': 'create_note',
-        'course_code': courseCode,
+        'courseId': courseId,
         'title': title,
         'description': description,
-        'content_url': objectPath,
-        'status': 'published',
+        'summary': summary,
+        'status': status,
+        'contentUrl': objectPath,
+        'fileName': fileName,
+        'fileSizeBytes': size,
       },
     );
 
-    if (response.status >= 400) {
-      throw Exception(_extractError(response.data));
+    if (responseData['success'] != true) {
+      throw Exception(_extractError(responseData));
     }
 
-    final Map<String, dynamic> payload = _asJsonMap(response.data);
-    if (payload['ok'] != true) {
-      throw Exception(_extractError(payload));
-    }
-
-    final Map<String, dynamic> row = (payload['note'] as Map<String, dynamic>?) ??
+    final Map<String, dynamic> row = (responseData['data'] as Map<String, dynamic>?) ??
         <String, dynamic>{};
 
-    return CourseNote(
-      id: (row['id'] ?? '').toString(),
-      courseId: courseId,
-      courseCode: courseCode,
-      title: (row['title'] ?? '').toString(),
-      description: (row['description'] ?? '').toString(),
-      contentUrl: (row['content_url'] ?? '').toString(),
-      fileName: fileName,
-      fileSizeBytes: size,
-      uploadedBy: (row['uploaded_by'] ?? '').toString(),
-      uploadedByName: (row['uploaded_by_name'] ?? 'You').toString(),
-      createdAt:
-          DateTime.tryParse((row['created_at'] ?? '').toString()) ??
-          DateTime.now(),
-    );
+    return CourseNote.fromJson(row);
   }
 
   Future<void> _uploadBinary({
@@ -263,39 +251,25 @@ class NotesService {
       final isOnline = await _connectivityService.isOnline();
 
       if (isOnline) {
-        final FunctionResponse response = await _client.functions.invoke(
+        final Map<String, dynamic> responseData = await ManualHttpClient.post(
           'notes-api',
-          body: <String, dynamic>{
+          <String, dynamic>{
             'action': 'list_notes',
-            'course_code': courseCode,
+            'courseId': courseId,
             'search': search,
             'sort': sort,
           },
         );
 
-        if (response.status >= 400) {
-          throw Exception(_extractError(response.data));
+        if (responseData['success'] != true) {
+          throw Exception(_extractError(responseData));
         }
 
-        final Map<String, dynamic> payload = _asJsonMap(response.data);
-        final List<dynamic> rows = (payload['notes'] as List<dynamic>?) ?? <dynamic>[];
+        final Map<String, dynamic> data = (responseData['data'] as Map<String, dynamic>?) ?? <String, dynamic>{};
+        final List<dynamic> rows = (data['items'] as List<dynamic>?) ?? <dynamic>[];
 
         final List<CourseNote> notes = rows.map((dynamic row) {
-          final Map<String, dynamic> rowMap = row as Map<String, dynamic>;
-          return CourseNote(
-            id: (rowMap['id'] ?? '').toString(),
-            courseId: courseId,
-            courseCode: courseCode,
-            title: (rowMap['title'] ?? '').toString(),
-            description: (rowMap['description'] ?? '').toString(),
-            contentUrl: (rowMap['content_url'] ?? '').toString(),
-            fileName: _fileNameFromPath((rowMap['content_url'] ?? '').toString()),
-            fileSizeBytes: 0,
-            uploadedBy: (rowMap['uploaded_by'] ?? '').toString(),
-            uploadedByName: (rowMap['uploaded_by_name'] ?? 'Unknown').toString(),
-            createdAt: DateTime.tryParse((rowMap['created_at'] ?? '').toString()) ??
-                DateTime.now(),
-          );
+          return CourseNote.fromJson(row as Map<String, dynamic>);
         }).toList(growable: false);
 
         // Cache for offline
@@ -340,36 +314,45 @@ class NotesService {
       );
     }
 
-    final FunctionResponse response = await _client.functions.invoke(
+    final Map<String, dynamic> responseData = await ManualHttpClient.post(
       'notes-api',
-      body: <String, dynamic>{
+      <String, dynamic>{
         'action': 'delete_note',
-        'note_id': noteId,
+        'noteId': noteId,
       },
     );
-    if (response.status >= 400) {
-      throw Exception(_extractError(response.data));
+    if (responseData['success'] != true) {
+      throw Exception(_extractError(responseData));
     }
 
     await _client.storage.from(_notesBucket).remove(<String>[objectPath]);
   }
 
-  Future<void> updateNoteTitle(String noteId, String title) async {
+  Future<void> updateNote({
+    required String noteId,
+    String? title,
+    String? description,
+    String? summary,
+    String? status,
+  }) async {
     if (!SupabaseBootstrap.isConfigured) {
       throw Exception(
         'Supabase is not configured. Notes require a live backend connection.',
       );
     }
-    final FunctionResponse response = await _client.functions.invoke(
+    final Map<String, dynamic> responseData = await ManualHttpClient.post(
       'notes-api',
-      body: <String, dynamic>{
-        'action': 'update_note_title',
-        'note_id': noteId,
-        'title': title,
+      <String, dynamic>{
+        'action': 'update_note',
+        'noteId': noteId,
+        if (title != null) 'title': title,
+        if (description != null) 'description': description,
+        if (summary != null) 'summary': summary,
+        if (status != null) 'status': status,
       },
     );
-    if (response.status >= 400) {
-      throw Exception(_extractError(response.data));
+    if (responseData['success'] != true) {
+      throw Exception(_extractError(responseData));
     }
   }
 

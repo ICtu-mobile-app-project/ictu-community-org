@@ -11,6 +11,8 @@ const corsHeaders: Record<string, string> = {
 
 type Role = 'student' | 'lecturer' | 'delegate';
 
+const NOTE_SELECT = 'id, course_id, course_code, title, description, summary, status, content_url, file_name, file_size_bytes, uploaded_by, created_at, updated_at, profiles:uploaded_by(full_name)';
+
 function asText(value: unknown): string {
   return typeof value === 'string' ? value.trim() : '';
 }
@@ -194,8 +196,11 @@ function mapNote(row: any) {
   return {
     id: row.id,
     courseId: row.course_id,
+    courseCode: row.course_code ?? '',
     title: row.title,
     description: row.description ?? '',
+    summary: row.summary ?? '',
+    status: row.status ?? 'published',
     contentUrl: row.content_url,
     fileName: row.file_name,
     fileSizeBytes: row.file_size_bytes ?? 0,
@@ -216,14 +221,9 @@ Deno.serve(async (request: Request) => {
   }
 
   try {
-    // Raw HTTP Bypass: Use arrayBuffer to avoid issues with some clients stripping bodies
     const arrayBuffer = await request.arrayBuffer();
     const decoder = new TextDecoder();
     const bodyText = decoder.decode(arrayBuffer);
-
-    // Diagnostic logging
-    const contentLength = request.headers.get('content-length');
-    console.log(`LEN: ${contentLength} | BYTES: ${arrayBuffer.byteLength}`);
 
     let body: any = {};
     if (bodyText) {
@@ -236,7 +236,7 @@ Deno.serve(async (request: Request) => {
 
     const action = asText(body?.action || body?.Action).toLowerCase();
     if (action === 'ping') {
-      return json(200, { success: true, message: 'pong', bytes: arrayBuffer.byteLength });
+      return json(200, { success: true, message: 'pong' });
     }
 
     if (!action) {
@@ -250,6 +250,8 @@ Deno.serve(async (request: Request) => {
       const courseId = asText(body.courseId);
       const title = asText(body.title);
       const description = asText(body.description);
+      const summary = asText(body.summary);
+      const status = asText(body.status) || 'published';
       const contentUrl = assertStorageObjectPath(body.contentUrl);
       const fileName = asText(body.fileName);
       const fileSizeBytes = asInt(body.fileSizeBytes);
@@ -263,18 +265,28 @@ Deno.serve(async (request: Request) => {
         return fail(403, 'You are not allowed to upload notes for this course');
       }
 
+      // Fetch course_code for denormalized storage
+      const { data: course } = await client
+        .from('courses')
+        .select('course_code')
+        .eq('id', courseId)
+        .single();
+
       const { data, error } = await client
-        .from('lecture_notes')
+        .from('notes')
         .insert({
           course_id: courseId,
+          course_code: course?.course_code,
           title,
           description,
+          summary,
+          status,
           content_url: contentUrl,
           file_name: fileName,
           file_size_bytes: Math.max(0, fileSizeBytes),
           uploaded_by: auth.userId,
         })
-        .select('id, course_id, title, description, content_url, file_name, file_size_bytes, uploaded_by, created_at, updated_at, profiles:uploaded_by(full_name)')
+        .select(NOTE_SELECT)
         .single();
 
       if (error) {
@@ -298,9 +310,14 @@ Deno.serve(async (request: Request) => {
       }
 
       let query = client
-        .from('lecture_notes')
-        .select('id, course_id, title, description, content_url, file_name, file_size_bytes, uploaded_by, created_at, updated_at, profiles:uploaded_by(full_name)')
+        .from('notes')
+        .select(NOTE_SELECT)
         .eq('course_id', courseId);
+
+      // Security: Students only see published notes
+      if (auth.role === 'student') {
+        query = query.eq('status', 'published');
+      }
 
       if (search) {
         query = query.ilike('title', `%${search}%`);
@@ -331,11 +348,17 @@ Deno.serve(async (request: Request) => {
         return fail(400, 'noteId is required');
       }
 
-      const { data, error } = await client
-        .from('lecture_notes')
-        .select('id, course_id, title, description, content_url, file_name, file_size_bytes, uploaded_by, created_at, updated_at, profiles:uploaded_by(full_name)')
-        .eq('id', noteId)
-        .maybeSingle();
+      let query = client
+        .from('notes')
+        .select(NOTE_SELECT)
+        .eq('id', noteId);
+
+      if (auth.role === 'student') {
+        query = query.eq('status', 'published');
+      }
+
+      const { data, error } = await query.maybeSingle();
+
       if (error) {
         return fail(400, error.message);
       }
@@ -351,15 +374,19 @@ Deno.serve(async (request: Request) => {
       return json(200, { success: true, data: mapNote(data) });
     }
 
-    if (action === 'update_note_title') {
+    if (action === 'update_note' || action === 'update_note_title') {
       const noteId = asText(body.noteId);
       const title = asText(body.title);
-      if (!noteId || !title) {
-        return fail(400, 'noteId and title are required');
+      const description = body.description !== undefined ? asText(body.description) : undefined;
+      const summary = body.summary !== undefined ? asText(body.summary) : undefined;
+      const status = body.status !== undefined ? asText(body.status) : undefined;
+
+      if (!noteId) {
+        return fail(400, 'noteId is required');
       }
 
       const { data: existing, error: existingError } = await client
-        .from('lecture_notes')
+        .from('notes')
         .select('id, course_id')
         .eq('id', noteId)
         .maybeSingle();
@@ -375,11 +402,21 @@ Deno.serve(async (request: Request) => {
         return fail(403, 'You are not allowed to edit this note');
       }
 
+      const updates: any = {};
+      if (title) updates.title = title;
+      if (description !== undefined) updates.description = description;
+      if (summary !== undefined) updates.summary = summary;
+      if (status !== undefined) updates.status = status;
+
+      if (Object.keys(updates).length === 0) {
+        return fail(400, 'No fields to update');
+      }
+
       const { data, error } = await client
-        .from('lecture_notes')
-        .update({ title })
+        .from('notes')
+        .update(updates)
         .eq('id', noteId)
-        .select('id, course_id, title, description, content_url, file_name, file_size_bytes, uploaded_by, created_at, updated_at, profiles:uploaded_by(full_name)')
+        .select(NOTE_SELECT)
         .single();
       if (error) {
         return fail(400, error.message);
@@ -395,7 +432,7 @@ Deno.serve(async (request: Request) => {
       }
 
       const { data: existing, error: existingError } = await client
-        .from('lecture_notes')
+        .from('notes')
         .select('id, course_id, content_url')
         .eq('id', noteId)
         .maybeSingle();
@@ -411,12 +448,11 @@ Deno.serve(async (request: Request) => {
         return fail(403, 'You are not allowed to delete this note');
       }
 
-      const { error } = await client.from('lecture_notes').delete().eq('id', noteId);
+      const { error } = await client.from('notes').delete().eq('id', noteId);
       if (error) {
         return fail(400, error.message);
       }
 
-      // Best-effort storage cleanup.
       await client.storage.from('lecture-notes').remove([existing.content_url]);
 
       return json(200, { success: true, data: { removed: true } });
@@ -429,7 +465,7 @@ Deno.serve(async (request: Request) => {
       }
 
       const { data: note, error: noteError } = await client
-        .from('lecture_notes')
+        .from('notes')
         .select('id, course_id, content_url')
         .eq('id', noteId)
         .maybeSingle();

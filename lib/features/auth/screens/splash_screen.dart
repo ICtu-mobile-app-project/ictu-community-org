@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+import 'package:ictu_community_org/core/widgets/ambient_background.dart';
+import 'package:ictu_community_org/core/navigation/app_routes.dart';
 import 'package:ictu_community_org/features/auth/controllers/auth_controller.dart';
 import 'package:ictu_community_org/features/auth/models/user_role.dart';
-import 'package:ictu_community_org/features/auth/screens/welcome_screen.dart';
-import 'package:ictu_community_org/features/home/screens/lecturer_dashboard_screen.dart';
-import 'package:ictu_community_org/features/navigation/screens/main_shell.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -36,58 +36,34 @@ class _SplashScreenState extends State<SplashScreen> {
     }
 
     if (role == UserRole.lecturer) {
-      if (mounted) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute<void>(
-            builder: (_) => const LecturerDashboardScreen(),
-          ),
-        );
-      }
+      context.goNamed(AppRoutes.lecturerHome);
       return;
     }
 
     if (role != null) {
-      if (mounted) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute<void>(builder: (_) => MainShell(userRole: role)),
-        );
-      }
+      context.goNamed(
+        AppRoutes.appShell,
+        pathParameters: <String, String>{'role': role.dbValue},
+      );
       return;
     }
 
-    if (mounted) {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute<void>(builder: (_) => const WelcomeScreen()),
-      );
-    }
+    context.goNamed(AppRoutes.welcome);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          Image.asset('assets/school2.jpeg', fit: BoxFit.cover),
-          Container(color: const Color(0xB0001433)),
-          Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [Color(0x33001533), Color(0xAA00122E)],
-              ),
-            ),
+      backgroundColor: Colors.transparent,
+      body: AmbientBackground(
+        child: Center(
+          child: Image.asset(
+            'assets/Logo.png',
+            width: 180,
+            height: 180,
+            fit: BoxFit.contain,
           ),
-          Center(
-            child: Image.asset(
-              'assets/Logo.png',
-              width: 180,
-              height: 180,
-              fit: BoxFit.contain,
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }

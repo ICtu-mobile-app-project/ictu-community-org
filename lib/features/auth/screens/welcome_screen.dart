@@ -1,160 +1,252 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
-import 'package:ictu_community_org/features/auth/screens/login_screen.dart';
-import 'package:ictu_community_org/features/auth/screens/signup_screen.dart';
+import 'package:ictu_community_org/core/navigation/app_routes.dart';
+import 'package:ictu_community_org/core/theme/app_colors.dart';
+import 'package:ictu_community_org/core/theme/app_text_styles.dart';
+import 'package:ictu_community_org/core/widgets/ambient_background.dart';
+import 'package:ictu_community_org/core/widgets/glass_card.dart';
+import 'package:ictu_community_org/core/widgets/glass_segmented_tab.dart';
+import 'package:ictu_community_org/core/widgets/primary_button.dart';
+import 'package:ictu_community_org/features/auth/models/user_role.dart';
 
-class WelcomeScreen extends StatelessWidget {
+class WelcomeScreen extends StatefulWidget {
   const WelcomeScreen({super.key});
+
+  @override
+  State<WelcomeScreen> createState() => _WelcomeScreenState();
+}
+
+class _WelcomeScreenState extends State<WelcomeScreen> {
+  int _selectedRoleIndex = 0;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          Image.asset('assets/school.jpeg', fit: BoxFit.cover),
-          Container(color: const Color(0x8A020916)),
-          Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [Color(0x22000C2A), Color(0xD9020B1F)],
-              ),
-            ),
-          ),
-          SafeArea(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 18),
-              child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  minHeight: MediaQuery.of(context).size.height - 36,
-                ),
-                child: Column(
-                  children: [
-                    const SizedBox(height: 32),
-                    Container(
-                    width: 148,
-                    height: 148,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.08),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(18),
-                      child: Image.asset('assets/Logo.png'),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Container(
-                    padding: const EdgeInsets.fromLTRB(24, 24, 24, 18),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.86),
-                      borderRadius: BorderRadius.circular(30),
-                      border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.55),
-                      ),
-                      boxShadow: const [
-                        BoxShadow(
-                          color: Color(0x36000000),
-                          blurRadius: 24,
-                          offset: Offset(0, 12),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      children: [
-                        Text(
-                          'Welcome to ICT-U',
-                          style: Theme.of(context).textTheme.headlineMedium
-                              ?.copyWith(
-                                color: const Color(0xFFF97316),
-                                fontWeight: FontWeight.w800,
+      backgroundColor: Colors.transparent,
+      body: AmbientBackground(
+        child: SafeArea(
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final bool isCompact = constraints.maxHeight < 700;
+              final double outerPad = isCompact ? 16 : 22;
+              final double logoSize = isCompact ? 96 : 112;
+              final double innerPad = isCompact ? 16 : 22;
+              final double gapSm = isCompact ? 8 : 12;
+              final double gapMd = isCompact ? 12 : 16;
+              final double gapLg = isCompact ? 16 : 24;
+
+              return SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: EdgeInsets.all(outerPad),
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 520),
+                    child: GlassCard(
+                      padding: EdgeInsets.all(innerPad),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Center(
+                            child: Container(
+                              width: logoSize,
+                              height: logoSize,
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.08),
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: Colors.white.withValues(alpha: 0.10),
+                                ),
                               ),
-                        ),
-                        const SizedBox(height: 8),
-                        const Text(
-                          'Your Gateway to Academic Excellence',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: Color(0xFF475569),
-                            fontSize: 14.5,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-                        const _FeatureTile(
-                          icon: Icons.menu_book_rounded,
-                          title: 'Access courses anywhere',
-                          subtitle:
-                              'View lectures, assignments, and grades on the go.',
-                        ),
-                        const SizedBox(height: 12),
-                        const _FeatureTile(
-                          icon: Icons.campaign_rounded,
-                          title: 'Stay updated',
-                          subtitle:
-                              'Get instant alerts for campus news and events.',
-                        ),
-                        const SizedBox(height: 12),
-                        const _FeatureTile(
-                          icon: Icons.groups_rounded,
-                          title: 'Connect with community',
-                          subtitle:
-                              'Chat with peers and collaborate with faculty.',
-                        ),
-                        const SizedBox(height: 22),
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFFF48A17),
-                              foregroundColor: Colors.white,
-                              minimumSize: const Size.fromHeight(56),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
+                              child: Padding(
+                                padding: EdgeInsets.all(isCompact ? 14 : 16),
+                                child: Image.asset('assets/Logo.png'),
                               ),
                             ),
-                            onPressed: () {
-                              Navigator.of(context).push(
-                                MaterialPageRoute<void>(
-                                  builder: (_) => const LoginScreen(),
+                          ),
+                          SizedBox(height: gapMd),
+                          Center(
+                            child: ConstrainedBox(
+                              constraints: const BoxConstraints(maxWidth: 320),
+                              child: GlassSegmentedTab(
+                                labels: const ['Student', 'Staff'],
+                                selectedIndex: _selectedRoleIndex,
+                                onTabChanged: (index) {
+                                  setState(() {
+                                    _selectedRoleIndex = index;
+                                  });
+                                },
+                              ),
+                            ),
+                          ),
+                          SizedBox(height: gapSm),
+                          Center(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  _selectedRoleIndex == 0
+                                      ? 'STUDENT COMMUNITY'
+                                      : 'STAFF PORTAL',
+                                  style: AppTextStyles.labelSm.copyWith(
+                                    color: AppColors.primaryContainer,
+                                    letterSpacing: 2.0,
+                                    fontWeight: FontWeight.w800,
+                                    shadows: [
+                                      Shadow(
+                                        color: AppColors.primaryContainer
+                                            .withValues(alpha: 0.4),
+                                        blurRadius: 10,
+                                      ),
+                                    ],
+                                  ),
                                 ),
+                                SizedBox(height: isCompact ? 6 : 8),
+                                Container(
+                                  width: 40,
+                                  height: 2,
+                                  decoration: BoxDecoration(
+                                    gradient: const LinearGradient(
+                                      colors: [
+                                        Colors.transparent,
+                                        AppColors.primaryContainer,
+                                        Colors.transparent,
+                                      ],
+                                    ),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: AppColors.primaryContainer
+                                            .withValues(alpha: 0.45),
+                                        blurRadius: 8,
+                                        spreadRadius: 1,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          SizedBox(height: gapLg),
+                          Text(
+                            'Welcome to ICTU',
+                            style: (isCompact
+                                    ? AppTextStyles.h2
+                                    : AppTextStyles.h1)
+                                .copyWith(fontSize: isCompact ? 26 : null),
+                            textAlign: TextAlign.center,
+                          ),
+                          SizedBox(height: isCompact ? 6 : 8),
+                          Text(
+                            'Your gateway to academic excellence',
+                            textAlign: TextAlign.center,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppTextStyles.bodyMd.copyWith(
+                              color: AppColors.onSurfaceVariant,
+                            ),
+                          ),
+                          SizedBox(height: gapMd),
+                          AnimatedCrossFade(
+                            firstChild: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: const [
+                                _FeatureTile(
+                                  icon: Icons.menu_book_rounded,
+                                  title: 'Access courses anywhere',
+                                  subtitle:
+                                      'View lectures, assignments, and materials on the go.',
+                                ),
+                                SizedBox(height: 12),
+                                _FeatureTile(
+                                  icon: Icons.campaign_rounded,
+                                  title: 'Stay updated',
+                                  subtitle:
+                                      'Get alerts for deadlines and campus updates.',
+                                ),
+                                SizedBox(height: 12),
+                                _FeatureTile(
+                                  icon: Icons.groups_rounded,
+                                  title: 'Connect with the community',
+                                  subtitle:
+                                      'Chat with peers and collaborate with faculty.',
+                                ),
+                              ],
+                            ),
+                            secondChild: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: const [
+                                _FeatureTile(
+                                  icon: Icons.dashboard_rounded,
+                                  title: 'Manage your courses',
+                                  subtitle:
+                                      'Organize lectures, notes, and track student progress.',
+                                ),
+                                SizedBox(height: 12),
+                                _FeatureTile(
+                                  icon: Icons.analytics_rounded,
+                                  title: 'Performance insights',
+                                  subtitle:
+                                      'Monitor student engagement and course effectiveness.',
+                                ),
+                                SizedBox(height: 12),
+                                _FeatureTile(
+                                  icon: Icons.forum_rounded,
+                                  title: 'Direct communication',
+                                  subtitle:
+                                      'Interact directly with students and share announcements.',
+                                ),
+                              ],
+                            ),
+                            crossFadeState: _selectedRoleIndex == 0
+                                ? CrossFadeState.showFirst
+                                : CrossFadeState.showSecond,
+                            duration: const Duration(milliseconds: 250),
+                          ),
+                          SizedBox(height: gapMd),
+                          PrimaryButton(
+                            label: 'Get started',
+                            height: isCompact ? 50 : 52,
+                            onTap: () {
+                              final UserRole role = _selectedRoleIndex == 0
+                                  ? UserRole.student
+                                  : UserRole.lecturer;
+                              context.pushNamed(
+                                AppRoutes.login,
+                                pathParameters: <String, String>{'role': role.dbValue},
                               );
                             },
-                            child: const Text(
-                              'Get Started',
-                              style: TextStyle(fontWeight: FontWeight.w700),
-                            ),
                           ),
-                        ),
-                        const SizedBox(height: 8),
-                        TextButton(
-                          onPressed: () {
-                            Navigator.of(context).push(
-                              MaterialPageRoute<void>(
-                                builder: (_) => const SignupScreen(),
+                          SizedBox(height: isCompact ? 4 : 8),
+                          TextButton(
+                            onPressed: () {
+                              final UserRole role = _selectedRoleIndex == 0
+                                  ? UserRole.student
+                                  : UserRole.lecturer;
+                              context.pushNamed(
+                                AppRoutes.signup,
+                                pathParameters: <String, String>{'role': role.dbValue},
+                              );
+                            },
+                            style: TextButton.styleFrom(
+                              foregroundColor: AppColors.primaryContainer,
+                              textStyle: AppTextStyles.labelSm.copyWith(
+                                color: AppColors.primaryContainer,
                               ),
-                            );
-                          },
-                          child: const Text(
-                            'New here? Create Account',
-                            style: TextStyle(
-                              color: Color(0xFF64748B),
-                              fontWeight: FontWeight.w700,
                             ),
+                            child: const Text('New here? Create Account'),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
-                    const SizedBox(height: 24),
-                  ],
                 ),
-              ),
-            ),
+              );
+            },
           ),
-        ],
+        ),
       ),
     );
   }
@@ -177,13 +269,14 @@ class _FeatureTile extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Container(
-          width: 44,
-          height: 44,
+          width: 40,
+          height: 40,
           decoration: BoxDecoration(
-            color: const Color(0xFFFDE6D3),
-            borderRadius: BorderRadius.circular(13),
+            color: AppColors.primaryContainer.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
           ),
-          child: Icon(icon, color: const Color(0xFFF48A17), size: 21),
+          child: Icon(icon, color: AppColors.primaryContainer, size: 20),
         ),
         const SizedBox(width: 14),
         Expanded(
@@ -192,19 +285,15 @@ class _FeatureTile extends StatelessWidget {
             children: [
               Text(
                 title,
-                style: const TextStyle(
-                  color: Color(0xFF1E293B),
-                  fontWeight: FontWeight.w800,
-                  fontSize: 18,
-                ),
+                style: AppTextStyles.bodyLg.copyWith(fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: 2),
               Text(
                 subtitle,
-                style: const TextStyle(
-                  color: Color(0xFF64748B),
-                  fontWeight: FontWeight.w500,
-                  fontSize: 14,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: AppTextStyles.bodyMd.copyWith(
+                  color: AppColors.onSurfaceVariant.withValues(alpha: 0.95),
                 ),
               ),
             ],

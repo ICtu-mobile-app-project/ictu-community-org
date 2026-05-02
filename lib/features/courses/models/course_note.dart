@@ -8,6 +8,8 @@ class CourseNote {
     this.courseCode = '',
     required this.title,
     required this.description,
+    required this.summary,
+    required this.status,
     required this.contentUrl,
     required this.fileName,
     required this.fileSizeBytes,
@@ -21,6 +23,8 @@ class CourseNote {
   final String courseCode;
   final String title;
   final String description;
+  final String summary;
+  final String status;
   final String contentUrl;
   final String fileName;
   final int fileSizeBytes;
@@ -53,6 +57,8 @@ class CourseNote {
       courseCode: (json['course_code'] ?? json['courseCode'] ?? '').toString(),
       title: (json['title'] ?? '').toString(),
       description: (json['description'] ?? '').toString(),
+      summary: (json['summary'] ?? '').toString(),
+      status: (json['status'] ?? 'published').toString(),
       contentUrl: (json['content_url'] ?? json['contentUrl'] ?? '').toString(),
       fileName: (json['file_name'] ?? json['fileName'] ?? '').toString(),
       fileSizeBytes: ((json['file_size'] ?? json['fileSizeBytes'] ?? 0) as num).toInt(),
@@ -69,6 +75,8 @@ class CourseNote {
       'course_code': courseCode,
       'title': title,
       'description': description,
+      'summary': summary,
+      'status': status,
       'content_url': contentUrl,
       'file_name': fileName,
       'file_size': fileSizeBytes,

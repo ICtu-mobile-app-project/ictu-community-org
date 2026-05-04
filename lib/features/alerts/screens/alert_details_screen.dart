@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import 'package:url_launcher/url_launcher.dart';
+
+import 'package:ictu_community_org/core/utils/calendar_utils.dart';
 import 'package:ictu_community_org/features/alerts/data/alerts_service.dart';
 import 'package:ictu_community_org/features/alerts/models/alert_item.dart';
 
@@ -58,6 +61,7 @@ class _AlertDetailsScreenState extends State<AlertDetailsScreen> {
       backgroundColor: const Color(0xFF0A0C10),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
+        automaticallyImplyLeading: false,
         iconTheme: const IconThemeData(color: Colors.white),
         title: const Text(
           'Alert Details',
@@ -200,11 +204,46 @@ class _AlertDetailsScreenState extends State<AlertDetailsScreen> {
                     ),
                   ),
                 ],
+                if (_alert!.submissionLink != null) ...[
+                  const SizedBox(height: 12),
+                  ElevatedButton.icon(
+                    onPressed: () async {
+                      final url = Uri.parse(_alert!.submissionLink!);
+                      if (await canLaunchUrl(url)) {
+                        await launchUrl(url, mode: LaunchMode.externalApplication);
+                      }
+                    },
+                    icon: const Icon(Icons.upload_file_rounded),
+                    label: const Text('Open Submission Link'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFF58220),
+                      foregroundColor: Colors.white,
+                      minimumSize: const Size.fromHeight(50),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 12),
                 OutlinedButton.icon(
-                  onPressed: () {},
+                  onPressed: () {
+                    if (_alert != null && _alert!.deadline != null) {
+                      CalendarUtils.addToCalendar(
+                        title: _alert!.title,
+                        description: _alert!.description,
+                        startTime: _alert!.deadline!,
+                      );
+                    } else if (_alert != null) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('No deadline specified for this alert.')),
+                      );
+                    }
+                  },
                   icon: const Icon(Icons.event_available_rounded),
                   label: const Text('Add to Calendar'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: const Color(0xFFF58220),
+                    side: const BorderSide(color: Color(0xFFF58220)),
+                  ),
                 ),
                 CheckboxListTile(
                   value: _markDone,

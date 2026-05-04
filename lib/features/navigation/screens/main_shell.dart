@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import 'package:ictu_community_org/core/widgets/app_bottom_nav.dart';
 import 'package:ictu_community_org/features/alerts/screens/lecturer_alerts_list_screen.dart';
+import 'package:ictu_community_org/features/alerts/screens/student_alerts_screen.dart';
 import 'package:ictu_community_org/features/auth/controllers/auth_controller.dart';
 import 'package:ictu_community_org/features/auth/models/user_role.dart';
 import 'package:ictu_community_org/features/auth/screens/welcome_screen.dart';
@@ -16,6 +17,8 @@ import 'package:ictu_community_org/features/home/screens/home_dashboard_screen.d
 import 'package:ictu_community_org/features/home/screens/lecturer_home_dashboard_screen.dart';
 import 'package:ictu_community_org/features/navigation/controllers/main_nav_controller.dart';
 import 'package:ictu_community_org/features/news/screens/campus_news_screen.dart';
+import 'package:ictu_community_org/core/utils/string_utils.dart';
+import 'package:ictu_community_org/features/profile/controllers/profile_controller.dart';
 import 'package:ictu_community_org/features/profile/screens/profile_screen.dart';
 import 'package:ictu_community_org/features/transcription/screens/audio_ai_transcription_screen.dart';
 
@@ -30,8 +33,15 @@ class MainShell extends StatefulWidget {
 
 class _MainShellState extends State<MainShell> {
   final MainNavController _controller = MainNavController();
+  final ProfileController _profileController = ProfileController();
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   bool _isLoggingOut = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _profileController.loadProfile();
+  }
 
   @override
   void dispose() {
@@ -55,6 +65,24 @@ class _MainShellState extends State<MainShell> {
     await Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (_) => const AudioAiTranscriptionScreen(),
+      ),
+    );
+  }
+
+  Future<void> _openNewsFromDrawer() async {
+    Navigator.of(context).pop();
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => const CampusNewsScreen(),
+      ),
+    );
+  }
+
+  Future<void> _openCommunityFromDrawer() async {
+    Navigator.of(context).pop();
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => const CommunityFeedScreen(),
       ),
     );
   }
@@ -117,10 +145,13 @@ class _MainShellState extends State<MainShell> {
         : widget.userRole == UserRole.lecturer
             ? LecturerHomeDashboardScreen(
                 onOpenSearch: () => _controller.setIndex(3),
+                onOpenAlerts: () => _controller.setIndex(1),
                 onOpenMenu: _openDrawerMenu,
               )
             : HomeDashboardScreen(
-                onOpenSearch: () => _controller.setIndex(4),
+                onOpenSearch: () => _controller.setIndex(3),
+                onOpenTimetable: () => _controller.setIndex(2),
+                onOpenAlerts: () => _controller.setIndex(1),
                 onOpenMenu: _openDrawerMenu,
                 userRole: widget.userRole,
               );
@@ -129,7 +160,6 @@ class _MainShellState extends State<MainShell> {
         ? <Widget>[
             homePage,
             TimetableScreen(userRole: widget.userRole),
-            const CampusNewsScreen(),
           ]
         : widget.userRole == UserRole.lecturer
             ? <Widget>[
@@ -140,14 +170,12 @@ class _MainShellState extends State<MainShell> {
                 ),
                 TimetableScreen(userRole: widget.userRole),
                 const LecturerMyCoursesScreen(),
-                const CampusNewsScreen(),
               ]
             : <Widget>[
                 homePage,
-                const CommunityFeedScreen(),
+                const StudentAlertsScreen(),
                 TimetableScreen(userRole: widget.userRole),
                 const EnrolledCoursesScreen(),
-                const CampusNewsScreen(),
               ];
 
     return ValueListenableBuilder<int>(
@@ -164,11 +192,6 @@ class _MainShellState extends State<MainShell> {
                   icon: Icons.calendar_month_outlined,
                   filledIcon: Icons.calendar_month,
                   label: 'Timetable',
-                ),
-                AppBottomNavItem(
-                  icon: Icons.newspaper_outlined,
-                  filledIcon: Icons.newspaper,
-                  label: 'News',
                 ),
               ]
             : widget.userRole == UserRole.lecturer
@@ -193,11 +216,6 @@ class _MainShellState extends State<MainShell> {
                       filledIcon: Icons.menu_book,
                       label: 'Courses',
                     ),
-                    AppBottomNavItem(
-                      icon: Icons.newspaper_outlined,
-                      filledIcon: Icons.newspaper,
-                      label: 'News',
-                    ),
                   ]
                 : const [
                     AppBottomNavItem(
@@ -206,9 +224,9 @@ class _MainShellState extends State<MainShell> {
                       label: 'Home',
                     ),
                     AppBottomNavItem(
-                      icon: Icons.groups_outlined,
-                      filledIcon: Icons.groups,
-                      label: 'Community',
+                      icon: Icons.notifications_active_outlined,
+                      filledIcon: Icons.notifications_active,
+                      label: 'Alerts',
                     ),
                     AppBottomNavItem(
                       icon: Icons.schedule_outlined,
@@ -220,11 +238,6 @@ class _MainShellState extends State<MainShell> {
                       filledIcon: Icons.menu_book,
                       label: 'Courses',
                     ),
-                    AppBottomNavItem(
-                      icon: Icons.newspaper_outlined,
-                      filledIcon: Icons.newspaper,
-                      label: 'News',
-                    ),
                   ];
 
         return Scaffold(
@@ -233,61 +246,93 @@ class _MainShellState extends State<MainShell> {
           drawer: Drawer(
             backgroundColor: const Color(0xFF0A0C10),
             child: SafeArea(
-              child: Column(
-                children: [
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
-                    color: const Color(0xFF0A0C10),
-                    child: const Row(
-                      children: [
-                        CircleAvatar(
-                          radius: 22,
-                          backgroundImage: AssetImage('assets/students.jpg'),
-                        ),
-                        SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            'Account Menu',
-                            style: TextStyle(
-                              color: Color(0xFFF1F5F9),
-                              fontWeight: FontWeight.w700,
-                              fontSize: 16,
+              child: AnimatedBuilder(
+                animation: _profileController,
+                builder: (context, _) {
+                  final profile = _profileController.profileData;
+                  final fullName = profile?['full_name'] ?? 'User';
+
+                  return Column(
+                    children: [
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
+                        color: const Color(0xFF0A0C10),
+                        child: Row(
+                          children: [
+                            CircleAvatar(
+                              radius: 22,
+                              backgroundColor: const Color(0xFF1E293B),
+                              child: Text(
+                                initialsFromName(fullName),
+                                style: const TextStyle(
+                                  color: Color(0xFFF58220),
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
+                              ),
                             ),
-                          ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                fullName,
+                                style: const TextStyle(
+                                  color: Color(0xFFF1F5F9),
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 16,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
-                  ),
-                  ListTile(
-                    leading: const Icon(Icons.person_outline_rounded),
-                    iconColor: const Color(0xFFF1F5F9),
-                    textColor: const Color(0xFFF1F5F9),
-                    title: const Text('Profile'),
-                    onTap: _openProfileFromDrawer,
-                  ),
-                  if (widget.userRole == UserRole.student)
-                    ListTile(
-                      leading: const Icon(Icons.auto_awesome_rounded),
-                      iconColor: const Color(0xFFF58220),
-                      textColor: const Color(0xFFF1F5F9),
-                      title: const Text('AI Transcription'),
-                      onTap: _openTranscriptionFromDrawer,
-                    ),
-                  ListTile(
-                    leading: _isLoggingOut
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Icon(Icons.logout_rounded),
-                    iconColor: const Color(0xFFF1F5F9),
-                    textColor: const Color(0xFFF1F5F9),
-                    title: const Text('Logout'),
-                    onTap: _isLoggingOut ? null : _logoutFromDrawer,
-                  ),
-                ],
+                      ),
+                      ListTile(
+                        leading: const Icon(Icons.person_outline_rounded),
+                        iconColor: const Color(0xFFF1F5F9),
+                        textColor: const Color(0xFFF1F5F9),
+                        title: const Text('Profile'),
+                        onTap: _openProfileFromDrawer,
+                      ),
+                      ListTile(
+                        leading: const Icon(Icons.newspaper_outlined),
+                        iconColor: const Color(0xFFF1F5F9),
+                        textColor: const Color(0xFFF1F5F9),
+                        title: const Text('Campus News'),
+                        onTap: _openNewsFromDrawer,
+                      ),
+                      if (widget.userRole == UserRole.student)
+                        ListTile(
+                          leading: const Icon(Icons.groups_outlined),
+                          iconColor: const Color(0xFFF1F5F9),
+                          textColor: const Color(0xFFF1F5F9),
+                          title: const Text('Community Feed'),
+                          onTap: _openCommunityFromDrawer,
+                        ),
+                      if (widget.userRole == UserRole.student ||
+                          widget.userRole == UserRole.lecturer)
+                        ListTile(
+                          leading: const Icon(Icons.auto_awesome_rounded),
+                          iconColor: const Color(0xFFF58220),
+                          textColor: const Color(0xFFF1F5F9),
+                          title: const Text('AI Transcription'),
+                          onTap: _openTranscriptionFromDrawer,
+                        ),
+                      ListTile(
+                        leading: _isLoggingOut
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : const Icon(Icons.logout_rounded),
+                        iconColor: const Color(0xFFF1F5F9),
+                        textColor: const Color(0xFFF1F5F9),
+                        title: const Text('Logout'),
+                        onTap: _isLoggingOut ? null : _logoutFromDrawer,
+                      ),
+                    ],
+                  );
+                },
               ),
             ),
           ),
@@ -296,7 +341,7 @@ class _MainShellState extends State<MainShell> {
             child: pages[index],
           ),
           bottomNavigationBar: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
             child: AppBottomNav(
               currentIndex: index,
               onTap: _controller.setIndex,

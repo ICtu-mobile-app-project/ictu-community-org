@@ -9,6 +9,7 @@ import 'package:ictu_community_org/features/courses/models/course_student.dart';
 import 'package:ictu_community_org/features/courses/models/course_delegate.dart';
 import 'package:ictu_community_org/features/courses/models/lecturer_course_overview.dart';
 import 'package:ictu_community_org/features/courses/screens/course_notes_list_screen.dart';
+import 'package:ictu_community_org/core/utils/string_utils.dart';
 import 'dart:async';
 
 class LecturerCourseDetailsScreen extends StatefulWidget {
@@ -47,6 +48,7 @@ class _LecturerCourseDetailsScreenState
       backgroundColor: const Color(0xFF0A0C10),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
+        automaticallyImplyLeading: false,
         title: Text(widget.course.code),
         bottom: TabBar(
           controller: _tabController,
@@ -256,9 +258,9 @@ class _StudentsTabState extends State<_StudentsTab> {
                   child: Row(
                     children: [
                       CircleAvatar(
-                        backgroundColor: const Color(0xFFF58220).withOpacity(0.1),
+                        backgroundColor: const Color(0xFF1E293B),
                         child: Text(
-                          student.fullName.isNotEmpty ? student.fullName[0].toUpperCase() : '?',
+                          initialsFromName(student.fullName),
                           style: const TextStyle(color: Color(0xFFF58220), fontWeight: FontWeight.bold),
                         ),
                       ),
@@ -477,9 +479,9 @@ class _DelegatesTabState extends State<_DelegatesTab> {
                   child: Row(
                     children: [
                       CircleAvatar(
-                        backgroundColor: const Color(0xFFF58220).withOpacity(0.1),
+                        backgroundColor: const Color(0xFF1E293B),
                         child: Text(
-                          delegate.studentName.isNotEmpty ? delegate.studentName[0].toUpperCase() : '?',
+                          initialsFromName(delegate.studentName),
                           style: const TextStyle(color: Color(0xFFF58220), fontWeight: FontWeight.bold),
                         ),
                       ),
@@ -562,9 +564,9 @@ class _StudentDetailsDialog extends StatelessWidget {
           children: [
             CircleAvatar(
               radius: 40,
-              backgroundColor: const Color(0xFFF58220).withOpacity(0.1),
+              backgroundColor: const Color(0xFF1E293B),
               child: Text(
-                student.fullName.isNotEmpty ? student.fullName[0].toUpperCase() : '?',
+                initialsFromName(student.fullName),
                 style: const TextStyle(
                   color: Color(0xFFF58220),
                   fontSize: 32,
@@ -733,9 +735,9 @@ class _AssignDelegateDialogState extends State<_AssignDelegateDialog> {
                             return ListTile(
                               contentPadding: const EdgeInsets.symmetric(horizontal: 12),
                               leading: CircleAvatar(
-                                backgroundColor: const Color(0xFFF58220).withOpacity(0.1),
+                                backgroundColor: const Color(0xFF1E293B),
                                 child: Text(
-                                  student.fullName[0].toUpperCase(),
+                                  initialsFromName(student.fullName),
                                   style: const TextStyle(color: Color(0xFFF58220)),
                                 ),
                               ),

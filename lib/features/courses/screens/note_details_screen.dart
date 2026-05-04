@@ -247,6 +247,7 @@ class _NoteDetailsScreenState extends State<NoteDetailsScreen> {
       backgroundColor: const Color(0xFF0A0C10),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
+        automaticallyImplyLeading: false,
         iconTheme: const IconThemeData(color: Colors.white),
         title: Text(
           widget.note.title,

@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 
+import 'package:ictu_community_org/core/utils/string_utils.dart';
 import 'package:ictu_community_org/core/widgets/ambient_background.dart';
+import 'package:ictu_community_org/features/alerts/models/alert_item.dart';
+import 'package:ictu_community_org/features/alerts/screens/lecturer_alerts_list_screen.dart';
+import 'package:ictu_community_org/features/alerts/screens/student_alerts_screen.dart';
 import 'package:ictu_community_org/features/auth/models/user_role.dart';
 import 'package:ictu_community_org/features/courses/controllers/enrolled_courses_controller.dart';
 import 'package:ictu_community_org/features/courses/models/student_course_overview.dart';
@@ -15,12 +19,16 @@ class HomeDashboardScreen extends StatefulWidget {
   const HomeDashboardScreen({
     super.key,
     required this.onOpenSearch,
+    required this.onOpenTimetable,
+    this.onOpenAlerts,
     this.onOpenMenu,
     this.userRole = UserRole.student,
     this.userDisplayName,
   });
 
   final VoidCallback onOpenSearch;
+  final VoidCallback onOpenTimetable;
+  final VoidCallback? onOpenAlerts;
   final VoidCallback? onOpenMenu;
   final UserRole userRole;
   final String? userDisplayName;
@@ -335,28 +343,48 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  const Row(
+                  Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       _QuickAction(
                         icon: Icons.calendar_month_rounded,
                         label: 'Schedule',
-                        color: Color(0xFFFB7185),
+                        color: const Color(0xFFFB7185),
+                        onTap: widget.onOpenTimetable,
                       ),
                       _QuickAction(
                         icon: Icons.assignment_rounded,
                         label: 'Exams',
-                        color: Color(0xFF38BDF8),
+                        color: const Color(0xFF38BDF8),
+                        onTap: widget.onOpenAlerts ?? () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute<void>(
+                              builder: (_) => const StudentAlertsScreen(
+                                initialType: AlertType.exam,
+                              ),
+                            ),
+                          );
+                        },
                       ),
                       _QuickAction(
                         icon: Icons.account_balance_wallet_rounded,
                         label: 'Finances',
-                        color: Color(0xFFFBBF24),
+                        color: const Color(0xFFFBBF24),
+                        onTap: () {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Finances feature coming soon')),
+                          );
+                        },
                       ),
                       _QuickAction(
                         icon: Icons.school_rounded,
                         label: 'Library',
-                        color: Color(0xFFA78BFA),
+                        color: const Color(0xFFA78BFA),
+                        onTap: () {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Library feature coming soon')),
+                          );
+                        },
                       ),
                     ],
                   ),
@@ -498,8 +526,16 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
                             width: 2,
                           ),
                         ),
-                        child: const CircleAvatar(
-                          backgroundImage: AssetImage('assets/students.jpg'),
+                        child: CircleAvatar(
+                          backgroundColor: const Color(0xFF1E293B),
+                          child: Text(
+                            initialsFromName(displayName),
+                            style: const TextStyle(
+                              color: Color(0xFFF58220),
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
                         ),
                       ),
                       Positioned(
@@ -784,38 +820,43 @@ class _QuickAction extends StatelessWidget {
     required this.icon,
     required this.label,
     required this.color,
+    this.onTap,
   });
 
   final IconData icon;
   final String label;
   final Color color;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: 74,
-      child: Column(
-        children: [
-          Container(
-            width: 56,
-            height: 56,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16),
-              color: Colors.white.withValues(alpha: 0.03),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+    return GestureDetector(
+      onTap: onTap,
+      child: SizedBox(
+        width: 74,
+        child: Column(
+          children: [
+            Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                color: Colors.white.withValues(alpha: 0.03),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+              ),
+              child: Icon(icon, color: color, size: 21),
             ),
-            child: Icon(icon, color: color, size: 21),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            label,
-            style: const TextStyle(
-              color: Color(0xFF94A3B8),
-              fontSize: 10,
-              fontWeight: FontWeight.w500,
+            const SizedBox(height: 8),
+            Text(
+              label,
+              style: const TextStyle(
+                color: Color(0xFF94A3B8),
+                fontSize: 10,
+                fontWeight: FontWeight.w500,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

@@ -105,6 +105,7 @@ class AlertsService {
     required String courseCode,
     DateTime? deadline,
     List<String> requirements = const <String>[],
+    String? submissionLink,
   }) async {
     _ensureConfigured();
 
@@ -118,6 +119,7 @@ class AlertsService {
         'course_code': courseCode,
         'deadline': deadline?.toUtc().toIso8601String(),
         'requirements': requirements,
+        'submission_link': submissionLink,
       },
     );
 

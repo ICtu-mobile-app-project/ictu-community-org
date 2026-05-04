@@ -12,10 +12,12 @@ class LecturerAlertsListScreen extends StatefulWidget {
     super.key,
     required this.courseCode,
     this.courseTitle,
+    this.initialType,
   });
 
   final String courseCode;
   final String? courseTitle;
+  final AlertType? initialType;
 
   @override
   State<LecturerAlertsListScreen> createState() => _LecturerAlertsListScreenState();
@@ -38,6 +40,7 @@ class _LecturerAlertsListScreenState extends State<LecturerAlertsListScreen> {
   @override
   void initState() {
     super.initState();
+    _filterType = widget.initialType;
     unawaited(_load());
   }
 
@@ -117,6 +120,7 @@ class _LecturerAlertsListScreenState extends State<LecturerAlertsListScreen> {
       backgroundColor: const Color(0xFF0A0C10),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
+        automaticallyImplyLeading: false,
         iconTheme: const IconThemeData(color: Colors.white),
         title: Text(
           '${widget.courseCode} Alerts',

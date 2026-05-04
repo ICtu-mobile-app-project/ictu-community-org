@@ -32,7 +32,7 @@ class CampusNewsScreen extends StatelessWidget {
           ),
           const SizedBox(height: 14),
           _newsCard(
-            image: 'assets/students.jpg',
+            image: 'assets/school.jpeg',
             category: 'NEWSLETTER',
             title: 'Weekly Campus Digest: Innovation, Grants and Internships',
             description:

@@ -9,6 +9,20 @@ class ManualHttpClient {
     Map<String, dynamic> body,
   ) async {
     final supabase = Supabase.instance.client;
+    
+    // Ensure we have a valid session before proceeding
+    Session? session = supabase.auth.currentSession;
+    
+    if (session == null || session.isExpired) {
+      // Attempt to refresh the session if it's expired or null
+      final response = await supabase.auth.refreshSession();
+      session = response.session;
+    }
+
+    if (session == null) {
+      throw Exception('Authentication session not found. Please log in again.');
+    }
+
     final baseUrl = dotenv.get('SUPABASE_URL');
     final anonKey = dotenv.get('SUPABASE_ANON_KEY');
     
@@ -19,7 +33,7 @@ class ManualHttpClient {
       uri,
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': 'Bearer ${supabase.auth.currentSession?.accessToken}',
+        'Authorization': 'Bearer ${session.accessToken}',
         'apikey': anonKey,
       },
       body: jsonEncode(body),
@@ -29,6 +43,11 @@ class ManualHttpClient {
       throw Exception('Request failed with status: ${response.statusCode}, body: ${response.body}');
     }
 
-    return jsonDecode(response.body) as Map<String, dynamic>;
+    final decoded = jsonDecode(response.body);
+    if (decoded is Map<String, dynamic>) {
+      return decoded;
+    } else {
+      return {'data': decoded};
+    }
   }
 }

@@ -3,8 +3,21 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class SupabaseBootstrap {
-  static String get _url => dotenv.get('SUPABASE_URL', fallback: '');
-  static String get _anonKey => dotenv.get('SUPABASE_ANON_KEY', fallback: '');
+  static String get _url {
+    try {
+      return dotenv.get('SUPABASE_URL', fallback: '');
+    } catch (_) {
+      return '';
+    }
+  }
+
+  static String get _anonKey {
+    try {
+      return dotenv.get('SUPABASE_ANON_KEY', fallback: '');
+    } catch (_) {
+      return '';
+    }
+  }
 
   static bool get isConfigured => _url.isNotEmpty && _anonKey.isNotEmpty;
 

@@ -1,14 +1,20 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+import 'package:ictu_community_org/core/theme/app_colors.dart';
+import 'package:ictu_community_org/core/theme/app_text_styles.dart';
+import 'package:ictu_community_org/core/widgets/ambient_background.dart';
+import 'package:ictu_community_org/core/navigation/app_routes.dart';
+import 'package:ictu_community_org/core/widgets/glass_card.dart';
+import 'package:ictu_community_org/core/widgets/glass_input.dart';
+import 'package:ictu_community_org/core/widgets/primary_button.dart';
 import 'package:ictu_community_org/features/auth/controllers/auth_controller.dart';
 import 'package:ictu_community_org/features/auth/models/user_role.dart';
-import 'package:ictu_community_org/features/auth/screens/login_screen.dart';
 
 class SignupScreen extends StatefulWidget {
-  const SignupScreen({super.key});
+  final UserRole? initialRole;
+  const SignupScreen({super.key, this.initialRole});
 
   @override
   State<SignupScreen> createState() => _SignupScreenState();
@@ -33,11 +39,21 @@ class _SignupScreenState extends State<SignupScreen> {
   final TextEditingController _confirmPasswordController =
       TextEditingController();
 
-  UserRole _selectedRole = UserRole.student;
+  late UserRole _selectedRole;
   String _selectedProgram = _programs.first;
   int _selectedYearLevel = 1;
+
   bool _isSubmitting = false;
+  bool _isGoogleSubmitting = false;
+  bool _passwordObscured = true;
+  bool _confirmPasswordObscured = true;
   String? _errorText;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedRole = widget.initialRole ?? UserRole.student;
+  }
 
   @override
   void dispose() {
@@ -78,7 +94,7 @@ class _SignupScreenState extends State<SignupScreen> {
       setState(() {
         _isSubmitting = false;
         _errorText =
-            'Please register with your ICT University email (@ictuniversity.edu.cm).';
+            'Please register with your ICT University email ($_schoolDomain).';
       });
       return;
     }
@@ -94,9 +110,7 @@ class _SignupScreenState extends State<SignupScreen> {
       yearLevel: _selectedYearLevel,
     );
 
-    if (!mounted) {
-      return;
-    }
+    if (!mounted) return;
 
     setState(() {
       _isSubmitting = false;
@@ -104,8 +118,8 @@ class _SignupScreenState extends State<SignupScreen> {
 
     if (!response.isSuccess) {
       setState(() {
-        _errorText =
-            response.message ?? 'Signup failed. Please check your information.';
+        _errorText = response.message ??
+            'Signup failed. Please check your information and try again.';
       });
       return;
     }
@@ -118,388 +132,325 @@ class _SignupScreenState extends State<SignupScreen> {
       SnackBar(content: Text(successMessage)),
     );
 
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute<void>(builder: (_) => const LoginScreen()),
+    context.goNamed(
+      AppRoutes.login,
+      pathParameters: const <String, String>{'role': 'student'},
     );
   }
 
-  void _onGoogleSignUp() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Google sign-up is coming soon.')),
+  Future<void> _onGoogleSignUp() async {
+    setState(() {
+      _isGoogleSubmitting = true;
+      _errorText = null;
+    });
+
+    final authController = Provider.of<AuthController>(context, listen: false);
+    final AuthFlowResponse response = await authController.signUpWithGoogle(
+      fullName: _nameController.text.trim().isEmpty
+          ? null
+          : _nameController.text.trim(),
+      role: _selectedRole,
+      faculty: _faculty,
+      program: _selectedProgram,
+      yearLevel: _selectedYearLevel,
+    );
+
+    if (!mounted) return;
+
+    setState(() {
+      _isGoogleSubmitting = false;
+    });
+
+    if (!response.isSuccess) {
+      setState(() {
+        _errorText = response.message ?? 'Google sign-up failed. Please try again.';
+      });
+      return;
+    }
+
+    // After Google sign-up we already have a session; route directly.
+    final UserRole resolvedRole = response.role ?? _selectedRole;
+    if (resolvedRole == UserRole.lecturer) {
+      context.goNamed(AppRoutes.lecturerHome);
+      return;
+    }
+
+    context.goNamed(
+      AppRoutes.appShell,
+      pathParameters: <String, String>{'role': resolvedRole.dbValue},
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final bool isDark = Theme.of(context).brightness == Brightness.dark;
-
     return Scaffold(
-      body: LayoutBuilder(
-        builder: (BuildContext context, BoxConstraints constraints) {
-          final double sx = constraints.maxWidth / 425;
-          final double sy = constraints.maxHeight / 884;
-
-          return Stack(
-            children: [
-              Container(color: isDark ? const Color(0xFF000205) : Colors.white),
-              _MovingCircle(
-                color: isDark
-                    ? const Color(0xFF600063).withValues(alpha: 0.43)
-                    : const Color(0xFFF39200),
-                size: Size(193 * sx, 175 * sy),
-              ),
-              _MovingCircle(
-                color: const Color(0xFF010F46).withValues(alpha: 0.43),
-                size: Size(183 * sx, 189 * sy),
-              ),
-              _MovingCircle(
-                color: const Color(0x6EFFC94A).withValues(alpha: 0.43),
-                size: Size(207 * sx, 206 * sy),
-              ),
-              if (!isDark)
-                _MovingCircle(
-                  color: const Color(0xFFF39200),
-                  size: Size(95 * sx, 88 * sy),
-                ),
-              Positioned.fill(
-                child: Container(
-                  color: isDark
-                      ? const Color(0x42000000)
-                      : const Color(0x42FFFFFF),
-                ),
-              ),
-              Positioned.fill(
-                child: SingleChildScrollView(
-                  padding: EdgeInsets.symmetric(horizontal: 42 * sx),
-                  child: Column(
-                    children: [
-                      SizedBox(height: 100 * sy),
-                      Container(
-                        padding: EdgeInsets.fromLTRB(
-                          30 * sx,
-                          18 * sy,
-                          30 * sx,
-                          22 * sy,
-                        ),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(17),
-                          gradient: const LinearGradient(
-                            begin: Alignment(-0.95, -0.95),
-                            end: Alignment(1, 1),
-                            colors: [Color(0x33D9D9D9), Color(0x334F4E4E)],
-                          ),
-                          border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.2),
-                          ),
-                        ),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Image.asset(
-                              'assets/Logo.png',
-                              width: 116 * sx,
-                              height: 132 * sy,
+      backgroundColor: Colors.transparent,
+      body: AmbientBackground(
+        child: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 520),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    SizedBox(
+                      height: 52,
+                      child: Stack(
+                        children: [
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: IconButton(
+                              onPressed: () => Navigator.of(context).maybePop(),
+                              icon: const Icon(Icons.arrow_back, color: Colors.white70),
                             ),
-                            const SizedBox(height: 6),
-                            const _GradientText(
+                          ),
+                          Center(
+                            child: Text(
                               'ICTU COMMUNITY',
-                              style: TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.w700,
-                                letterSpacing: 0.2,
+                              style: AppTextStyles.h2.copyWith(
+                                fontSize: 16,
+                                letterSpacing: 3,
+                                color: AppColors.primaryContainer,
+                                shadows: [
+                                  Shadow(
+                                    color: AppColors.primaryContainer.withValues(alpha: 0.55),
+                                    blurRadius: 8,
+                                  ),
+                                ],
                               ),
                             ),
-                            const SizedBox(height: 2),
-                            const _GradientText(
-                              'Create Account',
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w500,
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    GlassCard(
+                      padding: const EdgeInsets.all(28),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Center(
+                            child: Image.asset(
+                              'assets/Logo.png',
+                              width: 92,
+                              height: 92,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            widget.initialRole == UserRole.lecturer
+                                ? 'Join the Staff Portal'
+                                : 'Create your account',
+                            style: AppTextStyles.h1,
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            widget.initialRole == UserRole.lecturer
+                                ? 'Register as a staff member to manage courses.'
+                                : 'Register with your ICTU email to get started.',
+                            style: AppTextStyles.bodyMd.copyWith(
+                              color: AppColors.onSurfaceVariant,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 24),
+                          GlassInput(
+                            label: 'Full name',
+                            controller: _nameController,
+                            icon: Icons.person_outline,
+                            placeholder: 'e.g. Jane Nfor',
+                          ),
+                          const SizedBox(height: 16),
+                          GlassInput(
+                            label: 'Email address',
+                            controller: _emailController,
+                            icon: Icons.mail_outline,
+                            keyboardType: TextInputType.emailAddress,
+                            placeholder: 'name$_schoolDomain',
+                          ),
+                          const SizedBox(height: 16),
+                          GlassInput(
+                            label: 'Password',
+                            controller: _passwordController,
+                            icon: Icons.lock_outline,
+                            obscureText: _passwordObscured,
+                            placeholder: 'Create a password',
+                            suffix: IconButton(
+                              onPressed: () {
+                                setState(() => _passwordObscured = !_passwordObscured);
+                              },
+                              icon: Icon(
+                                _passwordObscured ? Icons.visibility_off : Icons.visibility,
+                                color: Colors.white54,
+                                size: 18,
                               ),
                             ),
-                            SizedBox(height: 18 * sy),
-                            _LabeledInput(
-                              label: 'Full Name',
-                              isDark: isDark,
-                              controller: _nameController,
-                            ),
-                            SizedBox(height: 10 * sy),
-                            _LabeledInput(
-                              label: 'Email Address',
-                              isDark: isDark,
-                              controller: _emailController,
-                            ),
-                            SizedBox(height: 10 * sy),
-                            _RoleSelector(
-                              role: _selectedRole,
-                              onChanged: (UserRole value) {
-                                setState(() {
-                                  _selectedRole = value;
-                                });
+                          ),
+                          const SizedBox(height: 16),
+                          GlassInput(
+                            label: 'Confirm password',
+                            controller: _confirmPasswordController,
+                            icon: Icons.lock_outline,
+                            obscureText: _confirmPasswordObscured,
+                            placeholder: 'Re-enter your password',
+                            suffix: IconButton(
+                              onPressed: () {
+                                setState(() => _confirmPasswordObscured = !_confirmPasswordObscured);
                               },
+                              icon: Icon(
+                                _confirmPasswordObscured ? Icons.visibility_off : Icons.visibility,
+                                color: Colors.white54,
+                                size: 18,
+                              ),
                             ),
-                            SizedBox(height: 10 * sy),
-                            _ProgramSelector(
-                              selectedProgram: _selectedProgram,
-                              options: _programs,
-                              onChanged: (String value) {
-                                setState(() {
-                                  _selectedProgram = value;
-                                });
-                              },
-                            ),
-                            SizedBox(height: 10 * sy),
-                            _YearLevelSelector(
-                              selectedValue: _selectedYearLevel,
-                              onChanged: (int value) {
-                                setState(() {
-                                  _selectedYearLevel = value;
-                                });
-                              },
-                            ),
-                            SizedBox(height: 10 * sy),
-                            _LabeledInput(
-                              label: 'Password',
-                              isDark: isDark,
-                              controller: _passwordController,
-                              obscureText: true,
-                            ),
-                            SizedBox(height: 10 * sy),
-                            _LabeledInput(
-                              label: 'Confirm Password',
-                              isDark: isDark,
-                              controller: _confirmPasswordController,
-                              obscureText: true,
-                            ),
-                            if (_errorText != null) ...[
-                              const SizedBox(height: 8),
-                              Text(
-                                _errorText!,
-                                style: const TextStyle(
-                                  color: Color(0xFFF87171),
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w600,
-                                ),
+                          ),
+                          const SizedBox(height: 20),
+                          _GlassDropdown<UserRole>(
+                            label: 'Role',
+                            value: _selectedRole,
+                            items: const [
+                              DropdownMenuItem(
+                                value: UserRole.student,
+                                child: Text('Student'),
+                              ),
+                              DropdownMenuItem(
+                                value: UserRole.delegateRole,
+                                child: Text('Delegate'),
+                              ),
+                              DropdownMenuItem(
+                                value: UserRole.lecturer,
+                                child: Text('Lecturer'),
                               ),
                             ],
-                            SizedBox(height: 14 * sy),
-                            SizedBox(
-                              width: 222 * sx,
-                              height: 37 * sy,
-                              child: DecoratedBox(
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(54),
-                                  gradient: const LinearGradient(
-                                    colors: [Color(0x91D49100), Color(0x9114154C)],
+                            onChanged: (value) {
+                              if (value == null) return;
+                              setState(() => _selectedRole = value);
+                            },
+                          ),
+                          const SizedBox(height: 16),
+                          _GlassDropdown<String>(
+                            label: 'Program',
+                            value: _selectedProgram,
+                            items: _programs
+                                .map(
+                                  (p) => DropdownMenuItem(
+                                    value: p,
+                                    child: Text(p),
                                   ),
-                                ),
-                                child: Material(
-                                  color: Colors.transparent,
-                                  child: InkWell(
-                                    borderRadius: BorderRadius.circular(54),
-                                    onTap: _isSubmitting ? null : _onSignup,
-                                    child: Center(
-                                      child: _isSubmitting
-                                          ? const SizedBox(
-                                              width: 22,
-                                              height: 22,
-                                              child: CircularProgressIndicator(
-                                                strokeWidth: 2,
-                                                color: Colors.white,
-                                              ),
-                                            )
-                                          : const Text(
-                                              'Sign Up',
-                                              style: TextStyle(
-                                                color: Colors.white,
-                                                fontWeight: FontWeight.w700,
-                                                fontSize: 28,
-                                                height: 1,
-                                                shadows: [
-                                                  Shadow(
-                                                    blurRadius: 6.4,
-                                                    offset: Offset(0, 4),
-                                                    color: Color(0x40000000),
-                                                  ),
-                                                  Shadow(
-                                                    blurRadius: 4,
-                                                    offset: Offset(0, 4),
-                                                    color: Color(0x40000000),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 10),
-                            _GoogleAuthButton(
-                              label: 'Sign up with Google',
-                              onTap: _onGoogleSignUp,
-                            ),
-                            const SizedBox(height: 6),
-                            TextButton(
-                              onPressed: () {
-                                Navigator.of(context).pushReplacement(
-                                  MaterialPageRoute<void>(
-                                    builder: (_) => const LoginScreen(),
-                                  ),
-                                );
+                                )
+                                .toList(),
+                            onChanged: (value) {
+                              if (value == null) return;
+                              setState(() => _selectedProgram = value);
+                            },
+                          ),
+                          if (_selectedRole == UserRole.student) ...[
+                            const SizedBox(height: 16),
+                            _GlassDropdown<int>(
+                              label: 'Year level',
+                              value: _selectedYearLevel,
+                              items: const [
+                                DropdownMenuItem(value: 1, child: Text('Year 1')),
+                                DropdownMenuItem(value: 2, child: Text('Year 2')),
+                                DropdownMenuItem(value: 3, child: Text('Year 3')),
+                                DropdownMenuItem(value: 4, child: Text('Year 4')),
+                              ],
+                              onChanged: (value) {
+                                if (value == null) return;
+                                setState(() => _selectedYearLevel = value);
                               },
-                              child: Text(
-                                'Already have an account? Login',
-                                style: TextStyle(
-                                  color: isDark
-                                      ? const Color(0xFFA6FFB6)
-                                      : const Color(0xFF334155),
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
                             ),
                           ],
-                        ),
+                          const SizedBox(height: 18),
+                          PrimaryButton(
+                            label: 'Create account',
+                            onTap: (_isSubmitting || _isGoogleSubmitting) ? null : _onSignup,
+                            isLoading: _isSubmitting,
+                          ),
+                          if (_errorText != null) ...[
+                            const SizedBox(height: 12),
+                            Text(
+                              _errorText!,
+                              style: AppTextStyles.labelSm.copyWith(
+                                color: AppColors.error,
+                                height: 1.3,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                          const SizedBox(height: 16),
+                          OutlinedButton.icon(
+                            onPressed: (_isSubmitting || _isGoogleSubmitting)
+                                ? null
+                                : _onGoogleSignUp,
+                            icon: _isGoogleSubmitting
+                                ? const SizedBox(
+                                    width: 18,
+                                    height: 18,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Colors.white,
+                                    ),
+                                  )
+                                : const Icon(Icons.g_mobiledata_rounded, size: 26),
+                            label: const Text('Sign up with Google'),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: AppColors.onSurface,
+                              side: BorderSide(
+                                color: Colors.white.withValues(alpha: 0.18),
+                              ),
+                              backgroundColor: Colors.white.withValues(alpha: 0.05),
+                              padding: const EdgeInsets.symmetric(
+                                vertical: 14,
+                                horizontal: 14,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                              textStyle: AppTextStyles.bodyMd.copyWith(
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          TextButton(
+                            onPressed: () {
+                                  final UserRole targetRole =
+                                      widget.initialRole ?? UserRole.student;
+                                  context.goNamed(
+                                    AppRoutes.login,
+                                    pathParameters: <String, String>{
+                                      'role': targetRole.dbValue,
+                                    },
+                                  );
+                            },
+                            style: TextButton.styleFrom(
+                              foregroundColor: AppColors.primaryContainer,
+                              textStyle: AppTextStyles.labelSm.copyWith(
+                                color: AppColors.primaryContainer,
+                              ),
+                            ),
+                            child: const Text('Already have an account? Login'),
+                          ),
+                        ],
                       ),
-                      SizedBox(height: 50 * sy),
-                    ],
-                  ),
-                ),
-              ),
-              Positioned(
-                top: 51 * sy,
-                left: 14 * sx,
-                child: Container(
-                  width: 42 * sx,
-                  height: 41 * sy,
-                  decoration: const BoxDecoration(
-                    color: Color(0x6ED9D9D9),
-                    shape: BoxShape.circle,
-                  ),
-                  child: IconButton(
-                    icon: Icon(
-                      Icons.arrow_back,
-                      color: Colors.white.withValues(alpha: 0.7),
-                      size: 18,
                     ),
-                    onPressed: () => Navigator.of(context).pop(),
-                  ),
+                  ],
                 ),
               ),
-              Positioned(
-                left: 0,
-                right: 0,
-                bottom: 10 * sy,
-                child: Center(
-                  child: Container(
-                    width: 128 * sx,
-                    height: 6 * sy,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFCBD5E1),
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          );
-        },
+            ),
+          ),
+        ),
       ),
     );
   }
 }
 
-class _RoleSelector extends StatelessWidget {
-  const _RoleSelector({required this.role, required this.onChanged});
-
-  final UserRole role;
-  final ValueChanged<UserRole> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return _DropdownShell<UserRole>(
-      label: 'Role',
-      value: role,
-      items: const <DropdownMenuItem<UserRole>>[
-        DropdownMenuItem<UserRole>(
-          value: UserRole.student,
-          child: Text('Student'),
-        ),
-        DropdownMenuItem<UserRole>(
-          value: UserRole.delegateRole,
-          child: Text('Delegate'),
-        ),
-        DropdownMenuItem<UserRole>(
-          value: UserRole.lecturer,
-          child: Text('Lecturer'),
-        ),
-        DropdownMenuItem<UserRole>(
-          value: UserRole.admin,
-          child: Text('Admin'),
-        ),
-      ],
-      onChanged: onChanged,
-    );
-  }
-}
-
-class _ProgramSelector extends StatelessWidget {
-  const _ProgramSelector({
-    required this.selectedProgram,
-    required this.options,
-    required this.onChanged,
-  });
-
-  final String selectedProgram;
-  final List<String> options;
-  final ValueChanged<String> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return _DropdownShell<String>(
-      label: 'Program',
-      value: selectedProgram,
-      items: options
-          .map(
-            (String program) => DropdownMenuItem<String>(
-              value: program,
-              child: Text(program),
-            ),
-          )
-          .toList(),
-      onChanged: onChanged,
-    );
-  }
-}
-
-class _YearLevelSelector extends StatelessWidget {
-  const _YearLevelSelector({
-    required this.selectedValue,
-    required this.onChanged,
-  });
-
-  final int selectedValue;
-  final ValueChanged<int> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return _DropdownShell<int>(
-      label: 'Year Level',
-      value: selectedValue,
-      items: const <DropdownMenuItem<int>>[
-        DropdownMenuItem<int>(value: 1, child: Text('Year 1')),
-        DropdownMenuItem<int>(value: 2, child: Text('Year 2')),
-        DropdownMenuItem<int>(value: 3, child: Text('Year 3')),
-        DropdownMenuItem<int>(value: 4, child: Text('Year 4')),
-      ],
-      onChanged: onChanged,
-    );
-  }
-}
-
-class _DropdownShell<T> extends StatelessWidget {
-  const _DropdownShell({
+class _GlassDropdown<T> extends StatelessWidget {
+  const _GlassDropdown({
     required this.label,
     required this.value,
     required this.items,
@@ -509,251 +460,44 @@ class _DropdownShell<T> extends StatelessWidget {
   final String label;
   final T value;
   final List<DropdownMenuItem<T>> items;
-  final ValueChanged<T> onChanged;
+  final ValueChanged<T?> onChanged;
 
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 11,
-            color: Colors.white,
-            fontFamily: 'Kode Mono',
-          ),
-        ),
-        const SizedBox(height: 4),
-        Container(
-          height: 44,
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          decoration: BoxDecoration(
-            color: const Color(0x82D9D9D9),
-            borderRadius: BorderRadius.circular(15),
-          ),
-          child: DropdownButtonHideUnderline(
-            child: DropdownButton<T>(
-              value: value,
-              isExpanded: true,
-              dropdownColor: const Color(0xFF12161F),
-              style: const TextStyle(color: Colors.white, fontSize: 13),
-              items: items,
-              onChanged: (T? next) {
-                if (next != null) {
-                  onChanged(next);
-                }
-              },
+        Text(label.toUpperCase(), style: AppTextStyles.labelSm),
+        const SizedBox(height: 8),
+        DropdownButtonFormField<T>(
+          value: value,
+          items: items,
+          onChanged: onChanged,
+          dropdownColor: AppColors.surfaceContainer,
+          style: AppTextStyles.bodyMd,
+          iconEnabledColor: Colors.white70,
+          decoration: InputDecoration(
+            filled: true,
+            fillColor: Colors.black.withValues(alpha: 0.25),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide:
+                  BorderSide(color: Colors.white.withValues(alpha: 0.10)),
             ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide:
+                  BorderSide(color: Colors.white.withValues(alpha: 0.10)),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: AppColors.primaryContainer),
+            ),
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           ),
         ),
       ],
-    );
-  }
-}
-
-class _LabeledInput extends StatelessWidget {
-  const _LabeledInput({
-    required this.controller,
-    required this.label,
-    required this.isDark,
-    this.obscureText = false,
-  });
-
-  final TextEditingController controller;
-  final String label;
-  final bool isDark;
-  final bool obscureText;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 11,
-            color: isDark ? Colors.white : Colors.black,
-            fontFamily: 'Kode Mono',
-          ),
-        ),
-        const SizedBox(height: 4),
-        SizedBox(
-          height: 44,
-          child: TextField(
-            controller: controller,
-            obscureText: obscureText,
-            style: TextStyle(
-              color: isDark ? Colors.white : Colors.black,
-              fontSize: 13,
-            ),
-            decoration: InputDecoration(
-              isDense: true,
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 12,
-                vertical: 12,
-              ),
-              filled: true,
-              fillColor: const Color(0x82D9D9D9),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(15),
-                borderSide: BorderSide.none,
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(15),
-                borderSide: BorderSide.none,
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(15),
-                borderSide: const BorderSide(
-                  color: Color(0xFFF59E0B),
-                  width: 1,
-                ),
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _GoogleAuthButton extends StatelessWidget {
-  const _GoogleAuthButton({required this.label, required this.onTap});
-
-  final String label;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: double.infinity,
-      height: 42,
-      child: OutlinedButton.icon(
-        onPressed: onTap,
-        icon: const Icon(Icons.g_mobiledata_rounded, size: 24),
-        label: Text(
-          label,
-          style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
-        ),
-        style: OutlinedButton.styleFrom(
-          foregroundColor: Colors.white,
-          side: BorderSide(color: Colors.white.withValues(alpha: 0.25)),
-          backgroundColor: Colors.white.withValues(alpha: 0.06),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _CircleDecor extends StatelessWidget {
-  const _CircleDecor({required this.color});
-
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-    );
-  }
-}
-
-class _MovingCircle extends StatefulWidget {
-  const _MovingCircle({required this.color, required this.size});
-  final Color color;
-  final Size size;
-
-  @override
-  State<_MovingCircle> createState() => _MovingCircleState();
-}
-
-class _MovingCircleState extends State<_MovingCircle>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<Offset> _animation;
-  late Offset _startOffset;
-  late Offset _endOffset;
-  final Random _random = Random();
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 15),
-    )..addStatusListener((status) {
-        if (status == AnimationStatus.completed) {
-          _pickNewOffsets();
-          _controller.forward(from: 0);
-        }
-      });
-
-    _startOffset = _randomOffset();
-    _endOffset = _randomOffset();
-    _animation = Tween<Offset>(begin: _startOffset, end: _endOffset).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
-    _controller.forward();
-  }
-
-  Offset _randomOffset() {
-    return Offset(_random.nextDouble(), _random.nextDouble());
-  }
-
-  void _pickNewOffsets() {
-    if (mounted) {
-      setState(() {
-        _startOffset = _endOffset;
-        _endOffset = _randomOffset();
-        _animation = Tween<Offset>(begin: _startOffset, end: _endOffset).animate(
-          CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-        );
-      });
-    }
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final Size screenSize = MediaQuery.of(context).size;
-    return AnimatedBuilder(
-      animation: _animation,
-      builder: (context, child) {
-        return Positioned(
-          left: _animation.value.dx * (screenSize.width - widget.size.width),
-          top: _animation.value.dy * (screenSize.height - widget.size.height),
-          child: child!,
-        );
-      },
-      child: _CircleDecor(color: widget.color),
-    );
-  }
-}
-
-class _GradientText extends StatelessWidget {
-  const _GradientText(this.text, {required this.style});
-
-  final String text;
-  final TextStyle style;
-
-  @override
-  Widget build(BuildContext context) {
-    return ShaderMask(
-      shaderCallback: (Rect bounds) => const LinearGradient(
-        colors: [Color(0xFFA6FFB6), Color(0xFF636999)],
-      ).createShader(bounds),
-      blendMode: BlendMode.srcIn,
-      child: Text(text, style: style),
     );
   }
 }

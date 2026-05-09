@@ -129,6 +129,8 @@ class NotesService {
       <String, dynamic>{
         'action': 'create_note',
         'courseId': courseId,
+        'courseCode': courseCode,
+        'course_code': courseCode, // Added for backend compatibility
         'title': title,
         'description': description,
         'summary': summary,

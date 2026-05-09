@@ -118,25 +118,35 @@ Deno.serve(async (request: Request) => {
     .from('profiles')
     .upsert(profileRow, { onConflict: 'id' });
 
-  if (upsertError?.message.includes('profiles_email_key')) {
-    const profileUpdate = {
+  if (upsertError) {
+    return Response.json({ error: upsertError.message }, { status: 400 });
+  }
+
+  // Also insert into role-specific tables for referential integrity
+  if (normalizedPayload.role === 'lecturer') {
+    const { error: lecturerError } = await adminClient.from('lecturers').upsert({
+      id: normalizedPayload.user_id,
       full_name: normalizedPayload.full_name,
-      role: normalizedPayload.role,
+      email: normalizedPayload.email,
+      faculty: normalizedPayload.faculty,
+    }, { onConflict: 'id' });
+
+    if (lecturerError) {
+      console.error('Error inserting lecturer:', lecturerError);
+    }
+  } else if (normalizedPayload.role === 'student' || normalizedPayload.role === 'delegate') {
+    const { error: studentError } = await adminClient.from('students').upsert({
+      id: normalizedPayload.user_id,
+      full_name: normalizedPayload.full_name,
+      email: normalizedPayload.email,
       faculty: normalizedPayload.faculty,
       program: normalizedPayload.program,
       year_level: normalizedPayload.year_level,
-    };
+    }, { onConflict: 'id' });
 
-    const { error: updateError } = await adminClient
-      .from('profiles')
-      .update(profileUpdate)
-      .eq('email', normalizedPayload.email);
-
-    if (updateError) {
-      return Response.json({ error: updateError.message }, { status: 400 });
+    if (studentError) {
+      console.error('Error inserting student:', studentError);
     }
-  } else if (upsertError) {
-    return Response.json({ error: upsertError.message }, { status: 400 });
   }
 
   return Response.json({ ok: true }, { status: 200 });

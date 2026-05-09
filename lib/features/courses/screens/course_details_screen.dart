@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:ictu_community_org/core/utils/string_utils.dart';
 import 'package:ictu_community_org/features/alerts/screens/alert_details_screen.dart';
+import 'package:ictu_community_org/features/alerts/screens/student_alerts_screen.dart';
 import 'package:ictu_community_org/features/auth/models/user_role.dart';
 import 'package:ictu_community_org/features/courses/controllers/course_details_controller.dart';
 import 'package:ictu_community_org/features/courses/models/course_note.dart';
@@ -55,7 +57,11 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
         if (_controller.error != null) {
           return Scaffold(
             backgroundColor: const Color(0xFF0A0C10),
-            appBar: AppBar(backgroundColor: Colors.transparent, elevation: 0),
+            appBar: AppBar(
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              automaticallyImplyLeading: false,
+            ),
             body: _ErrorCard(
               message: _controller.error!,
               onRetry: _controller.loadInitial,
@@ -75,10 +81,7 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
           appBar: AppBar(
             backgroundColor: Colors.transparent,
             elevation: 0,
-            leading: IconButton(
-              icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white),
-              onPressed: () => Navigator.of(context).pop(),
-            ),
+            automaticallyImplyLeading: false,
             title: Text(
               selectedCourse.code,
               style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
@@ -104,13 +107,35 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
                   description: selectedCourse.description,
                 ),
                 const SizedBox(height: 24),
-                const Text(
-                  'Course Content',
-                  style: TextStyle(
-                    color: Color(0xFFF1F5F9),
-                    fontWeight: FontWeight.w800,
-                    fontSize: 20,
-                  ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Course Content',
+                      style: TextStyle(
+                        color: Color(0xFFF1F5F9),
+                        fontWeight: FontWeight.w800,
+                        fontSize: 20,
+                      ),
+                    ),
+                    TextButton.icon(
+                      onPressed: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => StudentAlertsScreen(
+                              courseCode: selectedCourse.code,
+                            ),
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.notifications_active_outlined, size: 18),
+                      label: const Text('All Alerts'),
+                      style: TextButton.styleFrom(
+                        foregroundColor: const Color(0xFFF58220),
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 12),
                 if (_controller.isWorking)
@@ -512,9 +537,9 @@ class _LecturerInfoCard extends StatelessWidget {
             children: [
               CircleAvatar(
                 radius: 24,
-                backgroundColor: const Color(0xFFF58220).withValues(alpha: 0.1),
+                backgroundColor: const Color(0xFF1E293B),
                 child: Text(
-                  name.isNotEmpty ? name[0].toUpperCase() : '?',
+                  initialsFromName(name),
                   style: const TextStyle(
                     color: Color(0xFFF58220),
                     fontWeight: FontWeight.bold,

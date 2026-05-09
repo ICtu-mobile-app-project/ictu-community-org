@@ -23,6 +23,7 @@ class _CreateAlertScreenState extends State<CreateAlertScreen> {
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
   final TextEditingController _requirementsController = TextEditingController();
+  final TextEditingController _submissionLinkController = TextEditingController();
 
   List<LecturerCourseOption> _courses = <LecturerCourseOption>[];
   String? _selectedCourseCode;
@@ -41,6 +42,7 @@ class _CreateAlertScreenState extends State<CreateAlertScreen> {
     _titleController.dispose();
     _descriptionController.dispose();
     _requirementsController.dispose();
+    _submissionLinkController.dispose();
     super.dispose();
   }
 
@@ -133,6 +135,9 @@ class _CreateAlertScreenState extends State<CreateAlertScreen> {
         courseCode: _selectedCourseCode!,
         deadline: _type == AlertType.notice ? null : _deadline,
         requirements: requirements,
+        submissionLink: _submissionLinkController.text.trim().isEmpty 
+            ? null 
+            : _submissionLinkController.text.trim(),
       );
 
       if (!mounted) {
@@ -163,6 +168,7 @@ class _CreateAlertScreenState extends State<CreateAlertScreen> {
       backgroundColor: const Color(0xFF0A0C10),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
+        automaticallyImplyLeading: false,
         iconTheme: const IconThemeData(color: Colors.white),
         title: const Text(
           'Create Alert',
@@ -280,6 +286,25 @@ class _CreateAlertScreenState extends State<CreateAlertScreen> {
                 labelStyle: TextStyle(color: Color(0xFF94A3B8)),
                 hintText: '- Bring laptop\n- Submit PDF\n- Team of 3',
               ),
+            ),
+            const SizedBox(height: 10),
+            TextFormField(
+              controller: _submissionLinkController,
+              style: const TextStyle(color: Colors.white),
+              decoration: const InputDecoration(
+                labelText: 'Submission Link (Optional)',
+                hintText: 'e.g. Google Drive or Form link',
+                labelStyle: TextStyle(color: Color(0xFF94A3B8)),
+                prefixIcon: Icon(Icons.link_rounded, color: Color(0xFF94A3B8)),
+              ),
+              validator: (value) {
+                if (value != null && value.isNotEmpty) {
+                  if (!value.startsWith('http')) {
+                    return 'Please enter a valid URL';
+                  }
+                }
+                return null;
+              },
             ),
             const SizedBox(height: 16),
             ElevatedButton.icon(

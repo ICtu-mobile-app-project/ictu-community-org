@@ -124,7 +124,7 @@ async function getCourseMetrics(client: any, courseId: string, courseCode: strin
     client
       .from('course_enrollments')
       .select('id', { count: 'exact', head: true })
-      .eq('course_id', courseId),
+      .eq('course_code', courseCode),
     client
       .from('course_delegates')
       .select('id', { count: 'exact', head: true })
@@ -136,7 +136,7 @@ async function getCourseMetrics(client: any, courseId: string, courseCode: strin
     client
       .from('notes')
       .select('id', { count: 'exact', head: true })
-      .eq('course_id', courseId),
+      .eq('course_code', courseCode),
     client
       .from('alerts')
       .select('id', { count: 'exact', head: true })
@@ -201,7 +201,7 @@ Deno.serve(async (request: Request) => {
       }
     }
 
-    const action = asText(body?.action || body?.Action).toLowerCase();
+    const action = asText(body?.action || body?.Action).toLowerCase().trim();
 
     // Ping action for health checks (doesn't require auth)
     if (action === 'ping') {
@@ -211,16 +211,30 @@ Deno.serve(async (request: Request) => {
     const auth = await resolveAuth(request);
     const client = auth.serviceClient;
 
+    console.log(`REQ: action="${action}" | user="${auth.userId}" | role="${auth.role}"`);
+
     if (!action) {
       return fail(400, 'action is required');
     }
 
-    if (
-      action !== 'list_my_courses' &&
-      action !== 'search_students' &&
-      auth.role !== 'lecturer'
-    ) {
-      return fail(403, 'Only lecturers can perform this action');
+    // List of actions allowed for students/delegates
+    const publicActions = ['list_my_courses', 'search_students', 'ping'];
+
+    // List of all supported actions to verify if it's actually supported
+    const allActions = [
+      'ping', 'create_course', 'list_my_courses', 'get_course_details',
+      'update_course', 'delete_course', 'list_students', 'search_students',
+      'add_students', 'remove_student', 'list_delegates', 'assign_delegate',
+      'update_delegate', 'remove_delegate'
+    ];
+
+    if (!allActions.includes(action)) {
+      console.error(`ERROR: Action "${action}" not found in allActions list`);
+      return fail(400, `Unsupported action: ${action}`);
+    }
+
+    if (!publicActions.includes(action) && auth.role !== 'lecturer') {
+      return fail(403, `Forbidden: Role ${auth.role} cannot perform ${action}`);
     }
 
     if (action === 'create_course') {
@@ -417,12 +431,17 @@ Deno.serve(async (request: Request) => {
     if (action === 'list_students') {
       const courseId = asText(body.courseId);
       if (!courseId) return fail(400, 'courseId is required');
-      await assertCourseOwner(client, courseId, auth.userId);
+      const course = await assertCourseOwner(client, courseId, auth.userId);
 
       const { data, error } = await client
         .from('course_enrollments')
-        .select('id, enrolled_at, student_id, profiles:student_id(id, full_name, email)')
-        .eq('course_id', courseId)
+        .select(`
+          id,
+          enrolled_at,
+          student_id,
+          profiles:student_id(id, full_name, email, faculty, program, year_level)
+        `)
+        .eq('course_code', course.course_code)
         .order('enrolled_at', { ascending: false });
       if (error) return fail(400, error.message);
 
@@ -431,6 +450,9 @@ Deno.serve(async (request: Request) => {
         fullName: r.profiles?.full_name ?? 'Unknown Student',
         email: r.profiles?.email ?? '',
         enrolledAt: r.enrolled_at,
+        faculty: r.profiles?.faculty,
+        program: r.profiles?.program,
+        yearLevel: r.profiles?.year_level,
       }));
 
       return json(200, { success: true, data: { items } });
@@ -442,7 +464,7 @@ Deno.serve(async (request: Request) => {
 
       const { data, error } = await client
         .from('profiles')
-        .select('id, full_name, email, role')
+        .select('id, full_name, email, role, faculty, program, year_level')
         .eq('role', 'student')
         .ilike('email', `%${query}%`)
         .limit(25);
@@ -453,6 +475,9 @@ Deno.serve(async (request: Request) => {
         fullName: r.full_name ?? 'Unknown Student',
         email: r.email ?? '',
         enrolledAt: new Date().toISOString(),
+        faculty: r.faculty,
+        program: r.program,
+        yearLevel: r.year_level,
       }));
 
       return json(200, { success: true, data: { items } });
@@ -465,16 +490,16 @@ Deno.serve(async (request: Request) => {
         : [];
       if (!courseId) return fail(400, 'courseId is required');
       if (studentIds.length === 0) return fail(400, 'studentIds is required');
-      await assertCourseOwner(client, courseId, auth.userId);
+      const course = await assertCourseOwner(client, courseId, auth.userId);
 
       const rows = studentIds.map((id: string) => ({
-        course_id: courseId,
+        course_code: course.course_code,
         student_id: id,
       }));
 
       const { error } = await client
         .from('course_enrollments')
-        .upsert(rows, { onConflict: 'course_id,student_id', ignoreDuplicates: true });
+        .upsert(rows, { onConflict: 'course_code,student_id', ignoreDuplicates: true });
       if (error) return fail(400, error.message);
 
       return json(200, { success: true, data: { added: studentIds.length } });
@@ -484,12 +509,12 @@ Deno.serve(async (request: Request) => {
       const courseId = asText(body.courseId);
       const studentId = asText(body.studentId);
       if (!courseId || !studentId) return fail(400, 'courseId and studentId are required');
-      await assertCourseOwner(client, courseId, auth.userId);
+      const course = await assertCourseOwner(client, courseId, auth.userId);
 
       const { error: deleteEnrollmentError } = await client
         .from('course_enrollments')
         .delete()
-        .eq('course_id', courseId)
+        .eq('course_code', course.course_code)
         .eq('student_id', studentId);
       if (deleteEnrollmentError) return fail(400, deleteEnrollmentError.message);
 

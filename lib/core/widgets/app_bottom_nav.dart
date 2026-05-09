@@ -21,6 +21,7 @@ class AppBottomNav extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final double bottomInset = MediaQuery.viewPaddingOf(context).bottom;
     final navItems =
         items ?? AppBottomNavDefaults.defaults; // fall back to standard set
 
@@ -29,7 +30,8 @@ class AppBottomNav extends StatelessWidget {
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 40, sigmaY: 40),
         child: Container(
-          height: 80,
+          height: 80 + bottomInset,
+          padding: EdgeInsets.only(bottom: bottomInset),
           decoration: BoxDecoration(
             color: AppColors.topBarBg.withValues(alpha: 0.80),
             border: Border(
@@ -49,11 +51,10 @@ class AppBottomNav extends StatelessWidget {
               final active = i == currentIndex;
               final item = navItems[i];
 
-              return GestureDetector(
-                onTap: () => onTap(i),
-                behavior: HitTestBehavior.opaque,
-                child: SizedBox(
-                  width: 68,
+              return Expanded(
+                child: GestureDetector(
+                  onTap: () => onTap(i),
+                  behavior: HitTestBehavior.opaque,
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [

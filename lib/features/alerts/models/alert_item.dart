@@ -112,6 +112,7 @@ class AlertItem {
     required this.createdAt,
     this.deadline,
     this.requirements = const <String>[],
+    this.submissionLink,
   });
 
   final String id;
@@ -122,6 +123,7 @@ class AlertItem {
   final DateTime createdAt;
   final DateTime? deadline;
   final List<String> requirements;
+  final String? submissionLink;
 
   factory AlertItem.fromJson(Map<String, dynamic> json) {
     final dynamic requirementsRaw = json['requirements'];
@@ -138,6 +140,7 @@ class AlertItem {
       createdAt: DateTime.tryParse((json['created_at'] ?? '').toString()) ?? DateTime.now(),
       deadline: DateTime.tryParse((json['deadline'] ?? '').toString()),
       requirements: requirements,
+      submissionLink: json['submission_link']?.toString(),
     );
   }
 
@@ -151,6 +154,7 @@ class AlertItem {
       'created_at': createdAt.toIso8601String(),
       'deadline': deadline?.toIso8601String(),
       'requirements': requirements,
+      'submission_link': submissionLink,
     };
   }
 }

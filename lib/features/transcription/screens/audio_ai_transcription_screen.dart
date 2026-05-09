@@ -57,6 +57,7 @@ class _AudioAiTranscriptionScreenState extends State<AudioAiTranscriptionScreen>
       backgroundColor: Colors.transparent,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
+        automaticallyImplyLeading: false,
         iconTheme: const IconThemeData(color: Colors.white),
         title: const Text(
           'Audio/AI Transcription',

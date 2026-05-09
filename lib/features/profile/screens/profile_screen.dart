@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:ictu_community_org/core/utils/string_utils.dart';
 import 'package:ictu_community_org/features/profile/controllers/profile_controller.dart';
 
 import 'package:ictu_community_org/core/theme/app_colors.dart';
@@ -95,8 +96,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           width: 2,
                         ),
                       ),
-                      child: const CircleAvatar(
-                        backgroundImage: AssetImage('assets/students.jpg'),
+                      child: CircleAvatar(
+                        backgroundColor: AppColors.surfaceContainerHigh,
+                        child: Text(
+                          initialsFromName(data['full_name']),
+                          style: const TextStyle(
+                            color: AppColors.primaryContainer,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 32,
+                          ),
+                        ),
                       ),
                     ),
                   ),

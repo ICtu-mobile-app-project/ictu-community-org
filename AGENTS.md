@@ -449,3 +449,83 @@ For EVERY feature, ensure:
 ---
 
 **This guide ensures consistency, scalability, and ICTU-specific customization across the entire app!**
+
+---
+
+## 🤖 COPILOT BEHAVIOUR RULES (READ BEFORE EVERY EDIT)
+
+These rules are **mandatory**. Copilot must follow them in every session, for every file, for every error.
+
+---
+
+### ❌ RULE 1 — NEVER REWRITE AN ENTIRE FILE WITHOUT EXPLICIT USER APPROVAL
+
+Before making any edit, Copilot must classify the change:
+
+| Change type | Allowed without approval? |
+|---|---|
+| Adding a new function / widget / class | ✅ Yes |
+| Fixing a specific, isolated bug (≤ 15 lines changed) | ✅ Yes |
+| Refactoring a single method | ✅ Yes |
+| Rewriting or replacing 30 %+ of a file | ❌ **No — ask first** |
+| Deleting or replacing an existing class/widget | ❌ **No — ask first** |
+| Reformatting the entire file | ❌ **No — ask first** |
+
+**If a fix requires touching more than ~15 lines across a file, stop and say:**
+> "This fix would change a significant portion of `<filename>`. Do you want me to proceed with a full edit, or should I show you just the affected section?"
+
+**Never silently overwrite a file.** Always show a diff or describe the scope of changes before applying them.
+
+---
+
+### 🔍 RULE 2 — TRACE THE FULL DATA & LOGIC FLOW BEFORE TOUCHING CODE
+
+When asked to fix an error, Copilot must follow this exact diagnostic sequence **before writing a single line of code**:
+
+**Step 1 — Identify all files involved in the error**
+List every file that participates in the broken feature:
+- The screen/widget that shows the error
+- The controller/provider that manages state
+- The repository/service that calls the backend
+- The model that parses the response
+- The Edge Function (if backend)
+- Any shared core utility (e.g. `connectivity_service.dart`, `offline_service.dart`)
+
+**Step 2 — Trace the data flow top to bottom**
+Map the journey of data from the trigger point (e.g. button tap) all the way to where it fails:
+```
+User action → Screen → Controller → Repository → API call → Response parse → Model → UI render
+```
+Write this out (even if briefly) before diagnosing.
+
+**Step 3 — Identify WHERE in the flow the error originates**
+Ask: is the error in the call, in the parse, in the model, in the UI binding?
+Don't assume — read each layer's code.
+
+**Step 4 — Apply the minimal fix**
+Only change what the flow analysis shows is broken. Don't refactor surrounding code unless it is directly causing the error and you have approval (see Rule 1).
+
+**Step 5 — State the root cause before applying the fix**
+Say something like:
+> "Root cause: `_asJsonMap()` in `alerts_service.dart` returns `{}` when the response is a raw string, so `payload['alerts']` is always null. Fix: parse the outer string before extracting the list."
+
+---
+
+### 📁 RULE 3 — ALWAYS CONFIRM WHICH FILE YOU ARE EDITING
+
+Before applying any change, state:
+> "I am editing `lib/features/alerts/data/alerts_service.dart`, specifically the `listLecturerAlerts()` method, lines ~45–70."
+
+If Copilot is about to touch more than one file, list all of them upfront.
+
+---
+
+### 🧩 RULE 4 — PREFER SURGICAL EDITS OVER FULL REPLACEMENTS
+
+Use targeted replacements (old → new block) rather than pasting entire files.
+If you must show a full file, wrap it in a clearly labelled code block and ask:
+> "Should I apply this full replacement? (yes/no)"
+
+---
+
+**These rules exist to protect existing working code, prevent regressions, and keep the developer in control at all times.**

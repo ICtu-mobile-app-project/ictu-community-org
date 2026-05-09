@@ -248,6 +248,7 @@ Deno.serve(async (request: Request) => {
 
     if (action === 'create_note') {
       const courseId = asText(body.courseId);
+      const courseCode = asText(body.courseCode || body.course_code);
       const title = asText(body.title);
       const description = asText(body.description);
       const summary = asText(body.summary);
@@ -258,6 +259,10 @@ Deno.serve(async (request: Request) => {
 
       if (!courseId || !title || !fileName) {
         return fail(400, 'courseId, title, and fileName are required');
+      }
+
+      if (!courseCode) {
+        return fail(400, 'course_code is required');
       }
 
       const allowed = await canUploadNote(client, courseId, auth.userId);

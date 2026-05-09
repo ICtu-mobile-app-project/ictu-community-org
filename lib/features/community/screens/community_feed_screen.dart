@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'package:ictu_community_org/core/utils/string_utils.dart';
 import 'package:ictu_community_org/core/theme/app_colors.dart';
 import 'package:ictu_community_org/core/widgets/ambient_background.dart';
 import 'package:ictu_community_org/core/widgets/glass_card.dart';
@@ -149,9 +150,17 @@ class _StatusBubble extends StatelessWidget {
                 width: 2,
               ),
             ),
-            child: const CircleAvatar(
+            child: CircleAvatar(
               radius: 21,
-              backgroundImage: AssetImage('assets/students.jpg'),
+              backgroundColor: const Color(0xFF1E293B),
+              child: Text(
+                initialsFromName(name),
+                style: const TextStyle(
+                  color: Color(0xFFF58220),
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                ),
+              ),
             ),
           ),
           const SizedBox(height: 6),
@@ -188,9 +197,17 @@ class _ChatTile extends StatelessWidget {
         padding: const EdgeInsets.all(14),
         child: Row(
         children: [
-          const CircleAvatar(
+          CircleAvatar(
             radius: 20,
-            backgroundImage: AssetImage('assets/students.jpg'),
+            backgroundColor: const Color(0xFF1E293B),
+            child: Text(
+              initialsFromName(title),
+              style: const TextStyle(
+                color: Color(0xFFF58220),
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+              ),
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(

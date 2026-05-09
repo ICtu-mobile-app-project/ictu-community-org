@@ -299,6 +299,7 @@ class _AdminTimetableManagementScreenState
       backgroundColor: const Color(0xFF0A0C10),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
+        automaticallyImplyLeading: false,
         title: const Text('Timetable Management'),
       ),
       body: Center(

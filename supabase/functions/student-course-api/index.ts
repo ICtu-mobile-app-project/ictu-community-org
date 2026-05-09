@@ -143,14 +143,6 @@ Deno.serve(async (request: Request) => {
         course_code: course.course_code,
       });
 
-    // Also add to enrollments (UUID based) for backward compatibility/consistency if it exists
-    await adminClient
-      .from('enrollments')
-      .upsert({
-        student_id: user.id,
-        course_id: courseId,
-      }, { onConflict: 'student_id,course_id' });
-
     if (enrollError) return Response.json({ ok: false, error: enrollError.message }, { status: 400 });
     return Response.json({ ok: true, message: 'Enrolled successfully.' }, { status: 200 });
   }

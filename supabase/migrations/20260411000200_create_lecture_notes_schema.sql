@@ -1,4 +1,4 @@
-tan-- Lecture notes schema shared by lecturers and students.
+-- Lecture notes schema shared by lecturers and students.
 create extension if not exists pgcrypto;
 
 create table if not exists public.lecture_notes (
